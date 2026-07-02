@@ -1,0 +1,65 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --- Design tokens --- */
+:root {
+  --background: #ffffff;
+  --foreground: #14181f;
+  --muted-foreground: #4b5566;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --footer-bg: #f7fafc;
+  --accent: #2563eb;
+
+  --font-sans: Arial, Helvetica, sans-serif;
+}
+
+.dark {
+  --background: #0a1322;        /* deep navy-black, not pure black */
+  --foreground: #e8edf4;        /* soft off-white, easier on the eyes than pure white */
+  --muted-foreground: #8b9ab0;  /* cool slate-blue, reads clearly without glowing */
+  --card: #101b2d;              /* visibly lighter than background — real elevation */
+  --border: #233149;            /* navy-tinted border, not generic gray */
+  --footer-bg: #070d17;         /* slightly darker than background, grounds the footer */
+  --accent: #5b9dff;            /* brighter blue for AA contrast on dark surfaces */
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-footer: var(--footer-bg);
+}
+
+/* --- Base document --- */
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* --- Components --- */
+div[data-youtube-video] {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+div[data-youtube-video] iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}
