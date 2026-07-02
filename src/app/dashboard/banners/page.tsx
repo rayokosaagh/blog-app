@@ -395,7 +395,6 @@ export default function BannersPage() {
     );
   }
 
-  // List View with Liquid Animations
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
