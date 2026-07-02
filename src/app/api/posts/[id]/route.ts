@@ -10,7 +10,7 @@ export async function GET(
     const { id } = await params;
     const post = await prisma.post.findUnique({
       where: { id },
-      include: { author: true },
+      include: { author: true, tags: true },
     });
     if (!post) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(post);
@@ -35,11 +35,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { title, slug, content, published, featuredImage } = await req.json();
+    const { title, slug, content, published, featuredImage, tagIds } = await req.json();
+
     const updated = await prisma.post.update({
       where: { id },
-      data: { title, slug, content, published, featuredImage },
+      data: {
+        title,
+        slug,
+        content,
+        published,
+        featuredImage,
+        ...(tagIds !== undefined
+          ? { tags: { set: tagIds.map((tagId: string) => ({ id: tagId })) } }
+          : {}),
+      },
+      include: { tags: true },
     });
+
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update post" }, { status: 500 });

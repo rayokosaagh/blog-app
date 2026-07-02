@@ -2,11 +2,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-// GET all posts (with search)
+// GET all posts (with search + tag filter)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
+    const tag = searchParams.get("tag") || "";
 
     const posts = await prisma.post.findMany({
       where: {
@@ -14,24 +15,21 @@ export async function GET(req: Request) {
         ...(search
           ? {
               OR: [
-                {
-                  title: {
-                    contains: search,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  content: {
-                    contains: search,
-                    mode: "insensitive",
-                  },
-                },
+                { title: { contains: search, mode: "insensitive" } },
+                { content: { contains: search, mode: "insensitive" } },
               ],
+            }
+          : {}),
+        ...(tag
+          ? {
+              tags: {
+                some: { slug: tag },
+              },
             }
           : {}),
       },
       orderBy: { createdAt: "desc" },
-      include: { author: true },
+      include: { author: true, tags: true },
     });
 
     return NextResponse.json(posts);
@@ -43,7 +41,7 @@ export async function GET(req: Request) {
   }
 }
 
-// CREATE POST (unchanged)
+// CREATE POST
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -54,7 +52,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { title, slug, content, published, featuredImage } = body;
+    const { title, slug, content, published, featuredImage, tagIds } = body;
 
     if (!title || !slug || !content) {
       return NextResponse.json(
@@ -71,7 +69,11 @@ export async function POST(req: Request) {
         published: published ?? false,
         featuredImage: featuredImage || null,
         authorId: session.user.id,
+        ...(tagIds && tagIds.length > 0
+          ? { tags: { connect: tagIds.map((id: string) => ({ id })) } }
+          : {}),
       },
+      include: { tags: true },
     });
 
     return NextResponse.json(post, { status: 201 });

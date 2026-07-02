@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import TagPicker from "@/components/TagPicker";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -17,6 +18,7 @@ export default function EditPostPage({
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
   const [featuredImage, setFeaturedImage] = useState("");
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -35,6 +37,7 @@ export default function EditPostPage({
         setContent(data.content);
         setPublished(data.published);
         setFeaturedImage(data.featuredImage || "");
+        setTagIds(data.tags?.map((t: { id: string }) => t.id) || []);
       } catch (err) {
         setError("Failed to load post");
       } finally {
@@ -95,7 +98,14 @@ export default function EditPostPage({
       const res = await fetch(`/api/posts/${postId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, slug, content, published, featuredImage }),
+        body: JSON.stringify({
+          title,
+          slug,
+          content,
+          published,
+          featuredImage,
+          tagIds,
+        }),
       });
 
       if (!res.ok) {
@@ -217,6 +227,9 @@ export default function EditPostPage({
             </label>
             <Editor content={content} onChange={setContent} />
           </div>
+
+          {/* Tags */}
+          <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
           {/* Published toggle */}
           <div className="flex items-center gap-3">

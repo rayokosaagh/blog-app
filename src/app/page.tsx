@@ -9,7 +9,8 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimatedSect
 import Carousel from "@/components/Carousel";
 import Poll from "@/components/Poll";
 import ScrollRevealText from "@/components/ScrollRevealText";
-import SocialSidebar from "@/components/SocialSidebar"; // <-- Added import
+import SocialSidebar from "@/components/SocialSidebar";
+import TagIcon from "@/components/TagIcon";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -27,7 +28,7 @@ export default async function HomePage() {
       where: { published: true },
       take: 6,
       orderBy: { createdAt: "desc" },
-      include: { author: true },
+      include: { author: true, tags: true },
     }),
     prisma.banner.findMany({
       where: { active: true },
@@ -46,8 +47,6 @@ export default async function HomePage() {
           <Carousel banners={banners} />
         </div>
       )}
-
-      {/* <ScrollRevealText text="Every post starts as a thought worth keeping. We write the ones that stick, share the ones worth reading, and skip the rest." /> */}
 
       {/* Main Content - Socials left / Posts centered / Poll right */}
       <section className="max-w-[1600px] mx-auto px-6 py-16">
@@ -110,6 +109,24 @@ export default async function HomePage() {
                         <h4 className="text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug mb-3 line-clamp-3">
                           {post.title}
                         </h4>
+
+                        {/* Tags */}
+                        {post.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {post.tags.map((tag) => (
+                              <span
+                                key={tag.id}
+                                className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-0.5 rounded-full"
+                              >
+                                <TagIcon
+                                  icon={tag.icon}
+                                  className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
+                                />
+                                <span>{tag.name}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
                         <div className="mt-auto flex items-center gap-1 text-sm text-muted-foreground">
                           <span className="font-medium text-foreground/80">
