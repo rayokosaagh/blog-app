@@ -45,6 +45,8 @@ export async function PATCH(
         content,
         published,
         featuredImage,
+        // Preserve the exact order tags were selected in the picker.
+        ...(tagIds !== undefined ? { tagOrder: tagIds } : {}),
         ...(tagIds !== undefined
           ? { tags: { set: tagIds.map((tagId: string) => ({ id: tagId })) } }
           : {}),

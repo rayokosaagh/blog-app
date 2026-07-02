@@ -11,6 +11,7 @@ import Poll from "@/components/Poll";
 import ScrollRevealText from "@/components/ScrollRevealText";
 import SocialSidebar from "@/components/SocialSidebar";
 import TagIcon from "@/components/TagIcon";
+import { sortTagsByOrder } from "@/lib/sortTags";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -76,69 +77,75 @@ export default async function HomePage() {
               </FadeIn>
             ) : (
               <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {recentPosts.map((post) => (
+                {recentPosts.map((post) => {
+                  const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
+                  return (
                   <StaggerItem key={post.id}>
-                    <Link
-                      href={`/blog/${post.slug}`}
-                      className="group bg-card rounded-2xl overflow-hidden hover:shadow-xl dark:hover:shadow-none transition-all duration-300 flex flex-col h-full block border border-border"
-                    >
-                      {/* Image */}
-                      <div className="overflow-hidden">
-                        {post.featuredImage ? (
-                          <img
-                            src={post.featuredImage}
-                            alt={post.title}
-                            className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-52 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/30 flex items-center justify-center">
-                            <span className="text-5xl">📝</span>
-                          </div>
-                        )}
-                      </div>
+                    <div className="group bg-card rounded-2xl overflow-hidden hover:shadow-xl dark:hover:shadow-none transition-all duration-300 flex flex-col h-full border border-border">
+                      <Link href={`/blog/${post.slug}`} className="block">
+                        {/* Image */}
+                        <div className="overflow-hidden">
+                          {post.featuredImage ? (
+                            <img
+                              src={post.featuredImage}
+                              alt={post.title}
+                              className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-52 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/30 flex items-center justify-center">
+                              <span className="text-5xl">📝</span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
 
                       {/* Content */}
                       <div className="p-5 flex flex-col flex-1">
-                        <div className="flex items-center gap-1.5 mb-3">
-                          <span className="text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-wide">
-                            Blog
-                          </span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 inline-block" />
-                        </div>
+                        <Link href={`/blog/${post.slug}`} className="block">
+                          <h4 className="text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug mb-3 line-clamp-3">
+                            {post.title}
+                          </h4>
+                        </Link>
 
-                        <h4 className="text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug mb-3 line-clamp-3">
-                          {post.title}
-                        </h4>
-
-                        {/* Tags */}
-                        {post.tags.length > 0 && (
+                        {/* Tags - each links to filtered search results */}
+                        {orderedTags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-3">
-                            {post.tags.map((tag) => (
-                              <span
+                            {orderedTags.slice(0, 3).map((tag) => (
+                              <Link
                                 key={tag.id}
-                                className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-0.5 rounded-full"
+                                href={`/blog?tag=${tag.slug}`}
+                                className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                               >
                                 <TagIcon
                                   icon={tag.icon}
                                   className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
                                 />
                                 <span>{tag.name}</span>
-                              </span>
+                              </Link>
                             ))}
+                            {orderedTags.length > 3 && (
+                              <span className="inline-flex items-center bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                                +{orderedTags.length - 3}
+                              </span>
+                            )}
                           </div>
                         )}
 
-                        <div className="mt-auto flex items-center gap-1 text-sm text-muted-foreground">
+                        <Link
+                          href={`/blog/${post.slug}`}
+                          className="mt-auto flex items-center gap-1 text-sm text-muted-foreground"
+                        >
                           <span className="font-medium text-foreground/80">
                             {post.author.name}
                           </span>
                           <span className="mx-1">·</span>
                           <span>{formatDate(post.createdAt)}</span>
-                        </div>
+                        </Link>
                       </div>
-                    </Link>
+                    </div>
                   </StaggerItem>
-                ))}
+                  );
+                })}
               </StaggerContainer>
             )}
 

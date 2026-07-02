@@ -33,6 +33,10 @@ model Post {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   featuredImage String?
+  // Tag IDs in the order they were selected in the tag picker.
+  // Kept in sync with `tags` on every create/update; use this to sort
+  // `tags` for display instead of relying on relation query order.
+  tagOrder      String[]  @default([])
   author        User      @relation(fields: [authorId], references: [id])
   comments      Comment[]
   ratings       Rating[]

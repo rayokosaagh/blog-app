@@ -2,6 +2,7 @@
 // src/components/PopupAd.tsx
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 
 interface PopupAd {
@@ -17,6 +18,12 @@ export default function PopupAd() {
   const [ad, setAd] = useState<PopupAd | null>(null);
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Portals need a real DOM node, which only exists client-side after mount.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchAd = async () => {
@@ -48,9 +55,15 @@ export default function PopupAd() {
     }, 350);
   };
 
-  if (!visible || !ad) return null;
+  if (!mounted || !visible || !ad) return null;
 
-  return (
+  // Rendered via portal directly under <body>, deliberately outside the
+  // page-transition wrapper. That wrapper animates `filter`/`transform`,
+  // which turns it into a containing block for `position: fixed`
+  // descendants — without the portal, this modal would be positioned
+  // relative to that animated div instead of the viewport, causing it to
+  // drift off-center and scroll with the page.
+  return createPortal(
     <>
       <div
         className={`popup-ad-backdrop ${closing ? "popup-fade-out" : "popup-fade-in"}`}
@@ -255,6 +268,7 @@ export default function PopupAd() {
           to { transform: scale(1); opacity: 1; }
         }
       `}</style>
-    </>
+    </>,
+    document.body
   );
 }

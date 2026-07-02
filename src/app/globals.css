@@ -31,6 +31,7 @@
   --color-card: var(--card);
   --color-border: var(--border);
   --color-footer: var(--footer-bg);
+   --color-accent: var(--accent); 
 }
 
 /* --- Base document --- */

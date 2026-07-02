@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import TagIcon from "./TagIcon";
 
 export interface Tag {
@@ -18,10 +19,19 @@ interface TagPickerProps {
 export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Add modal
+  const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("");
   const [creating, setCreating] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [addError, setAddError] = useState("");
+
+  // Delete modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     fetchTags();
@@ -39,6 +49,16 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
     }
   }
 
+  // Show selected tags first, in the order they were selected, then the rest.
+  const orderedTags = useMemo(() => {
+    const byId = new Map(tags.map((t) => [t.id, t]));
+    const selected = selectedTagIds
+      .map((id) => byId.get(id))
+      .filter((t): t is Tag => Boolean(t));
+    const unselected = tags.filter((t) => !selectedTagIds.includes(t.id));
+    return [...selected, ...unselected];
+  }, [tags, selectedTagIds]);
+
   function toggleTag(id: string) {
     if (selectedTagIds.includes(id)) {
       onChange(selectedTagIds.filter((t) => t !== id));
@@ -47,11 +67,19 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
     }
   }
 
-  async function handleCreateTag(e: React.FormEvent) {
-    e.preventDefault();
+  function openAddModal() {
+    setNewName("");
+    setNewIcon("");
+    setAddError("");
+    setShowAddModal(true);
+  }
+
+  async function handleCreateTag(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!newName.trim()) return;
 
     setCreating(true);
+    setAddError("");
     try {
       const res = await fetch("/api/tags", {
         method: "POST",
@@ -61,7 +89,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
       const tag = await res.json();
 
       if (!res.ok) {
-        alert(tag.error || "Failed to create tag");
+        setAddError(tag.error || "Failed to create tag");
         return;
       }
 
@@ -69,124 +97,232 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
         prev.some((t) => t.id === tag.id) ? prev : [...prev, tag]
       );
       onChange([...selectedTagIds, tag.id]);
+      setShowAddModal(false);
       setNewName("");
       setNewIcon("");
     } catch (err) {
-      alert("Failed to create tag");
+      setAddError("Failed to create tag");
     } finally {
       setCreating(false);
     }
   }
 
-  async function handleDeleteTag(id: string, name: string) {
-    const confirmed = window.confirm(
-      `Delete the "${name}" tag? This removes it from every post, not just this one.`
-    );
-    if (!confirmed) return;
+  function openDeleteModal(tag: Tag) {
+    setTagToDelete(tag);
+    setDeleteError("");
+    setShowDeleteModal(true);
+  }
 
-    setDeletingId(id);
+  async function confirmDelete() {
+    if (!tagToDelete) return;
+    setDeleting(true);
+    setDeleteError("");
     try {
-      const res = await fetch(`/api/tags/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/tags/${tagToDelete.id}`, { method: "DELETE" });
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed to delete tag");
+        setDeleteError(data.error || "Failed to delete tag");
         return;
       }
 
-      setTags((prev) => prev.filter((t) => t.id !== id));
-      onChange(selectedTagIds.filter((t) => t !== id));
+      setTags((prev) => prev.filter((t) => t.id !== tagToDelete.id));
+      onChange(selectedTagIds.filter((t) => t !== tagToDelete.id));
+      setShowDeleteModal(false);
+      setTagToDelete(null);
     } catch (err) {
-      alert("Failed to delete tag");
+      setDeleteError("Failed to delete tag");
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   }
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        Tags
-      </label>
+      <div className="flex items-center justify-between mb-1">
+        <label className="block text-sm font-medium text-gray-700">Tags</label>
+        <button
+          type="button"
+          onClick={openAddModal}
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+          + Add Tag
+        </button>
+      </div>
 
       {loading ? (
         <p className="text-sm text-gray-400">Loading tags...</p>
       ) : (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {tags.map((tag) => {
-            const selected = selectedTagIds.includes(tag.id);
-            return (
-              <span
-                key={tag.id}
-                className={`group relative flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  selected
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleTag(tag.id)}
-                  className="flex items-center gap-1.5"
-                >
-                  <TagIcon icon={tag.icon} className="inline-flex w-4 h-4 [&>svg]:w-full [&>svg]:h-full" />
-                  <span>{tag.name}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteTag(tag.id, tag.name)}
-                  disabled={deletingId === tag.id}
-                  title={`Delete "${tag.name}" tag`}
-                  className={`flex items-center justify-center w-5 h-5 rounded-full text-xs leading-none transition-colors disabled:opacity-50 ${
+        <div className="flex flex-wrap gap-2 mb-1">
+          <AnimatePresence initial={false}>
+            {orderedTags.map((tag) => {
+              const selected = selectedTagIds.includes(tag.id);
+              return (
+                <motion.span
+                  key={tag.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                  className={`group relative flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-sm font-medium border ${
                     selected
-                      ? "hover:bg-white/20 text-white/80 hover:text-white"
-                      : "hover:bg-red-50 text-gray-400 hover:text-red-600"
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  {deletingId === tag.id ? "…" : "✕"}
-                </button>
-              </span>
-            );
-          })}
+                  <button
+                    type="button"
+                    onClick={() => toggleTag(tag.id)}
+                    className="flex items-center gap-1.5"
+                  >
+                    <motion.span
+                      layout
+                      className="inline-flex w-4 h-4 [&>svg]:w-full [&>svg]:h-full"
+                    >
+                      <TagIcon icon={tag.icon} className="w-4 h-4 [&>svg]:w-full [&>svg]:h-full" />
+                    </motion.span>
+                    <span>{tag.name}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openDeleteModal(tag)}
+                    title={`Delete "${tag.name}" tag`}
+                    className={`flex items-center justify-center w-5 h-5 rounded-full text-xs leading-none transition-colors ${
+                      selected
+                        ? "hover:bg-white/20 text-white/80 hover:text-white"
+                        : "hover:bg-red-50 text-gray-400 hover:text-red-600"
+                    }`}
+                  >
+                    ✕
+                  </button>
+                </motion.span>
+              );
+            })}
+          </AnimatePresence>
           {tags.length === 0 && (
-            <p className="text-sm text-gray-400">No tags yet — create one below.</p>
+            <p className="text-sm text-gray-400">No tags yet — click "+ Add Tag" to create one.</p>
           )}
         </div>
       )}
+      <p className="text-xs text-gray-400 mt-1">
+        Click a tag to select it, or the ✕ to delete it everywhere.
+      </p>
 
-      {/* Inline create new tag */}
-      <div className="flex items-start gap-2 border-t border-gray-100 pt-3">
-        <div className="flex flex-col items-center gap-1">
-          <textarea
-            value={newIcon}
-            onChange={(e) => setNewIcon(e.target.value)}
-            placeholder="🏷️ or <svg>...</svg>"
-            rows={2}
-            className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-none"
-          />
-          <div className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-md bg-gray-50">
-            <TagIcon icon={newIcon || "🏷️"} className="inline-flex w-5 h-5 [&>svg]:w-full [&>svg]:h-full" />
+      {/* Delete Modal */}
+      {showDeleteModal && tagToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+            <div className="p-10">
+              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">🗑️</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">Delete Tag?</h2>
+              <p className="text-gray-600 text-center mt-3">
+                Are you sure you want to delete <strong>"{tagToDelete.name}"</strong>? This removes it from every post, not just this one.
+              </p>
+              {deleteError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-2xl mt-4 text-sm text-center">
+                  {deleteError}
+                </div>
+              )}
+            </div>
+            <div className="border-t flex">
+              <button
+                onClick={() => { setShowDeleteModal(false); setTagToDelete(null); }}
+                disabled={deleting}
+                className="flex-1 py-5 text-gray-600 font-medium hover:bg-gray-100 active:scale-95 transition-all rounded-bl-3xl disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 py-5 bg-red-600 text-white font-semibold hover:bg-red-700 active:scale-95 transition-all rounded-br-3xl disabled:opacity-70"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
-        <input
-          type="text"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="New tag name"
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-        />
-        <button
-          type="button"
-          onClick={handleCreateTag}
-          disabled={creating || !newName.trim()}
-          className="bg-gray-900 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
-        >
-          {creating ? "Adding..." : "Add"}
-        </button>
-      </div>
-      <p className="text-xs text-gray-400 mt-1">
-        Paste an emoji (🚀) or raw SVG markup (&lt;svg&gt;...&lt;/svg&gt;) as the icon, then click Add. Click a tag to select it, or the ✕ to delete it everywhere.
-      </p>
+      )}
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Add New Tag</h2>
+
+              {addError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl mb-6">
+                  {addError}
+                </div>
+              )}
+
+              <div
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !(e.target instanceof HTMLTextAreaElement)) {
+                    e.preventDefault();
+                    handleCreateTag();
+                  }
+                }}
+                className="space-y-5"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <TagIcon icon={newIcon || "🏷️"} className="inline-flex w-8 h-8 [&>svg]:w-full [&>svg]:h-full" />
+                    </div>
+                    <textarea
+                      value={newIcon}
+                      onChange={(e) => setNewIcon(e.target.value)}
+                      placeholder="🏷️ or <svg>...</svg>"
+                      rows={3}
+                      className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Paste an emoji (🚀) or raw SVG markup (&lt;svg&gt;...&lt;/svg&gt;) as the icon.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="New tag name"
+                    className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleCreateTag()}
+                    disabled={creating || !newName.trim()}
+                    className="flex-1 bg-blue-600 text-white py-3.5 rounded-2xl font-medium active:scale-[0.985] transition-all disabled:opacity-70"
+                  >
+                    {creating ? "Adding..." : "Add Tag"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    disabled={creating}
+                    className="flex-1 py-3.5 rounded-2xl font-medium text-gray-600 hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

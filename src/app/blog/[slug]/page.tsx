@@ -12,6 +12,8 @@ import Poll from "@/components/Poll";
 import RatingMeter from "@/components/RatingMeter";
 import KeepReading from "@/components/KeepReading";
 import CommentSection from "@/components/CommentSection";
+import TagIcon from "@/components/TagIcon";
+import { sortTagsByOrder } from "@/lib/sortTags";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -131,10 +133,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const post = await prisma.post.findUnique({
     where: { slug },
-    include: { author: true },
+    include: { author: true, tags: true },
   });
 
   if (!post || !post.published) notFound();
+
+  const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
 
   const relatedPosts = await prisma.post.findMany({
     where: { 
@@ -197,9 +201,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 max-w-4xl mx-auto px-6 pb-10">
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="bg-blue-600 text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">Blog</span>
-          </div>
+          {orderedTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              {orderedTags.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/blog?tag=${t.slug}`}
+                  className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full border border-white/25 transition-colors"
+                >
+                  <TagIcon icon={t.icon} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
+                  {t.name}
+                </Link>
+              ))}
+            </div>
+          )}
           <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5">{post.title}</h1>
 
           <div className="flex items-center gap-4">

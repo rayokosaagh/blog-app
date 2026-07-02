@@ -69,6 +69,8 @@ export async function POST(req: Request) {
         published: published ?? false,
         featuredImage: featuredImage || null,
         authorId: session.user.id,
+        // Preserve the exact order tags were selected in the picker.
+        tagOrder: tagIds ?? [],
         ...(tagIds && tagIds.length > 0
           ? { tags: { connect: tagIds.map((id: string) => ({ id })) } }
           : {}),
