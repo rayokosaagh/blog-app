@@ -72,11 +72,10 @@ export default function Carousel({ banners }: CarouselProps) {
           <Link href={banners[current].link} target="_blank" rel="noopener noreferrer">
             {/* Image */}
             <img
-              src={banners[current].image}
-              alt={banners[current].title}
-              className="w-full h-full object-cover"
-            />
-
+  src={banners[current].image}
+  alt={banners[current].title}
+  className="w-full h-full object-cover"
+/>
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

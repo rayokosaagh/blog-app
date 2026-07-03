@@ -59,9 +59,9 @@ export default async function HomePage() {
             </div>
 
             {/* Center - Carousel */}
-            <div className="flex-1 min-w-0">
-              <Carousel banners={banners} />
-            </div>
+<div className="w-full flex-1 min-w-0">
+  <Carousel banners={banners} />
+</div>
 
             {/* Right - Latest */}
             <div className="hidden lg:block lg:w-72 flex-shrink-0">
