@@ -48,8 +48,8 @@ export default function LatestNewsList({ posts }: LatestNewsListProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-      className="bg-card border border-border rounded-2xl p-5 shadow-sm dark:shadow-none"
-    >
+      className="relative bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:border border-border p-5 overflow-hidden"
+     >
       <div className="flex items-center gap-2 mb-4">
         <motion.span
           className="flex items-center justify-center w-7 h-7 rounded-lg bg-accent/10 text-accent"

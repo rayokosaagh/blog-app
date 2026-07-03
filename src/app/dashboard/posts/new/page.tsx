@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import TagPicker from "@/components/TagPicker";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -13,6 +14,7 @@ export default function NewPostPage() {
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
   const [featuredImage, setFeaturedImage] = useState("");
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -66,7 +68,14 @@ export default function NewPostPage() {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, slug, content, published, featuredImage }),
+        body: JSON.stringify({
+          title,
+          slug,
+          content,
+          published,
+          featuredImage,
+          tagIds,
+        }),
       });
 
       const data = await res.json();
@@ -211,6 +220,9 @@ export default function NewPostPage() {
             </label>
             <Editor content={content} onChange={setContent} />
           </div>
+
+          {/* Tags */}
+          <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
           {/* Published toggle */}
           <div className="flex items-center gap-3">

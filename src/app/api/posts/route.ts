@@ -3,15 +3,26 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 // GET all posts (with search + tag filter)
+// Used by the dashboard: admins see every post, everyone else sees only their own.
 export async function GET(req: Request) {
   try {
+    const session = await auth();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const tag = searchParams.get("tag") || "";
 
+    const isAdmin = session.user.role === "ADMIN";
+
     const posts = await prisma.post.findMany({
       where: {
-        published: true,
+        // Non-admins only ever see their own posts (published or draft).
+        // Admins see everything.
+        ...(isAdmin ? {} : { authorId: session.user.id }),
         ...(search
           ? {
               OR: [

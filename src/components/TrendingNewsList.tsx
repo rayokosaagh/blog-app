@@ -41,8 +41,8 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="relative bg-card border border-border rounded-2xl p-5 shadow-sm dark:shadow-none overflow-hidden"
-    >
+      className="relative bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:border border-border p-5 overflow-hidden"
+     >
       {/* Subtle animated glow behind the flame icon */}
       <div className="flex items-center gap-2 mb-4 relative">
         <motion.span

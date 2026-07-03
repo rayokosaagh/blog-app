@@ -16,7 +16,6 @@ export default function SidebarNav({ isAdmin }: SidebarNavProps) {
   const baseLinks = [
     { href: "/dashboard", label: "Overview", icon: <HomeIcon /> },
     { href: "/dashboard/posts", label: "Posts", icon: <PostIcon /> },
-    { href: "/dashboard/posts/new", label: "New Post", icon: <EditIcon /> },
   ];
 
   const adminLinks = [
