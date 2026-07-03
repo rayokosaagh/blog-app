@@ -13,6 +13,8 @@ import SocialSidebar from "@/components/SocialSidebar";
 import TagIcon from "@/components/TagIcon";
 import TrendingNews from "@/components/TrendingNews";
 import LatestNews from "@/components/LatestNews";
+import MobileNewsHighlights from "@/components/MobileNewsHighlights";
+import LatestPostsFeed from "@/components/LatestPostsFeed";
 import { sortTagsByOrder } from "@/lib/sortTags";
 
 // Safety-net revalidation: even if revalidatePath("/") from the view
@@ -53,29 +55,34 @@ export default async function HomePage() {
       {banners.length > 0 && (
         <div className="max-w-[1600px] mx-auto px-6 pt-10">
           <div className="flex flex-col lg:flex-row gap-6 items-start">
-            {/* Left - Trending */}
+            {/* Left - Trending (desktop only) */}
             <div className="hidden lg:block lg:w-72 flex-shrink-0">
               <TrendingNews />
             </div>
 
             {/* Center - Carousel */}
-<div className="w-full flex-1 min-w-0">
-  <Carousel banners={banners} />
-</div>
+            <div className="w-full flex-1 min-w-0">
+              <Carousel banners={banners} />
+            </div>
 
-            {/* Right - Latest */}
+            {/* Right - Latest (desktop only) */}
             <div className="hidden lg:block lg:w-72 flex-shrink-0">
               <LatestNews />
             </div>
           </div>
+
+          {/* Mobile-only: Trending/Latest tabs, right below carousel */}
+          <div className="mt-6">
+            <MobileNewsHighlights />
+          </div>
         </div>
       )}
 
-      {/* Main Content - Socials left / Posts centered / Poll right */}
+      {/* Main Content - Posts centered / Poll + Social right */}
       <section className="max-w-[1600px] mx-auto px-6 py-16">
         <div className="flex flex-col lg:flex-row gap-10 lg:gap-12">
 
-          {/* Left Sidebar - Social Sidebar */}
+          {/* Left Sidebar - Social Sidebar (desktop only) */}
           <div className="hidden lg:block lg:w-72 flex-shrink-0 pt-4 lg:pt-0">
             <div className="sticky top-24">
               <SocialSidebar />
@@ -98,77 +105,83 @@ export default async function HomePage() {
                 </div>
               </FadeIn>
             ) : (
-              <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {recentPosts.map((post) => {
-                  const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
-                  return (
-                  <StaggerItem key={post.id}>
-                    <div className="group bg-card rounded-2xl overflow-hidden hover:shadow-xl dark:hover:shadow-none transition-all duration-300 flex flex-col h-full border border-border">
-                      <Link href={`/blog/${post.slug}`} className="block">
-                        {/* Image */}
-                        <div className="overflow-hidden">
-                          {post.featuredImage ? (
-                            <img
-                              src={post.featuredImage}
-                              alt={post.title}
-                              className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                          ) : (
-                            <div className="w-full h-52 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/30 flex items-center justify-center">
-                              <span className="text-5xl">📝</span>
-                            </div>
-                          )}
-                        </div>
-                      </Link>
+              <>
+                {/* Mobile: magazine-style overlay feed, lead story gets a bigger frame */}
+                <LatestPostsFeed posts={recentPosts} className="lg:hidden" />
 
-                      {/* Content */}
-                      <div className="p-5 flex flex-col flex-1">
+                {/* Desktop: existing 2-column card grid, unchanged */}
+                <StaggerContainer className="hidden lg:grid lg:grid-cols-2 gap-6">
+                  {recentPosts.map((post) => {
+                    const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
+                    return (
+                    <StaggerItem key={post.id}>
+                      <div className="group bg-card rounded-2xl overflow-hidden hover:shadow-xl dark:hover:shadow-none transition-all duration-300 flex flex-col h-full border border-border">
                         <Link href={`/blog/${post.slug}`} className="block">
-                          <h4 className="text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug mb-3 line-clamp-3">
-                            {post.title}
-                          </h4>
-                        </Link>
-
-                        {/* Tags - each links to filtered search results */}
-                        {orderedTags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-3">
-                            {orderedTags.slice(0, 3).map((tag) => (
-                              <Link
-                                key={tag.id}
-                                href={`/blog?tag=${tag.slug}`}
-                                className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                              >
-                                <TagIcon
-                                  icon={tag.icon}
-                                  className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
-                                />
-                                <span>{tag.name}</span>
-                              </Link>
-                            ))}
-                            {orderedTags.length > 3 && (
-                              <span className="inline-flex items-center bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-medium px-2 py-0.5 rounded-full">
-                                +{orderedTags.length - 3}
-                              </span>
+                          {/* Image */}
+                          <div className="overflow-hidden">
+                            {post.featuredImage ? (
+                              <img
+                                src={post.featuredImage}
+                                alt={post.title}
+                                className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                            ) : (
+                              <div className="w-full h-52 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/30 flex items-center justify-center">
+                                <span className="text-5xl">📝</span>
+                              </div>
                             )}
                           </div>
-                        )}
-
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          className="mt-auto flex items-center gap-1 text-sm text-muted-foreground"
-                        >
-                          <span className="font-medium text-foreground/80">
-                            {post.author.name}
-                          </span>
-                          <span className="mx-1">·</span>
-                          <span>{formatDate(post.createdAt)}</span>
                         </Link>
+
+                        {/* Content */}
+                        <div className="p-5 flex flex-col flex-1">
+                          <Link href={`/blog/${post.slug}`} className="block">
+                            <h4 className="text-base font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug mb-3 line-clamp-3">
+                              {post.title}
+                            </h4>
+                          </Link>
+
+                          {/* Tags - each links to filtered search results */}
+                          {orderedTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {orderedTags.slice(0, 3).map((tag) => (
+                                <Link
+                                  key={tag.id}
+                                  href={`/blog?tag=${tag.slug}`}
+                                  className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                                >
+                                  <TagIcon
+                                    icon={tag.icon}
+                                    className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
+                                  />
+                                  <span>{tag.name}</span>
+                                </Link>
+                              ))}
+                              {orderedTags.length > 3 && (
+                                <span className="inline-flex items-center bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                                  +{orderedTags.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <Link
+                            href={`/blog/${post.slug}`}
+                            className="mt-auto flex items-center gap-1 text-sm text-muted-foreground"
+                          >
+                            <span className="font-medium text-foreground/80">
+                              {post.author.name}
+                            </span>
+                            <span className="mx-1">·</span>
+                            <span>{formatDate(post.createdAt)}</span>
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  </StaggerItem>
-                  );
-                })}
-              </StaggerContainer>
+                    </StaggerItem>
+                    );
+                  })}
+                </StaggerContainer>
+              </>
             )}
 
             {recentPosts.length > 0 && (
@@ -182,10 +195,13 @@ export default async function HomePage() {
             )}
           </div>
 
-          {/* Right Sidebar - Poll */}
+          {/* Right Sidebar - Poll (+ Social Sidebar right below it, mobile only) */}
           <div className="lg:w-80 flex-shrink-0 lg:ml-10 pt-4 lg:pt-0">
-            <div className="sticky top-24">
+            <div className="lg:sticky lg:top-24">
               <Poll />
+              <div className="lg:hidden mt-8">
+                <SocialSidebar />
+              </div>
             </div>
           </div>
         </div>

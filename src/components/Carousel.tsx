@@ -54,8 +54,8 @@ export default function Carousel({ banners }: CarouselProps) {
   };
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl shadow-lg"
-      style={{ height: "420px" }}
+    <div
+      className="relative w-full overflow-hidden rounded-2xl shadow-lg h-48 sm:h-64 md:h-80 lg:h-[420px]"
     >
       {/* Slides */}
       <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -72,20 +72,21 @@ export default function Carousel({ banners }: CarouselProps) {
           <Link href={banners[current].link} target="_blank" rel="noopener noreferrer">
             {/* Image */}
             <img
-  src={banners[current].image}
-  alt={banners[current].title}
-  className="w-full h-full object-cover"
-/>
+              src={banners[current].image}
+              alt={banners[current].title}
+              className="w-full h-full object-cover"
+            />
+
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
             {/* Title */}
-            <div className="absolute bottom-0 left-0 right-0 p-8">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
               <motion.h3
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-white text-2xl font-bold mb-2"
+                className="text-white text-lg sm:text-2xl font-bold mb-2 line-clamp-2"
               >
                 {banners[current].title}
               </motion.h3>
@@ -93,7 +94,7 @@ export default function Carousel({ banners }: CarouselProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="inline-block bg-white text-gray-900 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+                className="inline-block bg-white text-gray-900 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-100 transition-colors"
               >
                 Learn More →
               </motion.span>
@@ -106,7 +107,7 @@ export default function Carousel({ banners }: CarouselProps) {
       {banners.length > 1 && (
         <button
           onClick={(e) => { e.preventDefault(); prev(); }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-all z-10 hover:scale-110"
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-all z-10 hover:scale-110"
           style={{ backgroundColor: "rgba(79,99,103,0.8)" }}
         >
           ‹
@@ -117,7 +118,7 @@ export default function Carousel({ banners }: CarouselProps) {
       {banners.length > 1 && (
         <button
           onClick={(e) => { e.preventDefault(); next(); }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-all z-10 hover:scale-110"
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-all z-10 hover:scale-110"
           style={{ backgroundColor: "rgba(79,99,103,0.8)" }}
         >
           ›
@@ -126,7 +127,7 @@ export default function Carousel({ banners }: CarouselProps) {
 
       {/* Dots */}
       {banners.length > 1 && (
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
+        <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center gap-2 z-10">
           {banners.map((_, i) => (
             <button
               key={i}
