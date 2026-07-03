@@ -28,6 +28,7 @@ interface Author {
 interface BlogFiltersProps {
   tags: Tag[];
   authors: Author[];
+  years: number[];
 }
 
 const fieldsContainerVariants = {
@@ -46,26 +47,34 @@ const fieldVariants = {
   },
 };
 
-function daysBetween(a: string, b: string) {
-  const start = new Date(a);
-  const end = new Date(b);
-  const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
-  return diff >= 0 ? diff + 1 : null;
-}
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 function parseTags(value: string | null) {
   return value ? value.split(",").filter(Boolean) : [];
 }
 
-export default function BlogFilters({ tags, authors }: BlogFiltersProps) {
+export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [isOpen, setIsOpen] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [author, setAuthor] = useState(searchParams.get("author") ?? "");
-  const [dateFrom, setDateFrom] = useState(searchParams.get("dateFrom") ?? "");
-  const [dateTo, setDateTo] = useState(searchParams.get("dateTo") ?? "");
+  const [month, setMonth] = useState(searchParams.get("month") ?? "");
+  const [year, setYear] = useState(searchParams.get("year") ?? "");
   // Multiple tags can now be selected at once.
   const [selectedTags, setSelectedTags] = useState<string[]>(() =>
     parseTags(searchParams.get("tag"))
@@ -74,33 +83,42 @@ export default function BlogFilters({ tags, authors }: BlogFiltersProps) {
   const appliedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeFilterCount =
-    [search, author, dateFrom, dateTo].filter(Boolean).length +
+    [search, author].filter(Boolean).length +
+    (month || year ? 1 : 0) +
     (selectedTags.length > 0 ? 1 : 0);
   const hasActiveFilters = activeFilterCount > 0;
-  const rangeDays = dateFrom && dateTo ? daysBetween(dateFrom, dateTo) : null;
+
+  const periodLabel =
+    month && year
+      ? `${MONTHS[Number(month) - 1]} ${year}`
+      : month
+      ? MONTHS[Number(month) - 1]
+      : year
+      ? year
+      : null;
 
   function buildQuery(
     overrides: Partial<{
       search: string;
       author: string;
-      dateFrom: string;
-      dateTo: string;
+      month: string;
+      year: string;
       tags: string[];
     }> = {}
   ) {
     const values = {
       search,
       author,
-      dateFrom,
-      dateTo,
+      month,
+      year,
       tags: selectedTags,
       ...overrides,
     };
     const params = new URLSearchParams();
     if (values.search) params.set("search", values.search);
     if (values.author) params.set("author", values.author);
-    if (values.dateFrom) params.set("dateFrom", values.dateFrom);
-    if (values.dateTo) params.set("dateTo", values.dateTo);
+    if (values.month) params.set("month", values.month);
+    if (values.year) params.set("year", values.year);
     if (values.tags.length) params.set("tag", values.tags.join(","));
     return params.toString();
   }
@@ -116,21 +134,21 @@ export default function BlogFilters({ tags, authors }: BlogFiltersProps) {
     appliedTimeout.current = setTimeout(() => setApplied(false), 1200);
   }
 
-  // Toggle a tag on/off, keeping any other already-selected tags.
+  // Toggle a tag on/off locally, keeping any other already-selected tags.
+  // Navigation only happens when "Apply Filters" is submitted, same as
+  // every other field in this form.
   function toggleTag(slug: string) {
     const next = selectedTags.includes(slug)
       ? selectedTags.filter((s) => s !== slug)
       : [...selectedTags, slug];
     setSelectedTags(next);
-    const qs = buildQuery({ tags: next });
-    router.push(qs ? `/blog?${qs}` : "/blog");
   }
 
   function clearAll() {
     setSearch("");
     setAuthor("");
-    setDateFrom("");
-    setDateTo("");
+    setMonth("");
+    setYear("");
     setSelectedTags([]);
     router.push("/blog");
   }
@@ -271,40 +289,56 @@ export default function BlogFilters({ tags, authors }: BlogFiltersProps) {
                 </div>
               </motion.div>
 
-              {/* Date range */}
+              {/* Month / Year */}
               <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-2 relative">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                    From
+                    Month
                   </label>
-                  <motion.input
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.15 }}
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    max={dateTo || undefined}
-                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
-                  />
+                  <div className="relative">
+                    <motion.select
+                      whileFocus={{ scale: 1.01 }}
+                      transition={{ duration: 0.15 }}
+                      value={month}
+                      onChange={(e) => setMonth(e.target.value)}
+                      className="peer w-full appearance-none border border-border rounded-xl pl-3 pr-8 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
+                    >
+                      <option value="">Any month</option>
+                      {MONTHS.map((m, i) => (
+                        <option key={m} value={i + 1}>
+                          {m}
+                        </option>
+                      ))}
+                    </motion.select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-accent" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                    To
+                    Year
                   </label>
-                  <motion.input
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.15 }}
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    min={dateFrom || undefined}
-                    className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
-                  />
+                  <div className="relative">
+                    <motion.select
+                      whileFocus={{ scale: 1.01 }}
+                      transition={{ duration: 0.15 }}
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      className="peer w-full appearance-none border border-border rounded-xl pl-3 pr-8 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
+                    >
+                      <option value="">Any year</option>
+                      {years.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </motion.select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-accent" />
+                  </div>
                 </div>
                 <AnimatePresence>
-                  {rangeDays !== null && (
+                  {periodLabel && (
                     <motion.div
-                      key="range-badge"
+                      key="period-badge"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
@@ -312,7 +346,7 @@ export default function BlogFilters({ tags, authors }: BlogFiltersProps) {
                       className="col-span-2 overflow-hidden"
                     >
                       <span className="inline-block mt-1 text-[11px] font-medium text-accent">
-                        {rangeDays} day{rangeDays === 1 ? "" : "s"} selected
+                        Showing {periodLabel}
                       </span>
                     </motion.div>
                   )}

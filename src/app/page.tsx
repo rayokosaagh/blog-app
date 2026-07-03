@@ -11,7 +11,14 @@ import Poll from "@/components/Poll";
 import ScrollRevealText from "@/components/ScrollRevealText";
 import SocialSidebar from "@/components/SocialSidebar";
 import TagIcon from "@/components/TagIcon";
+import TrendingNews from "@/components/TrendingNews";
+import LatestNews from "@/components/LatestNews";
 import { sortTagsByOrder } from "@/lib/sortTags";
+
+// Safety-net revalidation: even if revalidatePath("/") from the view
+// route is ever missed (e.g. multi-instance deploys, edge caching),
+// the homepage will never be more than 60s stale.
+export const revalidate = 60;
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -42,10 +49,25 @@ export default async function HomePage() {
       <Navbar />
       <PopupAd />
 
-      {/* Banner Carousel */}
+      {/* Banner Carousel + flanking Trending / Latest */}
       {banners.length > 0 && (
-        <div className="max-w-6xl mx-auto px-6 pt-10">
-          <Carousel banners={banners} />
+        <div className="max-w-[1600px] mx-auto px-6 pt-10">
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            {/* Left - Trending */}
+            <div className="hidden lg:block lg:w-72 flex-shrink-0">
+              <TrendingNews />
+            </div>
+
+            {/* Center - Carousel */}
+            <div className="flex-1 min-w-0">
+              <Carousel banners={banners} />
+            </div>
+
+            {/* Right - Latest */}
+            <div className="hidden lg:block lg:w-72 flex-shrink-0">
+              <LatestNews />
+            </div>
+          </div>
         </div>
       )}
 

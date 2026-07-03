@@ -14,6 +14,7 @@ import KeepReading from "@/components/KeepReading";
 import CommentSection from "@/components/CommentSection";
 import TagIcon from "@/components/TagIcon";
 import { sortTagsByOrder } from "@/lib/sortTags";
+import ViewTracker from "@/components/ViewTracker";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -178,8 +179,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
-      <Navbar />
+  <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
+    <ViewTracker postId={post.id} />
+    <Navbar />
 
       {/* Hero Header */}
       <div className="relative w-full h-[420px] md:h-[500px] overflow-hidden">
