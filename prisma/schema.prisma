@@ -184,3 +184,63 @@ enum Role {
   EDITOR
   READER
 }
+
+// ─── Gadget Comparison Feature ───────────────────────────────
+
+model GadgetCategory {
+  id        String       @id @default(cuid())
+  slug      String       @unique
+  name      String
+  icon      String?
+  products  Product[]
+  comparisons Comparison[]   // ← add this line
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("gadget_categories")
+}
+
+model Product {
+  id         String         @id @default(cuid())
+  slug       String         @unique   // "iphone-17-pro-max" — used in compare URLs (?p1=slug)
+  name       String                    // "iPhone 17 Pro Max"
+  brand      String                    // "Apple"
+  image      String?                   // product photo URL
+  priceFrom  Float?                    // starting price, shown under image on compare page
+  currency   String         @default("NPR")
+  published  Boolean        @default(true)
+
+  categoryId String
+  category   GadgetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  specs      Json                      // category-specific spec values, validated against
+                                        // that category's Zod schema (buildSpecsSchema) before write.
+                                        // Shape varies per category — flat key/value, e.g.
+                                        // { "ram": "12GB", "batteryMah": 5000, "os": "Android" }
+
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  comparisonsAsA Comparison[] @relation("ComparisonProductA")
+  comparisonsAsB Comparison[] @relation("ComparisonProductB")
+
+  @@index([categoryId])
+  @@index([slug])
+  @@map("products")
+}
+model Comparison {
+  id         String         @id @default(cuid())
+  categoryId String
+  category   GadgetCategory @relation(fields: [categoryId], references: [id])
+  productAId String
+  productA   Product        @relation("ComparisonProductA", fields: [productAId], references: [id])
+  productBId String
+  productB   Product        @relation("ComparisonProductB", fields: [productBId], references: [id])
+  active     Boolean        @default(true)
+  order      Int            @default(0)
+  createdAt  DateTime       @default(now())
+ 
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([order])
+  @@map("comparisons")
+}

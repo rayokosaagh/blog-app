@@ -23,7 +23,8 @@ export default function SidebarNav({ isAdmin }: SidebarNavProps) {
     { href: "/dashboard/banners", label: "Banners", icon: <LayersIcon /> },
     { href: "/dashboard/ads", label: "Ads", icon: <MegaphoneIcon /> },
     { href: "/dashboard/socials", label: "Social Links", icon: <LinkIcon /> },
-    { href: "/dashboard/polls", label: "Polls", icon: <PollIcon /> },   // ← Added
+    { href: "/dashboard/polls", label: "Polls", icon: <PollIcon /> }, 
+    { href: "/dashboard/gadgets", label: "Gadgets", icon: <GadgetIcon /> },
   ];
 
   const renderLink = (link: { href: string; label: string; icon: React.ReactNode }) => {
@@ -152,5 +153,12 @@ const PollIcon = () => (
 const LogOutIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+  </svg>
+);
+// New Gadget Icon (device/chip outline, matches your stroke style)
+const GadgetIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v2.25M15.75 3v2.25M8.25 18.75V21M15.75 18.75V21M3 8.25H5.25M3 12H5.25M3 15.75H5.25M18.75 8.25H21M18.75 12H21M18.75 15.75H21M6.75 5.25h10.5A1.5 1.5 0 0 1 18.75 6.75v10.5a1.5 1.5 0 0 1-1.5 1.5H6.75a1.5 1.5 0 0 1-1.5-1.5V6.75a1.5 1.5 0 0 1 1.5-1.5Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75h4.5v4.5h-4.5z" />
   </svg>
 );

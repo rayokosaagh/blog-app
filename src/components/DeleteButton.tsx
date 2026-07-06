@@ -4,11 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface DeleteButtonProps {
-  postId: string;
-  postTitle: string;
+  endpoint: string;
+  itemLabel?: string;
+  itemType?: string;
+  onDeleted?: () => void;
 }
 
-export default function DeleteButton({ postId, postTitle }: DeleteButtonProps) {
+export default function DeleteButton({
+  endpoint,
+  itemLabel,
+  itemType = "Item",
+  onDeleted,
+}: DeleteButtonProps) {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -16,15 +23,22 @@ export default function DeleteButton({ postId, postTitle }: DeleteButtonProps) {
   async function handleDelete() {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+      const res = await fetch(endpoint, { method: "DELETE" });
 
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Failed to delete post");
+        let message = "Failed to delete";
+        try {
+          const data = await res.json();
+          message = data.error || message;
+        } catch {
+          message = `${message} (${res.status} ${res.statusText})`;
+        }
+        alert(message);
         return;
       }
 
       setShowModal(false);
+      onDeleted?.();
       router.refresh();
     } catch (error) {
       alert("Something went wrong");
@@ -35,7 +49,6 @@ export default function DeleteButton({ postId, postTitle }: DeleteButtonProps) {
 
   return (
     <>
-      {/* Delete Button */}
       <button
         onClick={() => setShowModal(true)}
         className="text-sm text-red-600 hover:underline"
@@ -43,31 +56,28 @@ export default function DeleteButton({ postId, postTitle }: DeleteButtonProps) {
         Delete
       </button>
 
-      {/* Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md mx-4">
-            
-            {/* Icon */}
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🗑️</span>
             </div>
 
-            {/* Text */}
             <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-              Delete Post
+              Delete {itemType}
             </h2>
             <p className="text-gray-500 text-center mb-2">
               Are you sure you want to delete
             </p>
-            <p className="text-gray-900 font-medium text-center mb-6">
-              "{postTitle}"
-            </p>
+            {itemLabel && (
+              <p className="text-gray-900 font-medium text-center mb-6">
+                "{itemLabel}"
+              </p>
+            )}
             <p className="text-red-500 text-sm text-center mb-6">
               This action cannot be undone.
             </p>
 
-            {/* Buttons */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowModal(false)}
