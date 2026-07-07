@@ -1,9 +1,24 @@
 // src/components/GadgetCompareClient.tsx
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { GadgetCategoryDef } from "@/lib/gadgets/types";
+
+const slotContainerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+};
+
+const slotCardVariants = {
+  hidden: { opacity: 0, y: 14, scale: 0.96 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+  },
+};
 
 interface CategoryOption { slug: string; name: string; icon?: string }
 interface ProductLite { id: string; slug: string; name: string; brand: string; image?: string | null }
@@ -22,8 +37,6 @@ interface GadgetCompareClientProps {
 
 // ─────────────────────────────────────────────────────────────
 // Small animated on/off switch, reused for the two diff toggles.
-// Styled the same way as the toggle in ComparisonManager so the
-// admin and public-facing UIs feel consistent.
 // ─────────────────────────────────────────────────────────────
 function ToggleSwitch({
   checked,
@@ -57,6 +70,114 @@ function ToggleSwitch({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// Search box for a single comparison slot. Filters the already
+// fetched `options` list client-side (so thumbnails are free —
+// no extra network round trip), shows a dropdown with images,
+// and calls onPick(slug) when a result is clicked.
+// ─────────────────────────────────────────────────────────────
+function ProductSearchBox({
+  options,
+  onPick,
+  placeholder,
+}: {
+  options: ProductLite[];
+  onPick: (slug: string) => void;
+  placeholder: string;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? options.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
+        )
+      : options;
+    return list.slice(0, 8);
+  }, [query, options]);
+
+  return (
+    // z-30 + relative so this wins the stacking fight against the spec
+    // table (which sits underneath in normal document flow) and against
+    // sibling slot cards' own content.
+    <div ref={wrapRef} className="relative z-30 mt-3">
+      <input
+        type="text"
+        value={query}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        placeholder={placeholder}
+        className="w-full text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-1.5 outline-none focus:ring-2 focus:ring-blue-500/40"
+      />
+      <AnimatePresence>
+        {open && results.length > 0 && (
+          <motion.ul
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-30 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg text-left"
+          >
+            {results.map((p) => (
+              <li key={p.slug}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPick(p.slug);
+                    setQuery("");
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs"
+                >
+                  {p.image ? (
+                    <img
+                      src={p.image}
+                      alt=""
+                      className="h-7 w-7 object-contain rounded bg-zinc-50 dark:bg-zinc-800 shrink-0"
+                    />
+                  ) : (
+                    <span className="h-7 w-7 rounded bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                  )}
+                  <span className="truncate text-zinc-800 dark:text-zinc-100">
+                    {p.brand} {p.name}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </motion.ul>
+        )}
+        {open && query && results.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute z-30 mt-1 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg text-xs text-zinc-400 p-2"
+          >
+            No products match “{query}”.
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function GadgetCompareClient({
   categories,
   initialCategory,
@@ -67,48 +188,118 @@ export default function GadgetCompareClient({
   const [category, setCategory] = useState(initialCategory);
   const [def, setDef] = useState<GadgetCategoryDef | undefined>(initialDef);
   const [categoryProducts, setCategoryProducts] = useState<ProductLite[]>(initialCategoryProducts);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [highlightDiff, setHighlightDiff] = useState(true);
   const [onlyDiff, setOnlyDiff] = useState(false);
 
   const maxSlots = def?.maxCompare ?? 3;
-  const selectedSlugs = products.map((p) => p.slug);
 
-  // Switching category: fetch its product list fresh, clear the comparison.
+  // `slots` is a FIXED-LENGTH array, one entry per comparison slot.
+  // This is the key fix: a product picked into slot 2 stays in
+  // index 2, instead of being compacted to index 0 like before.
+  const [slots, setSlots] = useState<(Product | null)[]>(() => {
+    const arr: (Product | null)[] = new Array(maxSlots).fill(null);
+    initialProducts.slice(0, maxSlots).forEach((p, i) => (arr[i] = p));
+    return arr;
+  });
+
+  // Guards against out-of-order responses when someone switches
+  // categories back and forth quickly (phone -> laptop -> phone).
+  const requestIdRef = useRef(0);
+
+  // Keep the URL in sync with the current selection so a page refresh
+  // reflects what's actually on screen — not whatever slugs the user
+  // originally landed with. Uses replaceState (not router.replace) so
+  // this never triggers a server re-render/navigation, just updates
+  // the address bar for correctness on manual refresh/copy-link.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("category", category);
+    slots.forEach((s, i) => {
+      if (s) params.set(`p${i + 1}`, s.slug);
+    });
+    const query = params.toString();
+    const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+    window.history.replaceState(null, "", url);
+  }, [category, slots]);
+
   async function handleCategoryChange(slug: string) {
+    const reqId = ++requestIdRef.current;
     setCategory(slug);
-    setProducts([]);
     setLoading(true);
     try {
       const res = await fetch(`/api/gadgets/products?category=${slug}`);
       const data = await res.json();
+      if (reqId !== requestIdRef.current) return; // a newer switch happened, ignore this response
+      const nextDef: GadgetCategoryDef | undefined = data.categoryDef;
+      const nextMaxSlots = nextDef?.maxCompare ?? 3;
       setCategoryProducts(data.products ?? []);
-      setDef(data.categoryDef);
+      setDef(nextDef);
+      setSlots(new Array(nextMaxSlots).fill(null));
     } finally {
-      setLoading(false);
+      if (reqId === requestIdRef.current) setLoading(false);
     }
   }
 
-  // Add / swap a product into a comparison slot, always scoped to `category`.
+  // Pick a product into a specific slot. Always writes to `slotIndex`
+  // directly, and matches the API response back to slots by slug —
+  // never by array position — so nothing shifts around.
   async function handlePick(slotIndex: number, productSlug: string) {
     if (!productSlug) {
-      setProducts((prev) => prev.filter((_, i) => i !== slotIndex));
+      handleRemove(slotIndex);
       return;
     }
+    const reqId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const nextSlugs = [...selectedSlugs];
-      nextSlugs[slotIndex] = productSlug;
+      const slugsInSlotOrder = slots.map((s) => s?.slug ?? null);
+      slugsInSlotOrder[slotIndex] = productSlug;
+      const slugs = slugsInSlotOrder.filter(Boolean) as string[];
+
       const params = new URLSearchParams({ category });
-      nextSlugs.filter(Boolean).forEach((s, i) => params.set(`p${i + 1}`, s));
+      slugs.forEach((s, i) => params.set(`p${i + 1}`, s));
+
       const res = await fetch(`/api/gadgets/compare?${params.toString()}`);
       const data = await res.json();
-      if (res.ok) setProducts(data.products);
+      if (reqId !== requestIdRef.current) return;
+
+      if (res.ok) {
+        const bySlug: Record<string, Product> = {};
+        (data.products as Product[]).forEach((p) => (bySlug[p.slug] = p));
+
+        if (data.missingSlugs?.length) {
+          // Server resolved the request but couldn't find every slug
+          // (stale pick, deleted product, category mismatch, etc).
+          // Log it rather than silently discarding the whole update.
+          console.warn("Some products could not be loaded:", data.missingSlugs);
+        }
+
+        setSlots((prev) => {
+          const updated = [...prev];
+          // Only overwrite the slot we just picked if the server actually
+          // returned data for it — otherwise leave the previous value in
+          // place instead of nulling it out from under the user.
+          if (bySlug[productSlug]) {
+            updated[slotIndex] = bySlug[productSlug];
+          }
+          // Refresh any other already-filled slots with the latest data too.
+          return updated.map((s) => (s && bySlug[s.slug] ? bySlug[s.slug] : s));
+        });
+      }
     } finally {
-      setLoading(false);
+      if (reqId === requestIdRef.current) setLoading(false);
     }
   }
+
+  function handleRemove(slotIndex: number) {
+    setSlots((prev) => {
+      const updated = [...prev];
+      updated[slotIndex] = null;
+      return updated;
+    });
+  }
+
+  const filledProducts = useMemo(() => slots.filter(Boolean) as Product[], [slots]);
 
   // Spec groups shown in the table — filtered down to only-differing
   // fields when the "Show only Differences" toggle is on.
@@ -119,22 +310,20 @@ export default function GadgetCompareClient({
       .map((g) => ({
         ...g,
         fields: g.fields.filter((f) => {
-          const vals = products.map((p) => JSON.stringify(p.specs?.[f.key] ?? null));
+          const vals = filledProducts.map((p) => JSON.stringify(p.specs?.[f.key] ?? null));
           return new Set(vals).size > 1;
         }),
       }))
       .filter((g) => g.fields.length > 0);
-  }, [onlyDiff, def, products]);
+  }, [onlyDiff, def, filledProducts]);
 
   return (
-    // LayoutGroup scopes the shared layoutId animations (category pill,
-    // slot image swap) to this component only.
     <LayoutGroup>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-3xl border border-zinc-200/70 dark:border-white/10 bg-white/80 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] dark:shadow-none p-6 sm:p-8"
+        className="relative rounded-3xl border border-zinc-200/70 dark:border-white/10 bg-white/80 dark:bg-white/[0.03] backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] dark:shadow-none p-6 sm:p-8"
       >
         {/* Title */}
         <div className="mb-6">
@@ -146,9 +335,7 @@ export default function GadgetCompareClient({
           </p>
         </div>
 
-        {/* ── Category tabs ──────────────────────────────────────
-            Active tab gets a sliding pill background, same pattern
-            as the nav-link pill in Navbar.tsx (layoutId animation). */}
+        {/* ── Category tabs ────────────────────────────────────── */}
         <div className="flex gap-2 overflow-x-auto pb-3 mb-6 border-b border-zinc-200 dark:border-zinc-800">
           {categories.map((c) => {
             const active = c.slug === category;
@@ -165,31 +352,63 @@ export default function GadgetCompareClient({
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
                   />
                 )}
-                <span className={active ? "text-white" : "text-zinc-500 dark:text-zinc-400"}>
-                  {c.icon && <img src={c.icon} alt="" className="inline h-4 w-4 mr-1 align-[-2px]" />}
-                  {c.name}
-                </span>
+<span className={active ? "text-white" : "text-zinc-500 dark:text-zinc-400"}>
+  {c.icon && <i className={`${c.icon} mr-1.5 align-[-1px]`} aria-hidden="true" />}
+  {c.name}
+</span>
               </button>
             );
           })}
         </div>
 
-        {/* ── Product slots ───────────────────────────────────────
-            One card per comparison slot. AnimatePresence + a key on
-            the product slug lets the image/name cross-fade smoothly
-            whenever a slot's selection changes. */}
-        <div
-          className="grid gap-4 mb-6"
-          style={{ gridTemplateColumns: `repeat(${maxSlots}, minmax(0, 1fr))` }}
-        >
-          {Array.from({ length: maxSlots }).map((_, i) => {
-            const current = products[i];
-            return (
-              <motion.div
-                key={i}
-                whileHover={{ y: -2 }}
-                className="relative rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 text-center overflow-hidden"
-              >
+        {/* ── Product slots ─────────────────────────────────────── */}
+        {/*
+          NOTE: removed `overflow-hidden` here. It was clipping the
+          ProductSearchBox dropdown (which is position:absolute and
+          renders below the card's own bounds), no matter what z-index
+          the dropdown had — an overflow:hidden ancestor always wins
+          over z-index for content that visually extends past it.
+          `relative z-10` keeps this whole row above the spec table
+          that follows it later in the DOM.
+        */}
+        <motion.div
+  variants={slotContainerVariants}
+  initial="hidden"
+  animate="show"
+  className="relative z-10 grid gap-4 mb-6"
+  style={{ gridTemplateColumns: `repeat(${maxSlots}, minmax(0, 1fr))` }}
+>
+  {Array.from({ length: maxSlots }).map((_, i) => {
+    const current = slots[i];
+    return (
+      <motion.div
+        key={i}
+        layout
+        variants={slotCardVariants}
+        whileHover={{ y: -4, scale: 1.015, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ layout: { type: "spring", stiffness: 300, damping: 28 } }}
+        className="relative rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 text-center"
+      >
+                <AnimatePresence>
+  {current && (
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+      exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+      transition={{ type: "spring", stiffness: 400, damping: 22 }}
+      whileHover={{ scale: 1.15, rotate: 90 }}
+      whileTap={{ scale: 0.9 }}
+      onClick={() => handleRemove(i)}
+      aria-label={`Remove ${current.name} from comparison`}
+      className="absolute top-2 right-2 h-6 w-6 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-300 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30 flex items-center justify-center text-sm leading-none"
+    >
+      ×
+    </motion.button>
+  )}
+</AnimatePresence>
+
                 <AnimatePresence mode="wait">
                   {current ? (
                     <motion.div
@@ -200,12 +419,16 @@ export default function GadgetCompareClient({
                       transition={{ duration: 0.25 }}
                     >
                       {current.image && (
-                        <img
-                          src={current.image}
-                          alt={current.name}
-                          className="h-16 mx-auto object-contain mb-2"
-                        />
-                      )}
+  <motion.img
+    layout
+    src={current.image}
+    alt={current.name}
+    initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
+    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+    className="h-16 mx-auto object-contain mb-2"
+  />
+)}
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
                         {current.name}
                       </p>
@@ -223,22 +446,17 @@ export default function GadgetCompareClient({
                   )}
                 </AnimatePresence>
 
-                <select
-                  className="mt-3 w-full text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-1.5"
-                  value={current?.slug ?? ""}
-                  onChange={(e) => handlePick(i, e.target.value)}
-                >
-                  <option value="">Select product...</option>
-                  {categoryProducts.map((p) => (
-                    <option key={p.slug} value={p.slug}>{p.brand} {p.name}</option>
-                  ))}
-                </select>
+                <ProductSearchBox
+                  options={categoryProducts}
+                  onPick={(slug) => handlePick(i, slug)}
+                  placeholder="Search product..."
+                />
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
-        {/* Loading indicator — small animated dots instead of static text */}
+        {/* Loading indicator */}
         <AnimatePresence>
           {loading && (
             <motion.div
@@ -262,7 +480,7 @@ export default function GadgetCompareClient({
           )}
         </AnimatePresence>
 
-        {def && products.length >= 2 ? (
+        {def && filledProducts.length >= 2 ? (
           <>
             {/* Diff toggles */}
             <div className="flex gap-6 justify-end mb-4">
@@ -270,35 +488,43 @@ export default function GadgetCompareClient({
               <ToggleSwitch checked={onlyDiff} onChange={setOnlyDiff} label="Show only Differences" />
             </div>
 
-            {/* Jump nav — quick links to each spec group */}
+            {/* Jump nav */}
             <nav className="flex gap-2 overflow-x-auto text-sm mb-4">
               {groups.map((g) => (
-                <a
-                  key={g.title}
-                  href={`#${g.title.toLowerCase()}`}
-                  className="whitespace-nowrap px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  {g.title}
-                </a>
+                <motion.a
+  key={g.title}
+  href={`#${g.title.toLowerCase()}`}
+  whileHover={{ scale: 1.06, y: -1 }}
+  whileTap={{ scale: 0.96 }}
+  className="whitespace-nowrap px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-zinc-700 transition-colors"
+>
+  {g.title}
+</motion.a>
               ))}
             </nav>
 
-            {/* ── Spec comparison table ─────────────────────────
-                Rows animate in with a stagger, and re-animate when
-                `onlyDiff` changes which rows are visible. */}
-            <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+            {/* ── Spec comparison table ───────────────────────── */}
+            <div className="relative z-0 overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
               <table className="w-full text-sm border-collapse">
                 <tbody>
                   <AnimatePresence initial={false}>
                     {groups.map((g) => (
                       <React.Fragment key={g.title}>
-                        <tr id={g.title.toLowerCase()} className="bg-zinc-50 dark:bg-zinc-800">
-                          <td colSpan={products.length + 1} className="font-semibold p-3 text-zinc-700 dark:text-zinc-200">
-                            {g.title}
-                          </td>
-                        </tr>
+                        <motion.tr
+  layout
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.2 }}
+  id={g.title.toLowerCase()}
+  className="bg-zinc-50 dark:bg-zinc-800"
+>
+  <td colSpan={filledProducts.length + 1} className="font-semibold p-3 text-zinc-700 dark:text-zinc-200">
+    {g.title}
+  </td>
+</motion.tr>
                         {g.fields.map((f) => {
-                          const vals = products.map((p) => p.specs?.[f.key]);
+                          const vals = filledProducts.map((p) => p.specs?.[f.key]);
                           const differs = new Set(vals.map((v) => JSON.stringify(v))).size > 1;
                           return (
                             <motion.tr
@@ -314,9 +540,9 @@ export default function GadgetCompareClient({
                               {vals.map((v, i) => (
                                 <td
                                   key={i}
-                                  className={`p-3 whitespace-pre-line text-zinc-800 dark:text-zinc-100 transition-colors duration-300 ${
-                                    highlightDiff && differs ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
-                                  }`}
+                                  className={`p-3 whitespace-pre-line text-zinc-800 dark:text-zinc-100 transition-colors duration-500 ease-out ${
+  highlightDiff && differs ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
+}`}
                                 >
                                   {v === undefined || v === null || v === "" ? "—" : String(v)}
                                 </td>

@@ -4,7 +4,7 @@ import { GadgetCategoryDef } from "../types";
 export const mobiles: GadgetCategoryDef = {
   slug: "mobiles",
   name: "Smartphones",
-  icon: "/icons/smartphone.svg",
+  icon: "bi bi-phone",
   groups: [
     {
       title: "Launch",
@@ -54,8 +54,6 @@ export const mobiles: GadgetCategoryDef = {
         { key: "wirelessCharging", label: "Wireless Charging", type: "text" },
       ],
     },
-    // Back Cameras, Front Camera, Security, Audio, Sensors, Connectivity, Extras
-    // follow the same { title, fields } shape — add as many groups as needed.
   ],
   maxCompare: 3,
 };

@@ -2,6 +2,10 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
+// Hard ceiling just to stop someone from passing p1..p999 in the query string.
+// Bump this if you ever add a category with more compare slots than this.
+const MAX_COMPARE_SLOTS = 8;
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const featured = searchParams.get("featured");
@@ -17,23 +21,63 @@ export async function GET(req: NextRequest) {
 
   // ── Live pair lookup (comparison table widget) ──
   const category = searchParams.get("category");
-  const slugs = [searchParams.get("p1"), searchParams.get("p2"), searchParams.get("p3")].filter(Boolean) as string[];
 
-  if (!category || slugs.length < 2) {
-    return Response.json({ error: "category and at least 2 products required" }, { status: 400 });
+  // Read pN params dynamically instead of hardcoding p1/p2/p3, so this
+  // works for any category's maxCompare, not just categories with <= 3 slots.
+  const slugs: string[] = [];
+  for (let i = 1; i <= MAX_COMPARE_SLOTS; i++) {
+    const slug = searchParams.get(`p${i}`);
+    if (slug) slugs.push(slug);
+  }
+
+  // CHANGED: only require >=1 slug here, not >=2. The client is the one
+  // filling slots one at a time (handlePick sends whatever is currently
+  // filled + the new pick), so a request can legitimately have just 1
+  // slug — e.g. picking the very first product into an empty comparison,
+  // or re-adding a product after removing everything else. The "need at
+  // least 2 to show a comparison" rule is a UI concern (already enforced
+  // client-side via `filledProducts.length >= 2`), not an API concern.
+  // Rejecting single-product requests here caused picks to silently no-op:
+  // the client only applies the response when res.ok, so a 400 here meant
+  // the picked product was thrown away with no error shown to the user.
+  if (!category || slugs.length < 1) {
+    return Response.json({ error: "category and at least 1 product required" }, { status: 400 });
   }
 
   const products = await prisma.product.findMany({
     where: { slug: { in: slugs }, category: { slug: category } },
   });
 
-  if (products.length !== slugs.length) {
-    return Response.json({ error: "One or more products aren't in this category" }, { status: 400 });
+  const foundSlugs = new Set(products.map((p) => p.slug));
+  const missingSlugs = slugs.filter((s) => !foundSlugs.has(s));
+
+  // Instead of failing the whole request when one slug doesn't resolve
+  // (wrong category, stale slug, race with a remove elsewhere), return
+  // whatever DID resolve plus which ones didn't. The client can then
+  // update the slots it successfully got instead of throwing away
+  // everything, and optionally surface which pick failed.
+  const ordered = slugs
+    .map((s) => products.find((p) => p.slug === s))
+    .filter(Boolean);
+
+  // CHANGED: only error out if NOTHING resolved at all. Previously this
+  // required >=2 resolved products, which meant picking a single valid
+  // product (with no other slots filled) still 400'd even though the
+  // product itself was found just fine.
+  if (ordered.length < 1) {
+    return Response.json(
+      {
+        error: "None of the requested products could be found in this category",
+        missingSlugs,
+      },
+      { status: 400 }
+    );
   }
 
-  const ordered = slugs.map((s) => products.find((p) => p.slug === s)!);
-
-  return Response.json({ products: ordered });
+  return Response.json({
+    products: ordered,
+    ...(missingSlugs.length > 0 ? { missingSlugs } : {}),
+  });
 }
 
 export async function POST(req: NextRequest) {

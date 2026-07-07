@@ -2,6 +2,7 @@
 @source "../app/**/*.{ts,tsx}";
 @source "../components/**/*.{ts,tsx}";
 @custom-variant dark (&:where(.dark, .dark *));
+@import "bootstrap-icons/font/bootstrap-icons.css";
 
 /* --- Design tokens --- */
 :root {

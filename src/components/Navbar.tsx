@@ -11,8 +11,9 @@ import NavbarSearch from "@/components/NavbarSearch";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV_LINKS = [
-  { href: "/blog", label: "Posts", authOnly: false },
-  { href: "/dashboard", label: "Dashboard", authOnly: true },
+  { href: "/blog", label: "Posts", authOnly: false, icon: "bi bi-file-text" },
+  { href: "/compare", label: "Compare", authOnly: false, icon: "bi bi-bar-chart-line" },
+  { href: "/dashboard", label: "Dashboard", authOnly: true, icon: "bi bi-speedometer2" },
 ];
 
 export default function Navbar() {
