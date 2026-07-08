@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import TagPicker from "@/components/TagPicker";
+import NotifySubscribersButton from "@/components/NotifySubscribersButton";
+
+
+
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
@@ -243,6 +247,7 @@ export default function EditPostPage({
             <label htmlFor="published" className="text-sm font-medium text-gray-700">
               Published
             </label>
+            <NotifySubscribersButton postId={posts.id} />
           </div>
 
           {/* Buttons */}

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import DeleteButton from "@/components/DeleteButton";
 import AnimatedPostCard from "@/components/AnimatedPostCard";
+import NotifySubscribersButton from "@/components/NotifySubscribersButton";
 
 interface Post {
   id: string;
@@ -212,13 +213,16 @@ export default function PostsPage() {
                     {/* Actions */}
                     <div className="flex items-center gap-4">
                       {post.published && (
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          target="_blank"
-                          className="text-sm text-gray-500 hover:text-gray-700"
-                        >
-                          View →
-                        </Link>
+                        <>
+                          <Link
+                            href={`/blog/${post.slug}`}
+                            target="_blank"
+                            className="text-sm text-gray-500 hover:text-gray-700"
+                          >
+                            View →
+                          </Link>
+                          <NotifySubscribersButton postId={post.id} postTitle={post.title} />
+                        </>
                       )}
                       <Link
                         href={`/dashboard/posts/${post.id}/edit`}

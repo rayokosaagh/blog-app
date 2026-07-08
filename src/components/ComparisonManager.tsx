@@ -292,7 +292,7 @@ export default function ComparisonManager({
         </div>
 
         {categoryProducts.length < 2 && (
-          <p className="text-sm text-amber-600">
+          <p className="text-sm text-amber-600 dark:text-amber-400">
             This category needs at least 2 published products before you can add a comparison.
           </p>
         )}

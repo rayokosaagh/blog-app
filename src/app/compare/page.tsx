@@ -21,7 +21,7 @@ export default async function ComparePage({
   return (
     <>
       <Navbar />
-      <main className="relative min-h-screen bg-white">
+      <main className="relative min-h-screen bg-nackground">
         <div className="relative max-w-6xl mx-auto px-4 py-10">
           <GadgetCompare defaultCategory={category} defaultSlugs={slugs} />
         </div>

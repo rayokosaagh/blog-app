@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 export default function CategoryTabs({ current }: { current: string }) {
   const router = useRouter();
   return (
-    <div className="flex gap-6 overflow-x-auto border-b pb-3 mb-6">
+    <div className="flex gap-6 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800 pb-3 mb-6">
       {CATEGORY_LIST.map((c) => (
         <button
           key={c.slug}
           onClick={() => router.push(`/compare?category=${c.slug}`)} // fresh comparison, clears p1/p2/p3
-          className={`flex flex-col items-center gap-1 text-sm shrink-0 ${
-            c.slug === current ? "text-blue-600 font-semibold" : "text-gray-500"
+          className={`flex flex-col items-center gap-1 text-sm shrink-0 transition-colors ${
+            c.slug === current
+              ? "text-blue-600 dark:text-blue-400 font-semibold"
+              : "text-gray-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400"
           }`}
         >
           <img src={c.icon} alt={c.name} className="h-6 w-6" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { Package } from "lucide-react";
 
@@ -30,9 +30,23 @@ export default function GadgetsPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadProducts();
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   async function loadProducts() {
@@ -47,13 +61,27 @@ export default function GadgetsPage() {
     }
   }
 
+  const categories = useMemo(() => {
+    const map = new Map<string, string>(); // slug -> name
+    products.forEach((p) => map.set(p.category.slug, p.category.name));
+    return Array.from(map.entries());
+  }, [products]);
+
+  const selectedCategoryLabel = useMemo(() => {
+    if (selectedCategory === "all") return "All Categories";
+    return categories.find(([slug]) => slug === selectedCategory)?.[1] ?? "All Categories";
+  }, [selectedCategory, categories]);
+
   const filteredProducts = useMemo(() => {
-    return products.filter(
-      (p) =>
+    return products.filter((p) => {
+      const matchesSearch =
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [products, searchTerm]);
+        p.brand.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        selectedCategory === "all" || p.category.slug === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, selectedCategory]);
 
   function openDeleteModal(id: string, name: string) {
     setProductToDelete({ id, name });
@@ -192,7 +220,8 @@ export default function GadgetsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">Gadgets</h1>
@@ -216,71 +245,128 @@ export default function GadgetsPage() {
         </div>
       </div>
 
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search by name or brand..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full sm:w-80 border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative group">
+          <input
+            type="text"
+            placeholder="Search by name or brand..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-zinc-50 placeholder-gray-400"
+          />
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</div>
+        </div>
+
+        {/* Custom Category Dropdown */}
+        <div className="sm:w-64 relative" ref={dropdownRef}>
+          <button
+            onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+            className="w-full border border-gray-300 dark:border-zinc-700 rounded-2xl px-5 py-3.5 bg-white dark:bg-zinc-800 hover:border-gray-400 dark:hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-left flex items-center justify-between text-gray-900 dark:text-zinc-50"
+          >
+            <span>{selectedCategoryLabel}</span>
+            <span className={`transition-transform duration-200 ${showCategoryDropdown ? "rotate-180" : ""}`}>▼</span>
+          </button>
+
+          {showCategoryDropdown && (
+            <div className="absolute mt-2 w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 py-2 z-50 max-h-72 overflow-y-auto">
+              <div
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setShowCategoryDropdown(false);
+                }}
+                className={`px-5 py-3 hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors ${
+                  selectedCategory === "all" ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-medium" : "text-gray-900 dark:text-zinc-200"
+                }`}
+              >
+                All Categories
+              </div>
+              {categories.map(([slug, name]) => (
+                <div
+                  key={slug}
+                  onClick={() => {
+                    setSelectedCategory(slug);
+                    setShowCategoryDropdown(false);
+                  }}
+                  className={`px-5 py-3 hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors ${
+                    selectedCategory === slug ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-medium" : "text-gray-900 dark:text-zinc-200"
+                  }`}
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm dark:border dark:border-zinc-800 overflow-hidden">
+      {/* Products List (card rows, same compact size as original table rows) */}
+      <div className="space-y-3">
         {loading ? (
           <div className="flex items-center justify-center h-48">
             <p className="text-zinc-500">Loading products...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="p-16 text-center text-zinc-500">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm dark:border dark:border-zinc-800 p-16 text-center text-zinc-500">
             <p className="text-5xl mb-4">📦</p>
             <p className="text-lg font-medium">No products found</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-800 text-left text-zinc-500">
-              <tr>
-                <th className="p-4"></th>
-                <th className="p-4">Name</th>
-                <th className="p-4">Category</th>
-                <th className="p-4">Brand</th>
-                <th className="p-4">Published</th>
-                <th className="p-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((p) => (
-                <tr key={p.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                  <td className="p-4">
-                    <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Package className="text-zinc-400" size={22} />
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4 font-medium text-base text-zinc-900 dark:text-zinc-50">{p.name}</td>
-                  <td className="p-4 text-zinc-500">{p.category.name}</td>
-                  <td className="p-4 text-zinc-500">{p.brand}</td>
-                  <td className="p-4">{p.published ? "✅" : "—"}</td>
-                  <td className="p-4">
-                    <div className="flex gap-3">
-                      <Link href={`/dashboard/gadgets/${p.id}/edit`} className="text-blue-600 hover:underline">
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => openDeleteModal(p.id, p.name)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          filteredProducts.map((p) => (
+            <div
+              key={p.id}
+              className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm dark:border dark:border-zinc-800 flex items-center gap-4 p-4"
+            >
+              {/* Thumbnail - same 64x64 size as original */}
+              <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0">
+                {p.image ? (
+                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Package className="text-zinc-400" size={22} />
+                )}
+              </div>
+
+              {/* Name + Brand */}
+              <div className="flex-1 min-w-0">
+                <h2 className="font-medium text-base text-zinc-900 dark:text-zinc-50 truncate">
+                  {p.name}
+                </h2>
+                <p className="text-sm text-zinc-500 mt-0.5">{p.brand}</p>
+              </div>
+
+              {/* Category badge */}
+              <span className="hidden sm:inline-block text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex-shrink-0">
+                {p.category.name}
+              </span>
+
+              {/* Published badge */}
+              <span
+                className={`hidden sm:inline-block text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${
+                  p.published
+                    ? "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400"
+                    : "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-400"
+                }`}
+              >
+                {p.published ? "Published" : "Draft"}
+              </span>
+
+              {/* Actions */}
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <Link
+                  href={`/dashboard/gadgets/${p.id}/edit`}
+                  className="text-sm text-blue-600 hover:underline font-medium"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => openDeleteModal(p.id, p.name)}
+                  className="text-sm text-red-600 hover:underline font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

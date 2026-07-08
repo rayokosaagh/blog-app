@@ -17,6 +17,8 @@ import MobileNewsHighlights from "@/components/MobileNewsHighlights";
 import LatestPostsFeed from "@/components/LatestPostsFeed";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import LatestComparisons from "@/components/LatestComparisons";
+import NewsletterForm from "@/components/NewsletterForm";
+
 
 // Safety-net revalidation: even if revalidatePath("/") from the view
 // route is ever missed (e.g. multi-instance deploys, edge caching),
@@ -228,13 +230,24 @@ export default async function HomePage() {
       </section>
 
       {/*
-        Spacing fix: Latest Comparisons now lives in its own section,
-        fully outside the grid row above, with generous top margin so
-        it reads as a clearly separate block instead of visually
-        crowding (or being reachable by) the sticky sidebars above it.
+        Latest Comparisons + Newsletter, side by side.
+
+        items-stretch (not items-start) so the Newsletter column takes
+        on the exact height of the taller Comparisons column. The card
+        itself is h-full with an internal flex-1 spacer, so its form
+        naturally settles at the bottom of the card — landing on the
+        same baseline as each comparison card's "Compare now" row.
       */}
       <section className="max-w-[1600px] mx-auto px-6 pb-20 mt-6 lg:mt-10">
-        <LatestComparisons />
+        <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12 lg:items-stretch">
+          <div className="min-w-0">
+            <LatestComparisons />
+          </div>
+
+          <div className="flex justify-center lg:justify-start">
+            <NewsletterForm />
+          </div>
+        </div>
       </section>
 
       <Footer />

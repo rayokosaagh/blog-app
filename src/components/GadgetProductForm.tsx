@@ -195,7 +195,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
               onChange={(e) => handleNameChange(e.target.value)}
               required
               className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-              placeholder="iPhone 17 Pro Max"
             />
           </div>
           <div>
@@ -205,7 +204,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
               onChange={(e) => setBrand(e.target.value)}
               required
               className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-              placeholder="Apple"
             />
           </div>
         </div>
@@ -218,7 +216,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
             required
             disabled={mode === "edit"}
             className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2 disabled:opacity-60"
-            placeholder="iphone-17-pro-max"
           />
         </div>
 

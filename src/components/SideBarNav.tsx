@@ -25,6 +25,7 @@ export default function SidebarNav({ isAdmin }: SidebarNavProps) {
     { href: "/dashboard/socials", label: "Social Links", icon: <LinkIcon /> },
     { href: "/dashboard/polls", label: "Polls", icon: <PollIcon /> }, 
     { href: "/dashboard/gadgets", label: "Gadgets", icon: <GadgetIcon /> },
+    { href: "/dashboard/newsletter", label: "Newsletter", icon: <NewsletterIcon /> },
   ];
 
   const renderLink = (link: { href: string; label: string; icon: React.ReactNode }) => {
@@ -160,5 +161,12 @@ const GadgetIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v2.25M15.75 3v2.25M8.25 18.75V21M15.75 18.75V21M3 8.25H5.25M3 12H5.25M3 15.75H5.25M18.75 8.25H21M18.75 12H21M18.75 15.75H21M6.75 5.25h10.5A1.5 1.5 0 0 1 18.75 6.75v10.5a1.5 1.5 0 0 1-1.5 1.5H6.75a1.5 1.5 0 0 1-1.5-1.5V6.75a1.5 1.5 0 0 1 1.5-1.5Z" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75h4.5v4.5h-4.5z" />
+  </svg>
+);
+
+// New Newsletter Icon (envelope, matches your stroke style)
+const NewsletterIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
   </svg>
 );

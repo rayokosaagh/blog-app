@@ -244,3 +244,14 @@ model Comparison {
   @@index([order])
   @@map("comparisons")
 }
+
+model NewsletterSubscriber {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  token       String    @unique @default(cuid()) // used for confirm & unsubscribe links
+  confirmed   Boolean   @default(false)
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+}
