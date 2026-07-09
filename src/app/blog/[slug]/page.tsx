@@ -72,6 +72,16 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
   return { modifiedHtml, toc };
 }
 
+// Strips trailing empty paragraphs / stray <br> blocks left by the
+// rich-text editor so the card doesn't end with a large dead gap
+// before the "All posts / Written by" row.
+function stripTrailingEmptyBlocks(html: string): string {
+  return html.replace(
+    /(?:\s*<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*)+$/gi,
+    ""
+  );
+}
+
 function generateAdString(ad: { link: string; image: string; title: string }) {
   return `
     <a href="${ad.link}" target="_blank" rel="noopener noreferrer sponsored"
@@ -142,9 +152,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
 
   const relatedPosts = await prisma.post.findMany({
-    where: { 
-      published: true, 
-      NOT: { id: post.id } 
+    where: {
+      published: true,
+      NOT: { id: post.id },
     },
     take: 9,
     include: { author: true },
@@ -175,13 +185,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   let processedContent = parseAdsShortcodes(post.content, ads);
   processedContent = parseBannerShortcodes(processedContent, banners);
+  processedContent = stripTrailingEmptyBlocks(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
 
+  // Only show "Last updated" if the post was actually edited after creation.
+  const wasUpdated =
+    post.updatedAt &&
+    new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
+
   return (
-  <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
-    <ViewTracker postId={post.id} />
-    <Navbar />
+    <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
+      <ViewTracker postId={post.id} />
+      <Navbar />
 
       {/* Hero Header */}
       <div className="relative w-full h-[420px] md:h-[500px] overflow-hidden">
@@ -242,7 +258,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </div>
 
       {/* Main Content */}
-      <main className="w-full max-w-[1560px] mx-auto px-6 -mt-6 relative z-10 pb-15 flex flex-col 2xl:flex-row justify-center gap-8 items-start">
+      <main className="w-full max-w-[1560px] mx-auto px-6 -mt-6 relative z-10 pb-8 md:pb-12 flex flex-col 2xl:flex-row justify-center gap-8 items-start">
         {/* TOC Sidebar */}
         {toc.length > 0 && (
           <div className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
@@ -251,11 +267,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         )}
 
         {/* Article Content */}
-        <div className="w-full max-w-4xl bg-card border border-border rounded-2xl shadow-xl px-8 md:px-10 py-12 transition-colors duration-300">
+        <div className="w-full max-w-4xl bg-card border border-border rounded-2xl shadow-xl px-8 md:px-10 pt-12 pb-8 transition-colors duration-300">
           {/* Custom Typography + Image Styling */}
           <style>{`
             .rich-text-render { color: var(--foreground); }
             .rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.35rem; font-size: 1.0625rem; }
+            .rich-text-render p:empty,
+            .rich-text-render p:has(> br:only-child) { display: none; }
+            .rich-text-render > *:last-child { margin-bottom: 0; }
             .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {
               color: var(--foreground); font-weight: 700; margin-top: 2.25rem; margin-bottom: 0.85rem; scroll-margin-top: 100px;
             }
@@ -296,7 +315,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
 
           {/* Author Bio */}
-          <div className="mt-14 pt-8 border-t border-border flex items-center justify-between">
+          <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
             <Link href="/blog" className="inline-flex items-center gap-2 text-accent hover:underline font-medium text-sm transition-colors">
               ← All posts
             </Link>
@@ -319,6 +338,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Written by</p>
                 <p className="text-sm font-semibold text-foreground">{post.author.name}</p>
+                {wasUpdated && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Last updated {formatDate(post.updatedAt)}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -331,17 +355,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </main>
 
       {/* POLL */}
-      <div className="max-w-4xl mx-auto px-6 mt-4 mb-6">
+      <div className="max-w-4xl mx-auto px-6 mt-6 mb-6 md:mt-8 md:mb-8">
         <Poll />
       </div>
 
       {/* RATING */}
-      <div className="max-w-4xl mx-auto px-6 mb-12">
+      <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
         <RatingMeter postId={post.id} />
       </div>
 
       {/* COMMENTS */}
-      <div className="max-w-4xl mx-auto px-6 mb-12">
+      <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
         <CommentSection postId={post.id} />
       </div>
 

@@ -175,7 +175,7 @@ export default function Poll() {
       <div className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8">
         <div className="flex items-center gap-2">
           <BarChart3 size={22} className="text-blue-600" />
-          <h2 className="text-2xl font-bold text-foreground">Poll</h2>
+          <h2 className="text-2xl font-bold text-foreground">Polls</h2>
         </div>
         <div className="border-b border-border mt-4 mb-6" />
         <div className="space-y-3">
@@ -211,7 +211,7 @@ export default function Poll() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <BarChart3 size={22} className="text-blue-600" />
-          <h2 className="text-2xl font-bold text-foreground">Poll</h2>
+          <h2 className="text-2xl font-bold text-foreground">Polls</h2>
         </div>
 
         {hasMultiple && (
