@@ -12,7 +12,7 @@ import ControlsBar from "./gadgets/compare/ControlsBar";
 import JumpNav from "./gadgets/compare/JumpNav";
 import FocusedSpecBar from "./gadgets/compare/FocusedSpecBar";
 import DesktopTable from "./gadgets/compare/DesktopTable";
-import MobileGroups from "./gadgets/compare/MobileGroups";
+import MobileTable from "./gadgets/compare/MobileTable";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];
@@ -170,13 +170,15 @@ export default function GadgetCompareClient({
   }
 
   function jumpToGroup(title: string) {
-    setActiveGroupTitle(title);
-    const el = document.getElementById(title.toLowerCase());
-    if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - (headerOffset + 12);
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
+  setActiveGroupTitle(title);
+  const el =
+    document.getElementById(`m-${title.toLowerCase()}`) ??
+    document.getElementById(title.toLowerCase());
+  if (el) {
+    const y = el.getBoundingClientRect().top + window.scrollY - (headerOffset + 12);
+    window.scrollTo({ top: y, behavior: "smooth" });
   }
+}
 
   // Focus persists across the (unfiltered) group list so a filter typed
   // afterward doesn't silently drop the field you're focused on.
@@ -311,19 +313,15 @@ export default function GadgetCompareClient({
                 highlightDiff={highlightDiff}
                 onToggleFocus={toggleFocus}
               />
-              <MobileGroups
-                groups={groups}
-                filledProducts={filledProducts}
-                openMobileGroups={openMobileGroups}
-                onToggleMobileGroup={toggleMobileGroup}
-                fieldFilterActive={fieldFilter.length > 0}
-                activeGroupTitle={activeGroupTitle}
-                onSetActiveGroup={setActiveGroupTitle}
-                focusedKey={focusedKey}
-                onToggleFocus={toggleFocus}
-                highlightDiff={highlightDiff}
-                headerOffset={headerOffset}
-              />
+              <MobileTable
+  groups={groups}
+  filledProducts={filledProducts}
+  activeGroupTitle={activeGroupTitle}
+  focusedKey={focusedKey}
+  headerOffset={headerOffset}
+  highlightDiff={highlightDiff}
+  onToggleFocus={toggleFocus}
+/>
             </>
           )
         ) : (
