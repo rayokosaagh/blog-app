@@ -2,195 +2,260 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { Bookmark } from "lucide-react";
 import { sortTagsByOrder } from "@/lib/sortTags";
+import { formatRelativeTime } from "@/lib/postUtils";
 
-interface Tag {
+export interface FeedTag {
   id: string;
   name: string;
   slug: string;
   icon?: string | null;
 }
 
-interface FeedPost {
+export interface FeedPost {
   id: string;
   slug: string;
   title: string;
   featuredImage: string | null;
   createdAt: Date | string;
   content?: string | null;
+  tags?: FeedTag[];
   tagOrder?: string[] | null;
-  tags: Tag[];
-  author: { name: string | null };
+  author: { name: string | null; image?: string | null };
 }
 
 interface LatestPostsFeedProps {
   posts: FeedPost[];
+  /** Small accent label above the heading, e.g. "On this topic". Omit heading entirely if not provided. */
+  eyebrow?: string;
+  /** Section heading, e.g. "More Articles" or "Latest Posts". Omit to render just the grid, no header. */
+  heading?: string;
+  /** "View all" link shown top-right of the header, if heading is set. */
+  viewAllHref?: string;
+  /** Enables the interactive bookmark button on each tile. */
+  showBookmark?: boolean;
+  /** Max tiles to render. Defaults to all posts passed in. */
+  maxPosts?: number;
   className?: string;
 }
 
-function formatDate(date: Date | string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(date));
+function ArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
-function readingTime(html?: string | null) {
-  if (!html) return null;
-  const text = html.replace(/<[^>]*>/g, " ").trim();
-  if (!text) return null;
-  const words = text.split(/\s+/).length;
-  return Math.max(1, Math.round(words / 200));
+// Explicit, literal Tailwind classes so the build's content scanner picks
+// them up (avoid constructing class names dynamically at runtime).
+// Pattern repeats every 5 tiles: [big, wide, small, small, wide]
+const TILE_SPANS = [
+  "md:col-span-2 md:row-span-2", // 0 — big feature tile
+  "md:col-span-2 md:row-span-1", // 1 — wide
+  "md:col-span-1 md:row-span-1", // 2 — small
+  "md:col-span-1 md:row-span-1", // 3 — small
+  "md:col-span-2 md:row-span-1", // 4 — wide
+];
+
+const TILE_MOBILE_ASPECT = [
+  "aspect-[4/3] md:aspect-auto",
+  "aspect-[16/9] md:aspect-auto",
+  "aspect-[4/3] md:aspect-auto",
+  "aspect-[4/3] md:aspect-auto",
+  "aspect-[16/9] md:aspect-auto",
+];
+
+function isBig(index: number) {
+  return index % 5 === 0;
 }
 
-// Parent controls the reveal choreography; children just declare their own
-// "hidden" / "show" pose and inherit timing via context (no per-row
-// viewport polling needed, which keeps this cheap on scroll).
-const listVariants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.07, delayChildren: 0.04 },
-  },
-};
+function Tile({
+  post,
+  index,
+  showBookmark,
+}: {
+  post: FeedPost;
+  index: number;
+  showBookmark: boolean;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+  const [saved, setSaved] = useState(false);
+  const [burst, setBurst] = useState(0);
+  const href = `/blog/${post.slug}`;
+  const orderedTags = sortTagsByOrder(post.tags ?? [], post.tagOrder ?? []);
+  const primaryTag = orderedTags[0];
+  const big = isBig(index);
 
-const rowVariants = {
-  hidden: { opacity: 0, y: 16 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 340, damping: 30, mass: 0.7 },
-  },
-};
+  const variants: Variants = {
+    hidden: { opacity: 0, scale: shouldReduceMotion ? 1 : 0.94, y: shouldReduceMotion ? 0 : 16 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { duration: 0.5, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
 
-export default function LatestPostsFeed({ posts, className = "" }: LatestPostsFeedProps) {
-  const [saved, setSaved] = useState<Set<string>>(new Set());
-  const [loaded, setLoaded] = useState<Set<string>>(new Set());
-  const [burst, setBurst] = useState<Record<string, number>>({});
-
-  const toggleSave = (e: React.MouseEvent, id: string) => {
+  const toggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setSaved((prev) => {
-      const next = new Set(prev);
-      const willSave = !next.has(id);
-      willSave ? next.add(id) : next.delete(id);
-      if (willSave) {
-        setBurst((b) => ({ ...b, [id]: (b[id] ?? 0) + 1 }));
-      }
-      return next;
+      const willSave = !prev;
+      if (willSave) setBurst((b) => b + 1);
+      return willSave;
     });
   };
 
-  const markLoaded = (id: string) => {
-    setLoaded((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
-  };
+  const span = TILE_SPANS[index % TILE_SPANS.length];
+  const mobileAspect = TILE_MOBILE_ASPECT[index % TILE_MOBILE_ASPECT.length];
 
   return (
     <motion.div
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-40px" }}
-      variants={listVariants}
-      className={`bg-card border border-border rounded-2xl divide-y divide-border overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none ${className}`}
+      variants={variants}
+      whileHover={shouldReduceMotion ? undefined : { y: -3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      className={`relative rounded-2xl overflow-hidden group ${span} ${mobileAspect}`}
     >
-      {posts.map((post) => {
-        const orderedTags = sortTagsByOrder(post.tags, post.tagOrder ?? []);
-        const primaryTag = orderedTags[0];
-        const minutes = readingTime(post.content);
-        const isSaved = saved.has(post.id);
-        const isLoaded = loaded.has(post.id);
+      <Link href={href} className="absolute inset-0 block bg-muted">
+        {post.featuredImage ? (
+          <img
+            src={post.featuredImage}
+            alt={post.title}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.07]"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 transition-transform duration-700 ease-out group-hover:scale-[1.07]" />
+        )}
 
-        return (
-          <motion.div key={post.id} variants={rowVariants} className="group relative">
-            <Link href={`/blog/${post.slug}`} className="block">
-              <motion.div
-                whileTap={{ scale: 0.985 }}
-                transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                className="flex items-center gap-3 px-4 py-3.5 transition-colors duration-200 hover:bg-accent/5 active:bg-accent/[0.07]"
-              >
-                {/* Thumbnail */}
-                <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-foreground/5">
-                  {post.featuredImage ? (
-                    <>
-                      {!isLoaded && (
-                        <div className="absolute inset-0 animate-pulse bg-foreground/10" />
-                      )}
-                      <motion.img
-                        src={post.featuredImage}
-                        alt={post.title}
-                        onLoad={() => markLoaded(post.id)}
-                        initial={false}
-                        animate={{ opacity: isLoaded ? 1 : 0 }}
-                        transition={{ duration: 0.35, ease: "easeOut" }}
-                        className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
-                      />
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/30 flex items-center justify-center">
-                      <span className="text-xl">📝</span>
-                    </div>
-                  )}
-                </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/0 transition-opacity duration-300 group-hover:from-black/90" />
 
-                {/* Text content */}
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2 mb-1 transition-colors duration-200 group-hover:text-accent">
-                    {post.title}
-                  </h4>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
-                    {primaryTag && (
-                      <>
-                        <span className="font-medium text-accent">{primaryTag.name}</span>
-                        <span>·</span>
-                      </>
-                    )}
-                    <span>{formatDate(post.createdAt)}</span>
-                    {minutes && (
-                      <>
-                        <span>·</span>
-                        <span>{minutes} min</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+        <div className="absolute top-3.5 left-3.5 right-3.5 flex items-start justify-between gap-2">
+          {primaryTag ? (
+            <span
+              className={`inline-flex items-center bg-white/15 backdrop-blur-md border border-white/25 text-white font-semibold uppercase tracking-widest rounded-full ${
+                big ? "text-[11px] px-3 py-1" : "text-[10px] px-2.5 py-0.5"
+              }`}
+            >
+              {primaryTag.name}
+            </span>
+          ) : (
+            <span />
+          )}
 
-                {/* Bookmark */}
-                <button
-                  onClick={(e) => toggleSave(e, post.id)}
-                  aria-label={isSaved ? "Remove from saved" : "Save for later"}
-                  aria-pressed={isSaved}
-                  className="relative flex-shrink-0 flex items-center justify-center w-9 h-9 -mr-1.5 rounded-full"
-                >
-                  <AnimatePresence>
-                    {burst[post.id] && isSaved && (
-                      <motion.span
-                        key={burst[post.id]}
-                        initial={{ scale: 0.4, opacity: 0.55 }}
-                        animate={{ scale: 1.9, opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                        className="absolute inset-0 rounded-full bg-accent"
-                      />
-                    )}
-                  </AnimatePresence>
+          {showBookmark && (
+            <button
+              onClick={toggleSave}
+              aria-label={saved ? "Remove from saved" : "Save for later"}
+              aria-pressed={saved}
+              className="relative flex items-center justify-center w-8 h-8 rounded-full bg-black/35 backdrop-blur-md border border-white/20"
+            >
+              <AnimatePresence>
+                {burst > 0 && saved && (
                   <motion.span
-                    animate={isSaved ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                    transition={{ duration: 0.32, ease: "easeOut" }}
-                    className="relative"
-                  >
-                    <Bookmark
-                      className={`w-4 h-4 transition-colors duration-200 ${
-                        isSaved ? "text-accent" : "text-muted-foreground"
-                      }`}
-                      fill={isSaved ? "currentColor" : "none"}
-                      strokeWidth={2}
-                    />
-                  </motion.span>
-                </button>
-              </motion.div>
-            </Link>
-          </motion.div>
-        );
-      })}
+                    key={burst}
+                    initial={{ scale: 0.4, opacity: 0.55 }}
+                    animate={{ scale: 1.9, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="absolute inset-0 rounded-full bg-white"
+                  />
+                )}
+              </AnimatePresence>
+              <motion.span
+                animate={saved && !shouldReduceMotion ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                transition={{ duration: 0.32, ease: "easeOut" }}
+                className="relative flex items-center justify-center"
+              >
+                <Bookmark
+                  className={`w-[15px] h-[15px] transition-colors duration-200 ${
+                    saved ? "text-white" : "text-white/80"
+                  }`}
+                  fill={saved ? "currentColor" : "none"}
+                  strokeWidth={2}
+                />
+              </motion.span>
+            </button>
+          )}
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+          <h3
+            className={`font-bold text-white leading-snug transition-transform duration-300 group-hover:-translate-y-0.5 ${
+              big ? "text-xl md:text-2xl mb-2" : "text-sm md:text-base mb-1"
+            }`}
+          >
+            {post.title}
+          </h3>
+          <p className={`text-white/70 ${big ? "text-xs md:text-sm" : "text-[11px]"}`}>
+            {post.author.name} · {formatRelativeTime(post.createdAt)}
+          </p>
+        </div>
+      </Link>
     </motion.div>
+  );
+}
+
+export default function LatestPostsFeed({
+  posts,
+  eyebrow,
+  heading,
+  viewAllHref,
+  showBookmark = false,
+  maxPosts,
+  className = "",
+}: LatestPostsFeedProps) {
+  const shouldReduceMotion = useReducedMotion();
+  if (!posts || posts.length === 0) return null;
+
+  const tiles = typeof maxPosts === "number" ? posts.slice(0, maxPosts) : posts;
+
+  const containerVariants: Variants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.06 } },
+  };
+
+  return (
+    <div className={className}>
+      {heading && (
+        <motion.div
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.8 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-end justify-between gap-4 mb-6"
+        >
+          <div>
+            {eyebrow && (
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent mb-1.5">{eyebrow}</p>
+            )}
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">{heading}</h2>
+          </div>
+          {viewAllHref && (
+            <Link
+              href={viewAllHref}
+              className="group/all hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-accent transition-colors shrink-0 pb-1"
+            >
+              View all
+              <ArrowIcon className="w-4 h-4 transition-transform duration-300 group-hover/all:translate-x-1" />
+            </Link>
+          )}
+        </motion.div>
+      )}
+
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-4 md:auto-rows-[160px] lg:auto-rows-[180px] md:grid-flow-dense gap-4"
+      >
+        {tiles.map((post, i) => (
+          <Tile key={post.id} post={post} index={i} showBookmark={showBookmark} />
+        ))}
+      </motion.div>
+    </div>
   );
 }

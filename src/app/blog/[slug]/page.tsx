@@ -12,6 +12,7 @@ import Poll from "@/components/Poll";
 import RatingMeter from "@/components/RatingMeter";
 import KeepReading from "@/components/KeepReading";
 import CommentSection from "@/components/CommentSection";
+import RelatedArticles from "@/components/RelatedArticles";
 import TagIcon from "@/components/TagIcon";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import ViewTracker from "@/components/ViewTracker";
@@ -177,6 +178,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     ads = [];
     banners = [];
   }
+  const tagIds = post.tags.map((t) => t.id);
+
+const relatedByTags = tagIds.length > 0
+  ? await prisma.post.findMany({
+      where: {
+        published: true,
+        NOT: { id: post.id },
+        tags: { some: { id: { in: tagIds } } },
+      },
+      include: { author: true, tags: true }, // ← added tags: true
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    })
+  : [];
 
   const readingTime = Math.max(
     1,
@@ -371,6 +386,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       {/* Keep Reading */}
       <KeepReading relatedPosts={relatedPosts} />
+
+      {/* Related Articles (tag-based) */}
+<RelatedArticles posts={relatedByTags} />
 
       <Footer />
       <MobileNav toc={toc} />
