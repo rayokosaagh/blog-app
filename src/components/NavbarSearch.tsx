@@ -92,13 +92,14 @@ export default function NavbarSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search posts..."
-            className="w-full px-5 py-2.5 pr-10 text-sm 
-                       bg-white dark:bg-gray-800 
-                       border border-gray-300 dark:border-gray-700
-                       text-gray-900 dark:text-white 
-                       placeholder-gray-500 dark:placeholder-gray-400 
-                       rounded-full 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 
+            className="w-full px-5 py-2.5 pr-10 text-sm
+                       bg-white/40 dark:bg-white/10
+                       backdrop-blur-md backdrop-saturate-150
+                       border border-white/60 dark:border-white/10
+                       text-gray-900 dark:text-white
+                       placeholder-gray-500 dark:placeholder-gray-400
+                       rounded-full
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/60 dark:focus:bg-white/15
                        transition-all duration-300"
           />
 
@@ -114,7 +115,7 @@ export default function NavbarSearch() {
             <button
               type="button"
               onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full hover:bg-white/40 dark:hover:bg-white/10"
               aria-label="Clear search"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -127,7 +128,7 @@ export default function NavbarSearch() {
 
       {/* Too-short hint */}
       {isOpen && isQueryTooShort && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-[#0c233f] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+        <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 rounded-xl shadow-xl">
           <div className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
             Type at least {MIN_QUERY_LENGTH} characters to search
           </div>
@@ -136,14 +137,14 @@ export default function NavbarSearch() {
 
       {/* Results Dropdown */}
       {isOpen && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-[#0c233f] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 rounded-xl shadow-xl overflow-hidden">
           <ul className="py-1 max-h-80 overflow-y-auto">
             {results.map((post) => (
               <li key={post.id}>
                 <Link
                   href={`/blog/${post.slug}`}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-4 px-5 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 group"
+                  className="flex items-center gap-4 px-5 py-3 hover:bg-white/50 dark:hover:bg-white/10 transition-colors border-b border-white/40 dark:border-white/10 last:border-0 group"
                 >
                   {post.featuredImage ? (
                     <img
@@ -168,7 +169,7 @@ export default function NavbarSearch() {
 
       {/* No Results */}
       {isOpen && trimmedQuery.length >= MIN_QUERY_LENGTH && results.length === 0 && !isLoading && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-[#0c233f] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+        <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 rounded-xl shadow-xl">
           <div className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
             No posts found for "{trimmedQuery}"
           </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -16,6 +16,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Blog",
   description: "",
+};
+
+// Tells the mobile browser chrome (address bar / status bar) what color to
+// use, per color scheme, instead of falling back to a mismatched default —
+// this is what was causing the stray magenta line above the navbar.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a1322" },
+  ],
 };
 
 export default function RootLayout({

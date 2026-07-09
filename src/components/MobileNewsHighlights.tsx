@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import MobileNewsTabs from "./MobileNewsTabs";
 
-const ITEMS_TO_SHOW = 8;
+const ITEMS_TO_SHOW = 5;
 
 export default async function MobileNewsHighlights() {
   const sevenDaysAgo = new Date();
@@ -15,7 +15,7 @@ export default async function MobileNewsHighlights() {
       },
       orderBy: { views: "desc" },
       take: ITEMS_TO_SHOW,
-      select: { id: true, slug: true, title: true, featuredImage: true, views: true },
+      select: { id: true, slug: true, title: true, featuredImage: true, views: true, createdAt: true },
     }),
     prisma.post.findMany({
       where: { published: true },

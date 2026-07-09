@@ -33,7 +33,16 @@ const cardEntranceVariants: Variants = {
   },
 };
 
-function ProductPortrait({ product, align }: { product: ComparisonProduct; align: "left" | "right" }) {
+const rowEntranceVariants: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 360, damping: 30 },
+  },
+};
+
+function ProductPortrait({ product }: { product: ComparisonProduct }) {
   return (
     <div className="flex flex-col items-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-white p-2.5 ring-1 ring-black/5 dark:ring-white/10">
@@ -78,13 +87,13 @@ function ComparisonCard({
         </span>
 
         <div className="flex items-center justify-center gap-3">
-          <ProductPortrait product={item.productA} align="left" />
+          <ProductPortrait product={item.productA} />
 
           <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[10px] font-bold tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-accent group-hover:bg-accent group-hover:text-white">
             VS
           </span>
 
-          <ProductPortrait product={item.productB} align="right" />
+          <ProductPortrait product={item.productB} />
         </div>
 
         <div className="mt-5 flex items-center justify-center gap-1.5 border-t border-border pt-4 text-xs font-medium text-muted-foreground transition-colors duration-300 group-hover:text-accent">
@@ -99,6 +108,76 @@ function ComparisonCard({
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
         </div>
+      </Link>
+    </motion.div>
+  );
+}
+
+// Compact horizontal row used on small screens: two thumbnails + VS badge on the
+// left, category/product names in the middle, chevron on the right. Keeps the
+// same visual language (accent color, VS badge, sweep-in arrow) as the desktop
+// card but in a much shorter footprint so several fit on screen at once.
+function ComparisonRow({
+  item,
+  isLast,
+  reduceMotion,
+}: {
+  item: ComparisonItem;
+  isLast: boolean;
+  reduceMotion: boolean;
+}) {
+  return (
+    <motion.div variants={reduceMotion ? undefined : rowEntranceVariants}>
+      <Link
+        href={`/compare?category=${item.category.slug}&p1=${item.productA.slug}&p2=${item.productB.slug}`}
+        className="group block"
+      >
+        <motion.div
+          whileTap={{ scale: 0.97 }}
+          whileHover={{ x: 2 }}
+          transition={{ type: "spring", stiffness: 420, damping: 22 }}
+          className={`flex items-center gap-3 py-3 ${!isLast ? "border-b border-border" : ""}`}
+        >
+          {/* Overlapping thumbnail pair + VS badge */}
+          <div className="relative flex shrink-0 items-center">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-black/5 dark:ring-white/10">
+              {item.productA.image ? (
+                <img src={item.productA.image} alt={item.productA.name} className="h-full w-full object-contain" />
+              ) : (
+                <span className="text-[8px] text-zinc-300">No image</span>
+              )}
+            </div>
+            <span className="relative z-10 -mx-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-card bg-background text-[9px] font-bold tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-card group-hover:bg-accent group-hover:text-white">
+              VS
+            </span>
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-black/5 dark:ring-white/10">
+              {item.productB.image ? (
+                <img src={item.productB.image} alt={item.productB.name} className="h-full w-full object-contain" />
+              ) : (
+                <span className="text-[8px] text-zinc-300">No image</span>
+              )}
+            </div>
+          </div>
+
+          {/* Text block */}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-accent">{item.category.name}</p>
+            <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
+              {item.productA.name} <span className="text-muted-foreground">vs</span> {item.productB.name}
+            </p>
+          </div>
+
+          {/* Chevron */}
+          <svg
+            className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-accent"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </motion.div>
       </Link>
     </motion.div>
   );
@@ -138,12 +217,26 @@ export default function LatestComparisonsClient({
         </div>
       </div>
 
+      {/* Mobile: compact row list inside a single card */}
       <motion.div
         variants={reduceMotion ? undefined : containerVariants}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-60px" }}
-        className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4"
+        className="sm:hidden rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none"
+      >
+        {comparisons.map((c, i) => (
+          <ComparisonRow key={c.id} item={c} isLast={i === comparisons.length - 1} reduceMotion={reduceMotion} />
+        ))}
+      </motion.div>
+
+      {/* Tablet / desktop: existing card grid, untouched */}
+      <motion.div
+        variants={reduceMotion ? undefined : containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-60px" }}
+        className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4"
       >
         {comparisons.map((c) => (
           <ComparisonCard key={c.id} item={c} reduceMotion={reduceMotion} />
