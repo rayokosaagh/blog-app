@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, BarChart3 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 interface PollOption {
@@ -170,7 +170,28 @@ export default function Poll() {
     }
   }
 
-  if (loading) return <div className="text-center py-10 text-sm text-muted-foreground">Loading polls...</div>;
+  if (loading) {
+    return (
+      <div className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={22} className="text-blue-600" />
+          <h2 className="text-2xl font-bold text-foreground">Poll</h2>
+        </div>
+        <div className="border-b border-border mt-4 mb-6" />
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="h-12 w-full rounded-xl bg-muted"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.15 }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (polls.length === 0 || !currentPoll) return null;
 
   const hasVoted = Boolean(currentPoll.votedOptionId);
@@ -178,18 +199,32 @@ export default function Poll() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       onHoverStart={() => setIsHovering(true)}
       onHoverEnd={() => setIsHovering(false)}
-      className="bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:border border-border p-6"
+      className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8"
     >
-      {/* Navigation */}
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-          {hasMultiple ? `Poll ${currentIndex + 1} of ${polls.length}` : "Active Poll"}
-        </span>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={22} className="text-blue-600" />
+          <h2 className="text-2xl font-bold text-foreground">Poll</h2>
+        </div>
 
+        {hasMultiple && (
+          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 shrink-0">
+            {currentIndex + 1} of {polls.length}
+          </span>
+        )}
+      </div>
+
+      <div className="border-b border-border mt-4 mb-4" />
+
+      {/* Navigation */}
+      <div className="flex justify-end mb-4">
         <div className="flex gap-1">
           <button
             onClick={goToPrev}
@@ -207,22 +242,6 @@ export default function Poll() {
           </button>
         </div>
       </div>
-
-      {hasMultiple && (
-        <div className="flex justify-center gap-1.5 mb-6">
-          {polls.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goToIndex(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                i === currentIndex
-                  ? "bg-blue-600 dark:bg-blue-400 scale-125"
-                  : "bg-border hover:bg-foreground/20"
-              }`}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Clipped viewport so sliding content never escapes the card */}
       <div className="relative overflow-hidden">
@@ -299,7 +318,34 @@ export default function Poll() {
         </AnimatePresence>
       </div>
 
-      {error && <p className="text-red-600 mt-3 text-sm text-center">{error}</p>}
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-red-600 mt-3 text-sm text-center"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      {hasMultiple && (
+        <div className="flex justify-center gap-1.5 mt-6">
+          {polls.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToIndex(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                i === currentIndex
+                  ? "bg-blue-600 dark:bg-blue-400 scale-125"
+                  : "bg-border hover:bg-foreground/20"
+              }`}
+            />
+          ))}
+        </div>
+      )}
 
       <p className="text-center text-xs text-muted-foreground mt-6">
         Total votes: {currentPoll.totalVotes.toLocaleString()}

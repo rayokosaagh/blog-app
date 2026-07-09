@@ -247,7 +247,7 @@ export default function EditPostPage({
             <label htmlFor="published" className="text-sm font-medium text-gray-700">
               Published
             </label>
-            <NotifySubscribersButton postId={posts.id} />
+            <NotifySubscribersButton postId={postId} />
           </div>
 
           {/* Buttons */}
