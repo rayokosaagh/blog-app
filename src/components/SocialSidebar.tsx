@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { Share2 } from "lucide-react";
 
 export default async function SocialSidebar() {
   const socials = await prisma.socialLink.findMany({
@@ -8,13 +9,17 @@ export default async function SocialSidebar() {
   });
 
   return (
-    <div className="bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:border border-border p-6">
-      <h3 className="text-xl font-bold text-foreground mb-4">Latest tech, all here</h3>
-      <div className="w-full border-t border-dashed border-accent/30 mb-5"></div>
+    <div className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8">
+      <div className="flex items-center gap-2">
+        <Share2 size={22} className="text-blue-600" />
+        <h2 className="text-2xl font-bold text-foreground">Latest tech, all here</h2>
+      </div>
+
+      <div className="border-b border-border mt-4 mb-4" />
 
       <div className="space-y-3">
         {socials.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-sm text-muted-foreground">
             No links posted yet
           </div>
         ) : (

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, List } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface TocItem {
@@ -22,7 +22,7 @@ function ActiveDot({ active }: { active: boolean }) {
       animate={{
         scale: active ? 1.35 : 0.75,
         backgroundColor: active 
-          ? "rgb(111 66 193)"     // purple in light
+          ? "rgb(37 99 235)"     // blue-600 in light
           : "var(--border)",
         opacity: active ? 1 : 0.5,
       }}
@@ -40,7 +40,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
   const [activeId, setActiveId] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0 });
-  const [accentColor, setAccentColor] = useState("#6f42c1");
+  const [accentColor, setAccentColor] = useState("#2563eb");
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -49,7 +49,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
   useEffect(() => {
     const updateAccentColor = () => {
       const isDark = document.documentElement.classList.contains("dark");
-      setAccentColor(isDark ? "#ffffff" : "#6f42c1");
+      setAccentColor(isDark ? "#ffffff" : "#2563eb");
     };
 
     updateAccentColor();
@@ -117,7 +117,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
   }, [activeId]);
 
   return (
-    <aside className="sticky top-6 self-start w-full bg-card rounded-2xl shadow-xl border border-border p-6 max-h-[calc(100dvh-3rem)] overflow-y-auto overscroll-contain">
+    <aside className="sticky top-6 self-start w-full bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8 max-h-[calc(100dvh-3rem)] overflow-y-auto overscroll-contain">
       {/* Breadcrumb */}
       <div
         className={`overflow-hidden border-border transition-all duration-300 ease-in-out ${
@@ -133,15 +133,20 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
         </nav>
       </div>
 
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">IN THIS ARTICLE</h2>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <List size={22} className="text-blue-600 dark:text-white" />
+          <h2 className="text-2xl font-bold text-foreground">Contents</h2>
+        </div>
         <button
           onClick={() => setIsCollapsed((prev) => !prev)}
-          className="p-1 -m-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+          className="p-1.5 -m-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors shrink-0"
         >
-          <ChevronDown size={16} className={`transition-transform duration-300 ${isCollapsed ? "-rotate-90" : ""}`} />
+          <ChevronDown size={18} className={`transition-transform duration-300 ${isCollapsed ? "-rotate-90" : ""}`} />
         </button>
       </div>
+
+      <div className="border-b border-border mt-4 mb-4" />
 
       <div className={`grid transition-all duration-300 ease-in-out ${isCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}>
         <div className="overflow-hidden">
@@ -158,7 +163,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
                   className="absolute left-[3px] w-[5px] rounded-full shadow-lg"
                   style={{
                     background: `linear-gradient(to bottom, ${accentColor}, ${
-                      accentColor === "#ffffff" ? "#e0e0e0" : "#8b5cf6"
+                      accentColor === "#ffffff" ? "#e0e0e0" : "#60a5fa"
                     }, ${accentColor})`,
                     boxShadow: `0 0 12px ${accentColor}30`,
                   }}
@@ -188,8 +193,8 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
                             isSub ? "pl-8 text-[13px]" : "font-medium"
                           } ${
                             isActive
-                              ? "text-[#6f42c1] dark:text-white"
-                              : "text-muted-foreground hover:text-[#6f42c1] dark:hover:text-white hover:bg-purple-50/80 dark:hover:bg-zinc-800"
+                              ? "text-blue-600 dark:text-white"
+                              : "text-muted-foreground hover:text-blue-600 dark:hover:text-white hover:bg-blue-50/80 dark:hover:bg-zinc-800"
                           }`}
                         >
                           <ActiveDot active={isActive} />
