@@ -275,93 +275,103 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
           </AnimatePresence>
 
           {/* Track */}
-          <div className="relative w-full max-w-md mt-1">
-            {/* floating value bubble while dragging */}
-            <AnimatePresence>
-              {dragging && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0, left: `${pct}%` }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ left: { duration: 0 }, default: { duration: 0.15 } }}
-                  className="absolute -top-9 -translate-x-1/2 rounded-md px-2 py-1 text-xs font-bold text-white"
-                  style={{ backgroundColor: seg.color }}
-                >
-                  {value}
-                  <div
-                    className="absolute left-1/2 top-full -translate-x-1/2 h-0 w-0"
-                    style={{
-                      borderLeft: "4px solid transparent",
-                      borderRight: "4px solid transparent",
-                      borderTop: `4px solid ${seg.color}`,
-                    }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+<div className="relative w-full max-w-md mt-1">
+  {/* floating value bubble while dragging */}
+  <AnimatePresence>
+    {dragging && (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0, left: `${pct}%` }}
+        exit={{ opacity: 0, y: 6 }}
+        transition={{ left: { duration: 0 }, default: { duration: 0.15 } }}
+        className="absolute -top-9 -translate-x-1/2 rounded-md px-2 py-1 text-xs font-bold text-white"
+        style={{ backgroundColor: seg.color }}
+      >
+        {value}
+        <div
+          className="absolute left-1/2 top-full -translate-x-1/2 h-0 w-0"
+          style={{
+            borderLeft: "4px solid transparent",
+            borderRight: "4px solid transparent",
+            borderTop: `4px solid ${seg.color}`,
+          }}
+        />
+      </motion.div>
+    )}
+  </AnimatePresence>
 
-            <motion.div
-              ref={trackRef}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              className="group relative h-3 w-full rounded-full cursor-pointer touch-none bg-muted overflow-hidden"
-              animate={{
-                opacity: isUnrated ? 0.6 : 1,
-              }}
-              transition={{ duration: 0.25 }}
-            >
-              {/* flat solid fill, replaces the decorative rainbow gradient */}
-              <motion.div
-                className="absolute inset-y-0 left-0 rounded-full"
-                animate={{ width: `${pct}%`, backgroundColor: seg.color }}
-                transition={dragging ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 30 }}
-              />
+  {/* Pointer-interaction wrapper — NOT clipped, so the thumb (which is
+      taller than the track) and the average marker can render at full
+      size instead of being cut off by the track's rounded-pill clipping. */}
+  <motion.div
+    ref={trackRef}
+    onPointerDown={handlePointerDown}
+    onPointerMove={handlePointerMove}
+    onPointerUp={handlePointerUp}
+    className="group relative h-3 w-full cursor-pointer touch-none"
+    animate={{
+      opacity: isUnrated ? 0.6 : 1,
+    }}
+    transition={{ duration: 0.25 }}
+  >
+    {/* Clipped layer — only the pill background, fill, and tick marks
+        live here, since those are the only pieces that actually need
+        the rounded-pill clipping. */}
+    <div className="absolute inset-0 rounded-full bg-muted overflow-hidden">
+      {/* flat solid fill, replaces the decorative rainbow gradient */}
+      <motion.div
+        className="absolute inset-y-0 left-0 rounded-full"
+        animate={{ width: `${pct}%`, backgroundColor: seg.color }}
+        transition={dragging ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 30 }}
+      />
 
-              {/* tick marks */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-1">
-                {Array.from({ length: MAX - MIN + 1 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-1 w-0.5 rounded-full bg-background/60"
-                  />
-                ))}
-              </div>
+      {/* tick marks */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-1">
+        {Array.from({ length: MAX - MIN + 1 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-1 w-0.5 rounded-full bg-background/60"
+          />
+        ))}
+      </div>
+    </div>
 
-              {/* community average marker */}
-              {average !== null && average > 0 && (
-                <motion.div
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, left: `${((average - MIN) / (MAX - MIN)) * 100}%` }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  title={`Average: ${average.toFixed(1)}`}
-                >
-                  <div className="h-5 w-[3px] rounded-full bg-foreground/70" />
-                </motion.div>
-              )}
+    {/* community average marker — rendered outside the clipped layer so
+        its full height (5) is visible instead of being cropped to the
+        track's 3-unit height. */}
+    {average !== null && average > 0 && (
+      <motion.div
+        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, left: `${((average - MIN) / (MAX - MIN)) * 100}%` }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        title={`Average: ${average.toFixed(1)}`}
+      >
+        <div className="h-5 w-[3px] rounded-full bg-foreground/70" />
+      </motion.div>
+    )}
 
-              {/* thumb */}
-              <motion.div
-                className="absolute top-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-card border-2"
-                style={{ borderColor: seg.color }}
-                animate={{
-                  left: `${pct}%`,
-                  scale: dragging ? 1.3 : 1,
-                  y: "-50%",
-                  x: "-50%",
-                }}
-                transition={thumbTransition}
-              >
-                <motion.div
-                  className="h-2 w-2 rounded-full"
-                  animate={{ backgroundColor: seg.color }}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.div>
-            </motion.div>
-          </div>
-
+    {/* thumb — rendered outside the clipped layer so the full circle
+        is visible instead of being sliced down to the track's height. */}
+    <motion.div
+      className="absolute top-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-card border-2"
+      style={{ borderColor: seg.color }}
+      animate={{
+        left: `${pct}%`,
+        scale: dragging ? 1.3 : 1,
+        y: "-50%",
+        x: "-50%",
+      }}
+      transition={thumbTransition}
+    >
+      <motion.div
+        className="h-2 w-2 rounded-full"
+        animate={{ backgroundColor: seg.color }}
+        transition={{ duration: 0.3 }}
+      />
+    </motion.div>
+  </motion.div>
+</div>
           <div className="h-5">
             <AnimatePresence mode="wait">
               {submitted && (
