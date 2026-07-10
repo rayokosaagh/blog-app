@@ -55,7 +55,11 @@ export default function Carousel({ banners }: CarouselProps) {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl shadow-lg h-48 sm:h-64 md:h-80 lg:h-[420px]"
+      // Fixed heights on mobile/tablet (no sidebar to match there), but on
+      // desktop (lg+) this fills the height of its flex row, which now uses
+      // items-stretch — so it locks to the same height as the Trending/Latest
+      // sidebar cards instead of a hardcoded 420px.
+      className="relative w-full overflow-hidden rounded-2xl shadow-lg h-48 sm:h-64 md:h-80 lg:h-full"
     >
       {/* Slides */}
       <AnimatePresence initial={false} custom={direction} mode="wait">

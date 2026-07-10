@@ -9,7 +9,7 @@ export default async function TrendingNews() {
     Date.now() - TRENDING_WINDOW_DAYS * 24 * 60 * 60 * 1000
   );
 
-  const posts = await prisma.post.findMany({
+  let posts = await prisma.post.findMany({
     where: { published: true, createdAt: { gte: since } },
     orderBy: { views: "desc" },
     take: ITEMS_TO_SHOW,
@@ -19,8 +19,27 @@ export default async function TrendingNews() {
       title: true,
       featuredImage: true,
       views: true,
+      createdAt: true,
     },
   });
+
+  // Fallback: if no posts were published in the last 7 days, show the
+  // all-time most-viewed published posts instead.
+  if (posts.length === 0) {
+    posts = await prisma.post.findMany({
+      where: { published: true },
+      orderBy: { views: "desc" },
+      take: ITEMS_TO_SHOW,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        featuredImage: true,
+        views: true,
+        createdAt: true,
+      },
+    });
+  }
 
   if (posts.length === 0) return null;
 

@@ -10,10 +10,18 @@ interface TrendingPost {
   title: string;
   featuredImage: string | null;
   views: number;
+  createdAt: Date;
 }
 
 interface TrendingNewsListProps {
   posts: TrendingPost[];
+}
+
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
 }
 
 const containerVariants = {
@@ -89,12 +97,17 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
                 )}
               </div>
 
-              {/* Title with a flat underline that draws in on hover */}
+              {/* Title + date, with a flat underline that draws in on hover */}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground leading-snug line-clamp-2 transition-colors duration-200 group-hover:text-accent">
                   {post.title}
                 </p>
-                <span className="block h-[1.5px] w-0 bg-accent mt-1.5 transition-all duration-300 ease-out group-hover:w-6" />
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="h-[1.5px] w-0 bg-accent transition-all duration-300 ease-out group-hover:w-4" />
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(post.createdAt)}
+                  </p>
+                </div>
               </div>
             </Link>
 
