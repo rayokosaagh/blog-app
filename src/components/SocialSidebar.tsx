@@ -12,7 +12,7 @@ export default async function SocialSidebar() {
     <div className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8">
       <div className="flex items-center gap-2">
         <Share2 size={22} className="text-blue-600" />
-        <h2 className="text-2xl font-bold text-foreground">Latest tech, all here</h2>
+        <h2 className="text-2xl font-bold text-foreground">Socials</h2>
       </div>
 
       <div className="border-b border-border mt-4 mb-4" />

@@ -21,6 +21,7 @@ model User {
   posts     Post[]
   ratings   Rating[]
   sessions  Session[]
+  bookmarks Bookmark[]
 }
 
 model Post {
@@ -39,9 +40,23 @@ model Post {
   comments      Comment[]
   ratings       Rating[]
   tags          Tag[]     @relation("PostTags")
+  bookmarks Bookmark[]
 
   @@index([views])
   @@index([createdAt])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }
 
 model Tag {

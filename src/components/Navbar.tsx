@@ -6,11 +6,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Newspaper, Scale, Gauge, LogOut, X } from "lucide-react";
 import SignOutButton from "@/components/SignOutButton";
 import NavbarSearch from "@/components/NavbarSearch";
 import ThemeToggle from "@/components/ThemeToggle";
 import ExploreMenu from "@/components/ExploreMenu";
+import { Newspaper, Scale, Gauge, LogOut, X, Bookmark } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/blog", label: "Posts", authOnly: false, Icon: Newspaper },
@@ -27,18 +27,14 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
 
-  // Portals must only run client-side, after mount, since document.body
-  // isn't available during SSR.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Close menus on navigation
   useEffect(() => {
     setIsOpen(false);
     setIsProfileOpen(false);
   }, [pathname]);
 
-  // Lock scrolling when mobile menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -48,26 +44,24 @@ export default function Navbar() {
     return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
 
-  // Track scroll position
-useEffect(() => {
-  let ticking = false;
-  const handleScroll = () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      setIsScrolled((prev) => {
-        if (prev) return window.scrollY > 8;
-        return window.scrollY > 20;
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setIsScrolled((prev) => {
+          if (prev) return window.scrollY > 8;
+          return window.scrollY > 20;
+        });
+        ticking = false;
       });
-      ticking = false;
-    });
-  };
-  window.addEventListener("scroll", handleScroll, { passive: true });
-  handleScroll();
-  return () => window.removeEventListener("scroll", handleScroll);
-}, []);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  // Click outside listener for profile dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -92,12 +86,6 @@ useEffect(() => {
     isScrolled ? "px-3 pt-3" : "bg-white/90 dark:bg-[#0a1322]/90"
   }`}
 >
-      {/* Top blur strip — fills only the gap between the page's top edge and
-          the pill's top edge (height matches the header's own pt-3). Inset
-          left/right so it stays clear of the pill's rounded corners — a
-          full-width strip would overhang those curves and show up as a
-          small square patch right at the corners (where the pill's edge
-          recedes inward but the strip above stayed square). */}
       <div
         className={`pointer-events-none absolute left-10 right-10 sm:left-14 sm:right-14 top-0 transition-[height,opacity] duration-500 ease-out ${
           isScrolled
@@ -106,16 +94,6 @@ useEffect(() => {
         }`}
       />
 
-      {/* Full-bleed sheen for the flat (unscrolled) state — lives on the
-          header itself so it (and the header's background above) spans the
-          entire viewport width, not just the mx-auto max-w-[1560px] card
-          below. Previously this sheen only lived inside that card, and the
-          card carried its own background too — so on viewports wider than
-          1560px, the leftover margin outside the card showed the bare page
-          background (no bg, no sheen) while the card read visibly lighter.
-          That mismatch was the seam. Gated to !isScrolled because in the
-          scrolled/pill state the margins around the floating pill are
-          supposed to show the page background — that's intentional. */}
       {!isScrolled && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
@@ -129,26 +107,17 @@ useEffect(() => {
       : "rounded-none"
   }`}
 >
-        {/* Specular sheen — the glass "catches the light" along the top edge.
-            Clipped in its own overflow-hidden wrapper (rounded to match the
-            card shape) so it never needs to clip the rest of the header —
-            that overflow-hidden used to also clip the profile dropdown.
-            Only rendered in the scrolled/pill state now — the flat state's
-            sheen is handled at the header level above so it can span the
-            full viewport width instead of just this max-w card. */}
         {isScrolled && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
             <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
           </div>
         )}
 
-        {/* Top row — logo, desktop search/links, mobile hamburger */}
         <div
           className={`relative z-10 flex w-full items-center justify-between gap-4 px-6 [transition:height_500ms_ease-out] ${
             isScrolled ? "h-14" : "h-16"
           }`}
         >
-        {/* Left: Logo */}
         <motion.div
           className="relative z-10 flex-shrink-0"
           whileHover={{ scale: 1.05 }}
@@ -162,10 +131,6 @@ useEffect(() => {
           </Link>
         </motion.div>
 
-        {/* Center: Dynamic Search Bar — visible at every breakpoint now.
-            flex-1 + min-w-0 lets it shrink to fit whatever room is left
-            between the logo and the hamburger/auth controls on mobile,
-            instead of needing its own separate row. */}
         <div
           className={`relative z-10 flex flex-1 min-w-0 px-2 md:px-4 transition-all duration-500 ease-in-out w-full ${
             isScrolled ? "md:max-w-3xl" : "md:max-w-2xl"
@@ -174,7 +139,6 @@ useEffect(() => {
           <NavbarSearch />
         </div>
 
-        {/* Right: Desktop Links & Auth */}
         <nav className="relative z-10 hidden md:flex items-center text-sm font-medium">
           <div className="flex items-center gap-2 mr-6">
             <ThemeToggle />
@@ -223,12 +187,8 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Thin divider — separates browsing/nav controls from the
-              account cluster so the two groups read as distinct regions
-              instead of one long unbroken row. */}
           <div className="w-px h-5 bg-gray-300/60 dark:bg-white/10 mr-6" />
 
-          {/* Conditional Auth UI */}
           {status === "loading" ? (
             <div className="w-9 h-9 rounded-full bg-gray-200/60 dark:bg-white/10 animate-pulse" />
           ) : session ? (
@@ -248,7 +208,6 @@ useEffect(() => {
                 )}
               </motion.button>
 
-              {/* Profile Dropdown — glass card matching the header's language */}
               <AnimatePresence>
                 {isProfileOpen && (
                   <motion.div
@@ -259,7 +218,6 @@ useEffect(() => {
                     className="absolute left-1/2 -translate-x-1/2 mt-3 w-64 origin-top"
                   >
                     <div className="relative overflow-hidden rounded-2xl bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-                      {/* specular sheen, matches header */}
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
 
                       <div className="relative flex items-center gap-3 px-4 py-3.5 border-b border-white/40 dark:border-white/10">
@@ -279,6 +237,16 @@ useEffect(() => {
                       </div>
 
                       <div className="relative px-2 py-2">
+                        <Link
+                          href="/bookmarks"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/10 rounded-md transition-colors font-medium"
+                        >
+                          <Bookmark className="h-4 w-4" />
+                          Bookmarks
+                        </Link>
+                      </div>
+                      <div className="relative px-2 pb-2">
                         <SignOutButton className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 rounded-md transition-colors text-left font-medium cursor-pointer">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -303,7 +271,6 @@ useEffect(() => {
           )}
         </nav>
 
-        {/* Mobile Hamburger Button */}
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
           whileHover={{ scale: 1.1, rotate: 10 }}
@@ -325,23 +292,10 @@ useEffect(() => {
       </div>
     </header>
 
-    {/* Mobile Right-Side Sliding Panel + Backdrop — rendered via a portal
-        into document.body, NOT inside <header>. When the header gets
-        backdrop-blur-2xl on scroll, that backdrop-filter creates a new
-        containing block for position:fixed descendants (same effect as
-        transform), which was clipping this "h-full" panel down to the
-        header's own (much shorter) box instead of the real viewport.
-
-        Redesigned as a narrow side drawer (~78% width, capped at 300px)
-        instead of the old max-w-sm (384px) panel that swallowed most of
-        the screen on small phones. Rounded left edge + inset margin make
-        it read as a floating card peeking in from the side, and the
-        slide-in now uses a spring for a springier, more fluid feel. */}
     {mounted && createPortal(
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="mobile-nav-backdrop"
               initial={{ opacity: 0 }}
@@ -352,8 +306,6 @@ useEffect(() => {
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Sliding panel — transform lives on this wrapper only, blur/tint
-                live on the untransformed child so browsers don't drop the blur. */}
             <motion.div
               key="mobile-nav-panel"
               initial={{ x: "100%" }}
@@ -363,10 +315,8 @@ useEffect(() => {
               className="md:hidden fixed top-0 right-0 z-[111] h-full w-[78%] max-w-[300px]"
             >
               <div className="relative h-full bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border-l border-white/60 dark:border-white/10 rounded-l-3xl shadow-[-20px_0_50px_rgba(0,0,0,0.15)] dark:shadow-[-20px_0_50px_rgba(0,0,0,0.4)] flex flex-col overflow-y-auto">
-                {/* specular sheen */}
                 <div className="pointer-events-none absolute inset-0 rounded-l-3xl overflow-hidden bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
 
-                {/* Header row: compact profile identity when signed in, otherwise brand */}
                 <div className="relative flex items-center justify-between px-4 py-4 border-b border-white/40 dark:border-white/10">
                   {session ? (
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -429,9 +379,24 @@ useEffect(() => {
                         </motion.div>
                       );
                     })}
+
+                    {session && (
+                      <motion.div whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
+                        <Link
+                          href="/bookmarks"
+                          className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl transition-colors ${
+                            isActiveLink("/bookmarks")
+                              ? "bg-white/60 dark:bg-white/10 text-[#6f42c1] dark:text-white backdrop-blur-md"
+                              : "text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10"
+                          }`}
+                        >
+                          <Bookmark className="h-4 w-4 shrink-0" />
+                          <span className="truncate">Bookmarks</span>
+                        </Link>
+                      </motion.div>
+                    )}
                   </nav>
 
-                  {/* Mobile Auth UI */}
                   <div className="mt-auto pt-4">
                     {session ? (
                       <SignOutButton className="flex justify-center items-center gap-2 w-full py-2.5 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-all duration-200 font-medium text-sm cursor-pointer">

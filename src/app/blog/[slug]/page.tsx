@@ -16,6 +16,13 @@ import RelatedArticles from "@/components/RelatedArticles";
 import TagIcon from "@/components/TagIcon";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import ViewTracker from "@/components/ViewTracker";
+import { FadeIn } from "@/components/AnimatedSection";
+import { ArrowLeft, Clock } from "lucide-react";
+import ReadingProgressBar from "@/components/ReadingProgressBar";
+import ParallaxHeroImage from "@/components/ParallaxHeroImage";
+import ArticleImageLightbox from "@/components/ArticleImageLightbox";
+import { auth } from "@/auth";
+import BookmarkButton from "@/components/BookmarkButton";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -73,9 +80,6 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
   return { modifiedHtml, toc };
 }
 
-// Strips trailing empty paragraphs / stray <br> blocks left by the
-// rich-text editor so the card doesn't end with a large dead gap
-// before the "All posts / Written by" row.
 function stripTrailingEmptyBlocks(html: string): string {
   return html.replace(
     /(?:\s*<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*)+$/gi,
@@ -150,6 +154,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   if (!post || !post.published) notFound();
 
+  const session = await auth();
+  const isBookmarked = session?.user
+    ? !!(await prisma.bookmark.findUnique({
+        where: { userId_postId: { userId: session.user.id, postId: post.id } },
+      }))
+    : false;
+
   const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
 
   const relatedPosts = await prisma.post.findMany({
@@ -180,18 +191,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
   const tagIds = post.tags.map((t) => t.id);
 
-const relatedByTags = tagIds.length > 0
-  ? await prisma.post.findMany({
-      where: {
-        published: true,
-        NOT: { id: post.id },
-        tags: { some: { id: { in: tagIds } } },
-      },
-      include: { author: true, tags: true }, // ← added tags: true
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    })
-  : [];
+  const relatedByTags = tagIds.length > 0
+    ? await prisma.post.findMany({
+        where: {
+          published: true,
+          NOT: { id: post.id },
+          tags: { some: { id: { in: tagIds } } },
+        },
+        include: { author: true, tags: true },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      })
+    : [];
 
   const readingTime = Math.max(
     1,
@@ -204,7 +215,6 @@ const relatedByTags = tagIds.length > 0
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
 
-  // Only show "Last updated" if the post was actually edited after creation.
   const wasUpdated =
     post.updatedAt &&
     new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
@@ -212,63 +222,92 @@ const relatedByTags = tagIds.length > 0
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
       <ViewTracker postId={post.id} />
+      <ReadingProgressBar />
       <Navbar />
 
       {/* Hero Header */}
       <div className="relative w-full h-[420px] md:h-[500px] overflow-hidden">
-        {post.featuredImage ? (
-          <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700" />
-        )}
+        <style>{`
+          @keyframes heroZoomIn {
+            from { transform: scale(1.09); }
+            to { transform: scale(1); }
+          }
+          .hero-zoom {
+            animation: heroZoomIn 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          }
+        `}</style>
+
+        <ParallaxHeroImage src={post.featuredImage} alt={post.title} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
 
-        <div className="absolute top-6 left-0 right-0 max-w-4xl mx-auto px-6 z-20">
-          <nav className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card/80 backdrop-blur-md border border-border rounded-full text-sm text-muted-foreground font-medium shadow-lg">
-            <Link href="/" className="hover:text-foreground transition-all">Home</Link>
-            <span className="text-border text-xs">/</span>
-            <Link href="/blog" className="hover:text-foreground transition-all">Blog</Link>
-            <span className="text-border text-xs">/</span>
-            <span className="text-foreground truncate max-w-[250px]">{post.title}</span>
-          </nav>
-        </div>
+        <FadeIn>
+          <div className="absolute top-6 left-0 right-0 max-w-4xl mx-auto px-6 z-20">
+            <nav className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card/80 backdrop-blur-md border border-border rounded-full text-sm text-muted-foreground font-medium shadow-lg transition-shadow duration-300 hover:shadow-xl">
+              <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+              <span className="text-border text-xs">/</span>
+              <Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link>
+              <span className="text-border text-xs">/</span>
+              <span className="text-foreground truncate max-w-[250px]">{post.title}</span>
+            </nav>
+          </div>
+        </FadeIn>
 
         <div className="absolute bottom-0 left-0 right-0 max-w-4xl mx-auto px-6 pb-10">
           {orderedTags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              {orderedTags.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/blog?tag=${t.slug}`}
-                  className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full border border-white/25 transition-colors"
-                >
-                  <TagIcon icon={t.icon} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
-                  {t.name}
-                </Link>
-              ))}
-            </div>
+            <FadeIn delay={0.1}>
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {orderedTags.map((t) => (
+                  <Link
+                    key={t.id}
+                    href={`/blog?tag=${t.slug}`}
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full border border-white/25 transition-all duration-200 hover:scale-105 active:scale-95"
+                  >
+                    <TagIcon icon={t.icon} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
+                    {t.name}
+                  </Link>
+                ))}
+              </div>
+            </FadeIn>
           )}
-          <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5">{post.title}</h1>
 
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-white/60 shadow-xl shrink-0 bg-muted">
-              {post.author.image ? (
-                <img src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl">
-                  {post.author.name?.charAt(0).toUpperCase() || "U"}
+          <FadeIn delay={0.2}>
+            <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5">{post.title}</h1>
+          </FadeIn>
+
+          <FadeIn delay={0.3}>
+            <div className="flex items-center gap-4 w-full justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-white/60 shadow-xl shrink-0 bg-muted transition-transform duration-300 hover:scale-105">
+                  {post.author.image ? (
+                    <img src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl">
+                      {post.author.name?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div>
-              <p className="text-white font-semibold text-lg">{post.author.name}</p>
-              <div className="flex items-center gap-2 text-white/70 text-sm">
-                <time>{formatDate(post.createdAt)}</time>
-                <span>·</span>
-                <span>{readingTime} min read</span>
+                <div className="min-w-0">
+                  <p className="text-white font-semibold text-lg truncate">{post.author.name}</p>
+                  <div className="flex items-center gap-2 text-white/70 text-sm">
+                    <time>{formatDate(post.createdAt)}</time>
+                    <span>·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {readingTime} min read
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <BookmarkButton
+                  postId={post.id}
+                  initialBookmarked={isBookmarked}
+                  className="bg-white/15 hover:bg-white/25 backdrop-blur-md !text-white rounded-full px-3 py-2 border border-white/25"
+                />
               </div>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </div>
 
@@ -276,119 +315,147 @@ const relatedByTags = tagIds.length > 0
       <main className="w-full max-w-[1560px] mx-auto px-6 -mt-6 relative z-10 pb-8 md:pb-12 flex flex-col 2xl:flex-row justify-center gap-8 items-start">
         {/* TOC Sidebar */}
         {toc.length > 0 && (
-          <div className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
+          <FadeIn className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
             <TocSidebar toc={toc} title={post.title} />
-          </div>
+          </FadeIn>
         )}
 
         {/* Article Content */}
-        <div className="w-full max-w-4xl bg-card border border-border rounded-2xl shadow-xl px-8 md:px-10 pt-12 pb-8 transition-colors duration-300">
-          {/* Custom Typography + Image Styling */}
-          <style>{`
-            .rich-text-render { color: var(--foreground); }
-            .rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.35rem; font-size: 1.0625rem; }
-            .rich-text-render p:empty,
-            .rich-text-render p:has(> br:only-child) { display: none; }
-            .rich-text-render > *:last-child { margin-bottom: 0; }
-            .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {
-              color: var(--foreground); font-weight: 700; margin-top: 2.25rem; margin-bottom: 0.85rem; scroll-margin-top: 100px;
-            }
-            .rich-text-render h1 { font-size: 1.875rem; }
-            .rich-text-render h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-            .rich-text-render h3 { font-size: 1.25rem; }
+        <FadeIn delay={0.1} className="w-full max-w-4xl">
+          <div className="bg-card border border-border rounded-2xl shadow-xl px-8 md:px-10 pt-12 pb-8 transition-shadow duration-300 hover:shadow-2xl">
+            <style>{`
+              .rich-text-render { color: var(--foreground); }
+              .rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.35rem; font-size: 1.0625rem; }
+              .rich-text-render p:empty,
+              .rich-text-render p:has(> br:only-child) { display: none; }
+              .rich-text-render > *:last-child { margin-bottom: 0; }
+              .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {
+                color: var(--foreground); font-weight: 700; margin-top: 2.25rem; margin-bottom: 0.85rem; scroll-margin-top: 100px;
+              }
+              .rich-text-render h1 { font-size: 1.875rem; }
+              .rich-text-render h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+              .rich-text-render h3 { font-size: 1.25rem; }
 
-            .rich-text-render img {
-              max-width: 100%;
-              height: auto;
-              border-radius: 12px;
-              margin: 2rem auto;
-              display: block;
-              box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            }
+              .rich-text-render img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 12px;
+                margin: 2rem auto;
+                display: block;
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+                transition: transform 0.4s ease;
+              }
+              .rich-text-render img:hover { transform: scale(1.015); }
 
-            .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
-            .rich-text-render ul { list-style-type: disc; }
-            .rich-text-render ol { list-style-type: decimal; }
-            .rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
-            .rich-text-render li::marker { color: #3b82f6; }
+              .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
+              .rich-text-render ul { list-style-type: disc; }
+              .rich-text-render ol { list-style-type: decimal; }
+              .rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
+              .rich-text-render li::marker { color: #3b82f6; }
 
-            .rich-text-render table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
-            .rich-text-render th, .rich-text-render td { padding: 0.85rem 1rem; border: 1px solid var(--border); text-align: left; }
-            .rich-text-render th { background: rgba(0,0,0,0.03); font-weight: 600; }
-            .dark .rich-text-render th { background: rgba(255,255,255,0.03); }
-            .rich-text-render tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
-            .dark .rich-text-render tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
-          `}</style>
+              .rich-text-render table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
+              .rich-text-render th, .rich-text-render td { padding: 0.85rem 1rem; border: 1px solid var(--border); text-align: left; }
+              .rich-text-render th { background: rgba(0,0,0,0.03); font-weight: 600; }
+              .dark .rich-text-render th { background: rgba(255,255,255,0.03); }
+              .rich-text-render tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
+              .dark .rich-text-render tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+            `}</style>
 
-          {/* Main Article Content */}
-          <div className="overflow-x-auto rounded-xl">
-            <div
-              className="rich-text-render prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: modifiedHtml }}
-              suppressHydrationWarning
-            />
-          </div>
-
-          {/* Author Bio */}
-          <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
-            <Link href="/blog" className="inline-flex items-center gap-2 text-accent hover:underline font-medium text-sm transition-colors">
-              ← All posts
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-2xl overflow-hidden bg-muted ring-1 ring-border shrink-0">
-                {post.author.image ? (
-                  <img
-                    src={post.author.image}
-                    alt={post.author.name || "Author"}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
-                    {post.author.name?.charAt(0).toUpperCase() || "?"}
-                  </div>
-                )}
+            <ArticleImageLightbox>
+              <div className="overflow-x-auto rounded-xl">
+                <div
+                  className="rich-text-render prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{ __html: modifiedHtml }}
+                  suppressHydrationWarning
+                />
               </div>
+            </ArticleImageLightbox>
 
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Written by</p>
-                <p className="text-sm font-semibold text-foreground">{post.author.name}</p>
-                {wasUpdated && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Last updated {formatDate(post.updatedAt)}
-                  </p>
-                )}
+            {/* Author Bio */}
+            <div className="mt-10 pt-6 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-4 justify-between bg-muted/40 border border-border/60 rounded-2xl px-5 py-4 sm:px-6 sm:py-5">
+                <Link href="/blog" className="group inline-flex items-center gap-2 text-accent hover:underline font-medium text-sm transition-colors shrink-0">
+                  <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                  All posts
+                </Link>
+
+                <div className="hidden sm:block h-8 w-px bg-border" />
+
+                <BookmarkButton
+                  postId={post.id}
+                  initialBookmarked={isBookmarked}
+                  showLabel
+                  className="px-3 py-1.5 rounded-full border border-border hover:border-[#6f42c1] dark:hover:border-white shrink-0"
+                />
+
+                <div className="hidden sm:block h-8 w-px bg-border" />
+
+                <div className="flex items-center gap-3.5 w-full sm:w-auto justify-center sm:justify-end">
+                  <div className="w-11 h-11 rounded-full overflow-hidden bg-muted ring-2 ring-border shrink-0 transition-transform duration-300 hover:scale-105">
+                    {post.author.image ? (
+                      <img
+                        src={post.author.image}
+                        alt={post.author.name || "Author"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
+                        {post.author.name?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-left sm:text-right leading-tight">
+                    <p className="text-xs text-muted-foreground">Written by</p>
+                    <p className="text-sm font-semibold text-foreground">{post.author.name}</p>
+                    {wasUpdated && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Last updated {formatDate(post.updatedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </FadeIn>
 
         {/* Social Sidebar */}
-        <div className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
+        <FadeIn delay={0.2} className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
           <SocialSidebar />
-        </div>
+        </FadeIn>
       </main>
 
       {/* POLL */}
-      <div className="max-w-4xl mx-auto px-6 mt-6 mb-6 md:mt-8 md:mb-8">
-        <Poll />
-      </div>
+      <FadeIn>
+        <div className="max-w-4xl mx-auto px-6 mt-6 mb-6 md:mt-8 md:mb-8">
+          <Poll />
+        </div>
+      </FadeIn>
 
       {/* RATING */}
-      <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
-        <RatingMeter postId={post.id} />
-      </div>
+      <FadeIn>
+        <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
+          <RatingMeter postId={post.id} />
+        </div>
+      </FadeIn>
 
       {/* COMMENTS */}
-      <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
-        <CommentSection postId={post.id} />
-      </div>
+      <FadeIn>
+        <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
+          <CommentSection postId={post.id} />
+        </div>
+      </FadeIn>
 
       {/* Keep Reading */}
-      <KeepReading relatedPosts={relatedPosts} />
+      <FadeIn>
+        <KeepReading relatedPosts={relatedPosts} />
+      </FadeIn>
 
       {/* Related Articles (tag-based) */}
-<RelatedArticles posts={relatedByTags} />
+      <FadeIn>
+        <RelatedArticles posts={relatedByTags} />
+      </FadeIn>
 
       <Footer />
       <MobileNav toc={toc} />
