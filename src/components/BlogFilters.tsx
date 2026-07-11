@@ -34,12 +34,12 @@ interface BlogFiltersProps {
 const fieldsContainerVariants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.05, delayChildren: 0.05 },
   },
 };
 
 const fieldVariants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, y: 8 },
   visible: {
     opacity: 1,
     y: 0,
@@ -70,12 +70,11 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [author, setAuthor] = useState(searchParams.get("author") ?? "");
   const [month, setMonth] = useState(searchParams.get("month") ?? "");
   const [year, setYear] = useState(searchParams.get("year") ?? "");
-  // Multiple tags can now be selected at once.
   const [selectedTags, setSelectedTags] = useState<string[]>(() =>
     parseTags(searchParams.get("tag"))
   );
@@ -128,15 +127,11 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
     const qs = buildQuery();
     router.push(qs ? `/blog?${qs}` : "/blog");
 
-    // brief "Applied" confirmation on the submit button
     if (appliedTimeout.current) clearTimeout(appliedTimeout.current);
     setApplied(true);
     appliedTimeout.current = setTimeout(() => setApplied(false), 1200);
   }
 
-  // Toggle a tag on/off locally, keeping any other already-selected tags.
-  // Navigation only happens when "Apply Filters" is submitted, same as
-  // every other field in this form.
   function toggleTag(slug: string) {
     const next = selectedTags.includes(slug)
       ? selectedTags.filter((s) => s !== slug)
@@ -155,36 +150,22 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="bg-card border border-border rounded-2xl p-5 mt-6 shadow-sm dark:shadow-none"
+      className="bg-card border border-border rounded-3xl px-6 py-4 mt-8 shadow-sm dark:shadow-none"
     >
-      {/* Header / toggle */}
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
         className="w-full flex items-center justify-between gap-3 group"
       >
-        <div className="flex items-center gap-2.5">
-          <motion.span
-            whileHover={{ rotate: isOpen ? 0 : 10 }}
-            transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-accent/10 text-accent overflow-hidden"
-          >
-            {hasActiveFilters && (
-              <motion.span
-                className="absolute inset-0 rounded-lg bg-accent/25"
-                animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              />
-            )}
-            <SlidersHorizontal className="w-4 h-4 relative z-10" />
-          </motion.span>
-          <span className="text-sm font-semibold text-foreground">
-            Filters
+        <div className="flex items-center gap-3">
+          <span className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+            <SlidersHorizontal className="w-4 h-4" />
           </span>
+          <span className="text-sm font-semibold text-foreground">Filters</span>
           <AnimatePresence mode="wait">
             {hasActiveFilters && (
               <motion.span
@@ -193,7 +174,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-semibold"
+                className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-[11px] font-semibold"
               >
                 {activeFilterCount}
               </motion.span>
@@ -210,7 +191,6 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
         </motion.div>
       </button>
 
-      {/* Collapsible content */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -226,7 +206,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
               variants={fieldsContainerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-5"
+              className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-6"
             >
               {/* Text search */}
               <motion.div variants={fieldVariants} className="md:col-span-2">
@@ -234,15 +214,13 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                   Search
                 </label>
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground peer-focus:text-accent transition-colors" />
-                  <motion.input
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.15 }}
+                  <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground peer-focus:text-blue-600 dark:peer-focus:text-blue-400 transition-colors" />
+                  <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search title or content..."
-                    className="peer w-full border border-border rounded-xl pl-9 pr-9 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
+                    className="peer w-full border border-transparent bg-background rounded-2xl pl-10 pr-9 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 text-foreground"
                   />
                   <AnimatePresence>
                     {search && (
@@ -256,7 +234,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setSearch("")}
                         aria-label="Clear search"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
                         <X className="w-3.5 h-3.5" />
                       </motion.button>
@@ -271,12 +249,10 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                   Author
                 </label>
                 <div className="relative">
-                  <motion.select
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.15 }}
+                  <select
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
-                    className="peer w-full appearance-none border border-border rounded-xl pl-3.5 pr-9 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
+                    className="peer w-full appearance-none border border-transparent bg-background rounded-2xl pl-4 pr-9 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-foreground"
                   >
                     <option value="">All authors</option>
                     {authors.map((a) => (
@@ -284,8 +260,8 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                         {a.name ?? "Unknown"}
                       </option>
                     ))}
-                  </motion.select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-accent" />
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-blue-600 dark:peer-focus:text-blue-400" />
                 </div>
               </motion.div>
 
@@ -296,21 +272,19 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                     Month
                   </label>
                   <div className="relative">
-                    <motion.select
-                      whileFocus={{ scale: 1.01 }}
-                      transition={{ duration: 0.15 }}
+                    <select
                       value={month}
                       onChange={(e) => setMonth(e.target.value)}
-                      className="peer w-full appearance-none border border-border rounded-xl pl-3 pr-8 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
+                      className="peer w-full appearance-none border border-transparent bg-background rounded-2xl pl-3.5 pr-8 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-foreground"
                     >
-                      <option value="">Any month</option>
+                      <option value="">Any</option>
                       {MONTHS.map((m, i) => (
                         <option key={m} value={i + 1}>
                           {m}
                         </option>
                       ))}
-                    </motion.select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-accent" />
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground peer-focus:text-blue-600 dark:peer-focus:text-blue-400" />
                   </div>
                 </div>
                 <div>
@@ -318,21 +292,19 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                     Year
                   </label>
                   <div className="relative">
-                    <motion.select
-                      whileFocus={{ scale: 1.01 }}
-                      transition={{ duration: 0.15 }}
+                    <select
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
-                      className="peer w-full appearance-none border border-border rounded-xl pl-3 pr-8 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent text-foreground"
+                      className="peer w-full appearance-none border border-transparent bg-background rounded-2xl pl-3.5 pr-8 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-foreground"
                     >
-                      <option value="">Any year</option>
+                      <option value="">Any</option>
                       {years.map((y) => (
                         <option key={y} value={y}>
                           {y}
                         </option>
                       ))}
-                    </motion.select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 peer-focus:rotate-180 peer-focus:text-accent" />
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground peer-focus:text-blue-600 dark:peer-focus:text-blue-400" />
                   </div>
                 </div>
                 <AnimatePresence>
@@ -345,7 +317,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                       transition={{ duration: 0.2 }}
                       className="col-span-2 overflow-hidden"
                     >
-                      <span className="inline-block mt-1 text-[11px] font-medium text-accent">
+                      <span className="inline-block mt-1 text-[11px] font-medium text-blue-600 dark:text-blue-400">
                         Showing {periodLabel}
                       </span>
                     </motion.div>
@@ -356,7 +328,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
               {/* Tag pills + actions */}
               <motion.div
                 variants={fieldVariants}
-                className="md:col-span-4 flex items-start justify-between flex-wrap gap-3 pt-1 border-t border-border mt-1"
+                className="md:col-span-4 flex items-start justify-between flex-wrap gap-3 pt-3 border-t border-border mt-1"
               >
                 <div className="flex flex-wrap gap-2 pt-4">
                   {tags.map((t) => {
@@ -367,46 +339,23 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                         key={t.id}
                         onClick={() => toggleTag(t.slug)}
                         aria-pressed={isActive}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.93 }}
-                        className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-200 ${
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.96 }}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium transition-colors duration-200 ${
                           isActive
-                            ? "bg-accent text-white border-accent"
-                            : "bg-background text-muted-foreground border-border hover:bg-foreground/5"
+                            ? "bg-blue-600 dark:bg-blue-500 text-white"
+                            : "bg-background text-muted-foreground hover:bg-foreground/5"
                         }`}
                       >
-                        {/* Brief pulse the moment a tag becomes active */}
-                        {isActive && (
-                          <motion.span
-                            key={`ring-${t.id}`}
-                            initial={{ opacity: 0.5, scale: 1 }}
-                            animate={{ opacity: 0, scale: 1.7 }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                            className="absolute inset-0 rounded-full bg-accent pointer-events-none"
+                        {isActive ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <TagIcon
+                            icon={t.icon}
+                            className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
                           />
                         )}
-                        <span className="relative z-10 inline-flex items-center gap-1.5">
-                          <AnimatePresence mode="wait" initial={false}>
-                            <motion.span
-                              key={isActive ? "check" : "icon"}
-                              initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                              exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                              transition={{ duration: 0.2 }}
-                              className="inline-flex w-3.5 h-3.5"
-                            >
-                              {isActive ? (
-                                <Check className="w-3.5 h-3.5" />
-                              ) : (
-                                <TagIcon
-                                  icon={t.icon}
-                                  className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
-                                />
-                              )}
-                            </motion.span>
-                          </AnimatePresence>
-                          {t.name}
-                        </span>
+                        {t.name}
                       </motion.button>
                     );
                   })}
@@ -425,15 +374,9 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         transition={{ duration: 0.2 }}
-                        className="group inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2.5 whitespace-nowrap overflow-hidden"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-3 whitespace-nowrap overflow-hidden"
                       >
-                        <motion.span
-                          className="inline-flex"
-                          whileHover={{ rotate: -180 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                        </motion.span>
+                        <RotateCcw className="w-3.5 h-3.5" />
                         Clear all
                       </motion.button>
                     )}
@@ -442,7 +385,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                     type="submit"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.96 }}
-                    className="relative bg-accent text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-all min-w-[128px] flex items-center justify-center overflow-hidden"
+                    className="relative bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-2xl text-sm font-medium hover:opacity-90 transition-all min-w-[130px] flex items-center justify-center overflow-hidden"
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span

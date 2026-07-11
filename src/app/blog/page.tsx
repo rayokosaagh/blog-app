@@ -27,9 +27,6 @@ export default async function BlogPage({
     monthNum !== undefined && !isNaN(monthNum) && monthNum >= 1 && monthNum <= 12;
   const hasValidYear = yearNum !== undefined && !isNaN(yearNum);
 
-  // month + year, or year alone -> a plain gte/lt range Prisma can filter directly.
-  // month alone (no year) can't be a single range since it repeats every year,
-  // so that case falls through to a raw SQL EXTRACT(MONTH ...) filter below.
   let createdAtFilter: Prisma.DateTimeFilter | undefined;
   if (hasValidYear && hasValidMonth) {
     createdAtFilter = {
@@ -44,11 +41,8 @@ export default async function BlogPage({
   }
 
   const monthOnly = hasValidMonth && !hasValidYear;
-
   const hasFilters = Boolean(search || tagSlugs.length > 0 || author || month || year);
 
-  // If filtering by month-only, first grab matching post IDs via raw SQL,
-  // then constrain the main findMany with an `id: { in: ... }` filter.
   let monthOnlyIds: string[] | undefined;
   if (monthOnly) {
     const rows = await prisma.$queryRaw<{ id: string }[]>`
@@ -89,7 +83,6 @@ export default async function BlogPage({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    // Distinct years that have at least one published post, newest first.
     prisma.$queryRaw<{ year: number }[]>`
       SELECT DISTINCT EXTRACT(YEAR FROM "createdAt")::int AS year
       FROM "Post"
@@ -105,24 +98,29 @@ export default async function BlogPage({
       : [new Date().getFullYear()];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Navbar />
 
       {/* Header */}
-      <header className="max-w-6xl mx-auto px-6 pt-12 pb-8">
-        <div className="mb-6">
-          <nav className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card border border-border rounded-full text-sm text-muted-foreground font-medium shadow-sm dark:shadow-none">
-            <Link href="/" className="hover:text-accent transition-colors">
+      <header className="max-w-6xl mx-auto px-6 pt-16 pb-10 relative">
+        {/* Soft ambient glow behind the headline — the one signature touch */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-[520px] h-[280px] rounded-full bg-blue-500/10 blur-3xl"
+        />
+
+        <div className="relative">
+          <nav className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-xs text-muted-foreground font-medium shadow-sm dark:shadow-none mb-8">
+            <Link href="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Home
             </Link>
-            <span className="text-border text-xs">/</span>
-
+            <span className="text-border">/</span>
             {hasFilters ? (
               <>
-                <Link href="/blog" className="hover:text-accent transition-colors">
+                <Link href="/blog" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Blog
                 </Link>
-                <span className="text-border text-xs">/</span>
+                <span className="text-border">/</span>
                 <span className="text-foreground truncate max-w-[200px] md:max-w-[400px] inline-flex items-center gap-1.5">
                   {search ? (
                     `Search: ${search}`
@@ -149,41 +147,36 @@ export default async function BlogPage({
               <span className="text-foreground">Blog</span>
             )}
           </nav>
+
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.05] flex items-center gap-3 flex-wrap">
+            {search
+              ? `Results for "${search}"`
+              : activeTags.length > 0
+              ? activeTags.map((t, i) => (
+                  <span key={t.id} className="inline-flex items-center gap-3">
+                    <TagIcon
+                      icon={t.icon}
+                      className="inline-flex w-9 h-9 md:w-12 md:h-12 [&>svg]:w-full [&>svg]:h-full text-blue-600 dark:text-blue-400"
+                    />
+                    {t.name}
+                    {i < activeTags.length - 1 && (
+                      <span className="text-muted-foreground text-2xl font-normal">
+                        +
+                      </span>
+                    )}
+                  </span>
+                ))
+              : activeAuthor
+              ? `Posts by ${activeAuthor.name}`
+              : "Articles & Insights"}
+          </h1>
+
+          <BlogFilters tags={allTags} authors={authors} years={availableYears} />
         </div>
-
-        <h1 className="text-4xl font-bold text-foreground flex items-center gap-2.5 flex-wrap">
-          {search
-            ? `Results for "${search}"`
-            : activeTags.length > 0
-            ? activeTags.map((t, i) => (
-                <span key={t.id} className="inline-flex items-center gap-2.5">
-                  <TagIcon
-                    icon={t.icon}
-                    className="inline-flex w-8 h-8 [&>svg]:w-full [&>svg]:h-full"
-                  />
-                  {t.name}
-                  {i < activeTags.length - 1 && (
-                    <span className="text-muted-foreground text-2xl font-normal">
-                      +
-                    </span>
-                  )}
-                </span>
-              ))
-            : activeAuthor
-            ? `Posts by ${activeAuthor.name}`
-            : "Blog"}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {posts.length} {posts.length === 1 ? "post" : "posts"}{" "}
-          {hasFilters ? "found" : "published"}
-        </p>
-
-        {/* Advanced filters */}
-        <BlogFilters tags={allTags} authors={authors} years={availableYears} />
       </header>
 
       {/* Posts */}
-      <main className="max-w-6xl mx-auto px-6 pb-20">
+      <main className="max-w-6xl mx-auto px-6 pb-24">
         <AnimatedPostsGrid
           posts={posts}
           hasFilters={hasFilters}
