@@ -23,6 +23,11 @@ import ParallaxHeroImage from "@/components/ParallaxHeroImage";
 import ArticleImageLightbox from "@/components/ArticleImageLightbox";
 import { auth } from "@/auth";
 import BookmarkButton from "@/components/BookmarkButton";
+import { parseKeyHighlightsBlock } from "@/components/KeyHighlights";
+import { parseAlsoReadBlock } from "@/components/AlsoRead";
+import AlsoReadMount from "@/components/AlsoReadMount";
+
+
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -49,6 +54,7 @@ function splitIntoParagraphs(html: string): string[] {
 
 function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: TocItem[] } {
   const toc: TocItem[] = [];
+  const seenIds = new Map<string, number>();
 
   const modifiedHtml = html.replace(
     /<(h[1-4])([^>]*?)>([\s\S]*?)<\/h[1-4]>/gi,
@@ -60,12 +66,20 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
 
       if (!cleanText) return match;
 
-      const id = cleanText
+      const baseId = cleanText
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "");
+
+      // Two headings with identical (or similarly-punctuated) text would
+      // otherwise reduce to the same slug — and downstream, the same React
+      // key in TocSidebar. Suffix repeats so every heading gets a unique,
+      // still-readable id.
+      const seenCount = seenIds.get(baseId) ?? 0;
+      seenIds.set(baseId, seenCount + 1);
+      const id = seenCount === 0 ? baseId : `${baseId}-${seenCount + 1}`;
 
       toc.push({
         text: cleanText,
@@ -73,7 +87,13 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
         level: tag.toLowerCase() as "h1" | "h2" | "h3" | "h4",
       });
 
-      return `<${tag}${attributes ? " " + attributes.trim() : ""} id="${id}">${content}</${tag}>`;
+      // Clickable hash anchor for h2/h3 — deep-links to that section
+      const anchor =
+        tag === "h2" || tag === "h3"
+          ? `<a href="#${id}" class="heading-anchor" aria-label="Link to ${cleanText}">#</a>`
+          : "";
+
+      return `<${tag}${attributes ? " " + attributes.trim() : ""} id="${id}">${anchor}${content}</${tag}>`;
     }
   );
 
@@ -132,6 +152,22 @@ function parseBannerShortcodes(html: string, banners: any[]): string {
   return updatedHtml;
 }
 
+function stripTags(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripWrappingParagraph(html: string): string {
+  return html
+    .trim()
+    .replace(/^<p[^>]*>/i, "")
+    .replace(/<\/p>\s*$/i, "")
+    .trim();
+}
+
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await prisma.post.findUnique({ where: { slug } });
@@ -153,6 +189,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   });
 
   if (!post || !post.published) notFound();
+
+  console.log("POST UPDATED AT:", post.updatedAt, "| CONTENT LENGTH:", post.content.length);
+
+  // NOTE: dumping the full raw content here was flooding the terminal and
+  // truncating before reaching the section we actually needed to inspect.
+  // Log a small window around "Key Highlights" instead.
+  const khIdx = post.content.toLowerCase().indexOf("key highlights");
+  if (khIdx !== -1) {
+    console.log(
+      "CONTEXT AROUND KEY HIGHLIGHTS:",
+      post.content.slice(Math.max(0, khIdx - 50), khIdx + 500)
+    );
+    console.log(
+      "OCCURRENCES OF 'key highlights' IN CONTENT:",
+      (post.content.toLowerCase().match(/key highlights/g) || []).length
+    );
+  } else {
+    console.log("'key highlights' NOT FOUND IN RAW CONTENT");
+  }
 
   const session = await auth();
   const isBookmarked = session?.user
@@ -211,9 +266,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   let processedContent = parseAdsShortcodes(post.content, ads);
   processedContent = parseBannerShortcodes(processedContent, banners);
+  processedContent = parseKeyHighlightsBlock(processedContent);
+  processedContent = parseAlsoReadBlock(processedContent);
   processedContent = stripTrailingEmptyBlocks(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
+
+  console.log("MODIFIED HTML CONTAINS OVERVIEW TEXT:", modifiedHtml.includes("Overview"));
+  console.log(
+    "MODIFIED HTML CONTAINS LOWERCASE 'Key highlights' (our injected box):",
+    modifiedHtml.includes("Key highlights")
+  );
+  console.log(
+    "MODIFIED HTML CONTAINS RAW 'Key Highlights' (untouched heading):",
+    modifiedHtml.includes(">Key Highlights<") || modifiedHtml.includes("Key Highlights</strong>")
+  );
+  console.log("MODIFIED HTML LENGTH:", modifiedHtml.length);
 
   const wasUpdated =
     post.updatedAt &&
@@ -329,13 +397,92 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               .rich-text-render p:empty,
               .rich-text-render p:has(> br:only-child) { display: none; }
               .rich-text-render > *:last-child { margin-bottom: 0; }
-              .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {
-                color: var(--foreground); font-weight: 700; margin-top: 2.25rem; margin-bottom: 0.85rem; scroll-margin-top: 100px;
-              }
-              .rich-text-render h1 { font-size: 1.875rem; }
-              .rich-text-render h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-              .rich-text-render h3 { font-size: 1.25rem; }
 
+              /* --- Headings: double-bar accent (h2 only) --- */
+              .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {
+                color: var(--foreground);
+                font-weight: 700;
+                letter-spacing: -0.01em;
+                line-height: 1.3;
+                scroll-margin-top: 100px;
+                position: relative;
+              }
+
+              .rich-text-render h1 {
+                font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.1rem);
+                margin-top: 2.5rem;
+                margin-bottom: 1rem;
+              }
+
+              .rich-text-render h2 {
+                font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.625rem);
+                margin-top: 3rem;
+                margin-bottom: 1.15rem;
+                padding-left: 1.35rem;
+              }
+              .rich-text-render h2::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0.14em;
+                bottom: 0.14em;
+                width: 4px;
+                border-radius: 2px;
+                background: var(--accent);
+              }
+              .rich-text-render h2::after {
+                content: "";
+                position: absolute;
+                left: 9px;
+                top: 0.14em;
+                bottom: 0.14em;
+                width: 2px;
+                border-radius: 1px;
+                background: var(--border);
+              }
+
+              .rich-text-render h3 {
+                font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.2rem);
+                font-weight: 600;
+                margin-top: 2.25rem;
+                margin-bottom: 0.7rem;
+              }
+
+              .rich-text-render h4 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--muted-foreground);
+                margin-top: 1.75rem;
+                margin-bottom: 0.6rem;
+              }
+
+              /* Clickable hash anchor */
+              .rich-text-render .heading-anchor {
+                position: absolute;
+                left: -1.5rem;
+                top: 0.15em;
+                font-size: 0.8em;
+                font-weight: 500;
+                color: var(--muted-foreground);
+                text-decoration: none;
+                opacity: 0;
+                transition: opacity 0.15s ease, color 0.15s ease;
+              }
+              .rich-text-render h2:hover .heading-anchor,
+              .rich-text-render h3:hover .heading-anchor,
+              .rich-text-render .heading-anchor:focus-visible {
+                opacity: 0.6;
+              }
+              .rich-text-render .heading-anchor:hover { opacity: 1 !important; color: var(--accent); }
+              @media (max-width: 640px) {
+                .rich-text-render .heading-anchor {
+                  position: static;
+                  margin-right: 0.4rem;
+                  opacity: 0.4;
+                }
+              }
+
+              /* --- Images --- */
               .rich-text-render img {
                 max-width: 100%;
                 height: auto;
@@ -347,18 +494,64 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               }
               .rich-text-render img:hover { transform: scale(1.015); }
 
+              /* --- Lists --- */
               .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
               .rich-text-render ul { list-style-type: disc; }
               .rich-text-render ol { list-style-type: decimal; }
               .rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
-              .rich-text-render li::marker { color: #3b82f6; }
+              .rich-text-render li::marker { color: var(--accent); }
 
-              .rich-text-render table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
-              .rich-text-render th, .rich-text-render td { padding: 0.85rem 1rem; border: 1px solid var(--border); text-align: left; }
-              .rich-text-render th { background: rgba(0,0,0,0.03); font-weight: 600; }
-              .dark .rich-text-render th { background: rgba(255,255,255,0.03); }
-              .rich-text-render tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
-              .dark .rich-text-render tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+              /* --- Table: "spec sheet" treatment --- */
+              .rich-text-render table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                margin: 2.5rem 0;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                overflow: hidden;
+                font-size: 0.9375rem;
+                box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+              }
+
+              .rich-text-render thead th {
+                background: linear-gradient(
+                  180deg,
+                  color-mix(in srgb, var(--accent) 8%, transparent),
+                  color-mix(in srgb, var(--accent-2) 4%, transparent)
+                );
+                font-weight: 700;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--foreground);
+                padding: 0.9rem 1.15rem;
+                border-bottom: 2px solid var(--border);
+                text-align: left;
+              }
+              .rich-text-render thead th:first-child { border-top-left-radius: 13px; }
+              .rich-text-render thead th:last-child { border-top-right-radius: 13px; }
+
+              .rich-text-render td {
+                padding: 0.85rem 1.15rem;
+                border-bottom: 1px solid var(--border);
+                font-variant-numeric: tabular-nums;
+                color: var(--muted-foreground);
+              }
+              .rich-text-render td:first-child {
+                font-weight: 600;
+                color: var(--foreground);
+              }
+              .rich-text-render tbody tr:last-child td { border-bottom: none; }
+              .rich-text-render tbody tr:last-child td:first-child { border-bottom-left-radius: 13px; }
+              .rich-text-render tbody tr:last-child td:last-child { border-bottom-right-radius: 13px; }
+
+              .rich-text-render tbody tr {
+                transition: background-color 0.15s ease;
+              }
+              .rich-text-render tbody tr:hover td {
+                background: color-mix(in srgb, var(--accent) 5%, transparent);
+              }
             `}</style>
 
             <ArticleImageLightbox>
@@ -370,6 +563,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 />
               </div>
             </ArticleImageLightbox>
+            <AlsoReadMount />
 
             {/* Author Bio */}
             <div className="mt-10 pt-6 border-t border-border">

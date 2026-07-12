@@ -13,8 +13,10 @@
   --border: #e2e8f0;
   --footer-bg: #f7fafc;
   --accent: #2563eb;
-
+  --accent: #2563eb;
+  --accent-2: #7c5cff;
   --font-sans: Arial, Helvetica, sans-serif;
+  --accent-2: #7c5cff;
 }
 
 .dark {
@@ -24,7 +26,10 @@
   --card: #101b2d;              /* visibly lighter than background — real elevation */
   --border: #233149;            /* navy-tinted border, not generic gray */
   --footer-bg: #070d17;         /* slightly darker than background, grounds the footer */
-  --accent: #5b9dff;            /* brighter blue for AA contrast on dark surfaces */
+  --accent: #5b9dff;    
+   --accent: #5b9dff;
+  --accent-2: #a78bfa;
+   --accent-2: #a78bfa;        /* brighter blue for AA contrast on dark surfaces */
 }
 
 @theme {
@@ -35,6 +40,9 @@
   --color-border: var(--border);
   --color-footer: var(--footer-bg);
    --color-accent: var(--accent); 
+   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-2: var(--accent-2);
 }
 
 /* --- Base document --- */
