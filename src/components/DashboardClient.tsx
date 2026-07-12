@@ -1,20 +1,10 @@
+// components/DashboardClient.tsx
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Line, Pie } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, ChevronDown } from "lucide-react";
 
 interface Post {
   id: string;
@@ -27,21 +17,23 @@ interface Post {
 
 interface DashboardClientProps {
   initialRecentPosts: Post[];
-  monthlyData: Record<string, number>;
-  publishedPosts: number;
-  draftPosts: number;
 }
 
-export default function DashboardClient({
-  initialRecentPosts,
-  monthlyData,
-  publishedPosts,
-  draftPosts,
-}: DashboardClientProps) {
+export default function DashboardClient({ initialRecentPosts }: DashboardClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT">("ALL");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowFilterDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   const filteredPosts = useMemo(() => {
     return initialRecentPosts.filter((post) => {
@@ -54,120 +46,125 @@ export default function DashboardClient({
     });
   }, [initialRecentPosts, searchTerm, statusFilter]);
 
-  // Line Chart Data
-  const months = Object.keys(monthlyData);
-  const lineData = {
-    labels: months.length ? months : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    datasets: [{
-      label: "Posts Created",
-      data: months.length ? Object.values(monthlyData) : [3, 7, 4, 8, 12, 5],
-      borderColor: "#3b82f6",
-      backgroundColor: "rgba(59, 130, 246, 0.1)",
-      tension: 0.4,
-      fill: true,
-    }],
-  };
-
-  // Pie Chart Data
-  const pieData = {
-    labels: ["Published", "Drafts"],
-    datasets: [{
-      data: [publishedPosts, draftPosts],
-      backgroundColor: ["#10b981", "#eab308"],
-      borderWidth: 0,
-    }],
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-      {/* Analytics Charts */}
-      <div className="lg:col-span-3 space-y-8">
-        {/* Posts Over Time */}
-        <div className="bg-white rounded-3xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4">Posts Over Time</h3>
-          <div className="h-80">
-            <Line data={lineData} options={{ maintainAspectRatio: false, responsive: true }} />
-          </div>
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+      <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+        <h2
+          className="text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Recent posts
+        </h2>
+        <Link
+          href="/dashboard/posts"
+          className="text-blue-500 hover:text-blue-600 text-xs font-medium transition-colors"
+        >
+          View all →
+        </Link>
+      </div>
+
+      <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search posts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+          />
         </div>
 
-        {/* Published vs Drafts */}
-        <div className="bg-white rounded-3xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4">Content Status</h3>
-          <div className="h-80 flex items-center justify-center">
-            <div className="w-80">
-              <Pie data={pieData} options={{ maintainAspectRatio: false }} />
-            </div>
-          </div>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setShowFilterDropdown((s) => !s)}
+            className="w-full sm:w-40 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+          >
+            {statusFilter === "ALL" ? "All posts" : statusFilter === "PUBLISHED" ? "Published" : "Drafts"}
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showFilterDropdown ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {showFilterDropdown && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50"
+              >
+                {(["ALL", "PUBLISHED", "DRAFT"] as const).map((val) => (
+                  <div
+                    key={val}
+                    onClick={() => {
+                      setStatusFilter(val);
+                      setShowFilterDropdown(false);
+                    }}
+                    className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
+                      statusFilter === val
+                        ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
+                        : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                    }`}
+                  >
+                    {val === "ALL" ? "All posts" : val === "PUBLISHED" ? "Published" : "Drafts"}
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Recent Posts */}
-      <div className="lg:col-span-2">
-        <div className="bg-white rounded-3xl shadow-sm overflow-hidden h-full flex flex-col">
-          <div className="p-6 border-b flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Posts</h2>
-            <Link href="/dashboard/posts" className="text-blue-600 hover:underline text-sm">View all →</Link>
-          </div>
-
-          {/* Search + Filter */}
-          <div className="p-6 border-b flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="Search posts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className="w-full sm:w-44 border border-gray-300 rounded-2xl px-4 py-3 bg-white flex justify-between items-center"
+      <div className="max-h-[420px] overflow-auto">
+        <AnimatePresence mode="popLayout">
+          {filteredPosts.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="p-12 text-center text-sm text-zinc-400"
+            >
+              No posts match that search.
+            </motion.div>
+          ) : (
+            filteredPosts.map((post, i) => (
+              <motion.div
+                key={post.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.03 }}
+                className="p-5 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
               >
-                {statusFilter === "ALL" ? "All Posts" : statusFilter === "PUBLISHED" ? "Published" : "Drafts"}
-                <span>▼</span>
-              </button>
-
-              {showFilterDropdown && (
-                <div className="absolute mt-2 w-full bg-white rounded-2xl shadow-xl border py-2 z-50">
-                  {["ALL", "PUBLISHED", "DRAFT"].map((val) => (
-                    <div
-                      key={val}
-                      onClick={() => { setStatusFilter(val as any); setShowFilterDropdown(false); }}
-                      className={`px-5 py-3 hover:bg-gray-100 cursor-pointer ${statusFilter === val ? "bg-blue-50 text-blue-700" : ""}`}
+                <div className="flex justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                      {post.title}
+                    </p>
+                    <p
+                      className="text-xs text-zinc-500 dark:text-zinc-500 mt-1"
+                      style={{ fontFamily: "var(--font-mono)" }}
                     >
-                      {val === "ALL" ? "All Posts" : val === "PUBLISHED" ? "Published" : "Drafts"}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-auto">
-            {filteredPosts.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">No posts found</div>
-            ) : (
-              filteredPosts.map((post) => (
-                <div key={post.id} className="p-6 border-b hover:bg-gray-50 transition-all">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">{post.title}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        By {post.author.name} • {new Date(post.createdAt).toDateString()}
-                      </p>
-                    </div>
-                    <span className={`text-xs px-3 py-1 rounded-full self-start ${
-                      post.published ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                    }`}>
-                      {post.published ? "Published" : "Draft"}
-                    </span>
+                      {post.author.name} · {new Date(post.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
+                  <span
+                    className={`text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full self-start shrink-0 ${
+                      post.published
+                        ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    {post.published ? "Live" : "Draft"}
+                  </span>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
