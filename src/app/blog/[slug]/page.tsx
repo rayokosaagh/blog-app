@@ -26,7 +26,7 @@ import BookmarkButton from "@/components/BookmarkButton";
 import { parseKeyHighlightsBlock } from "@/components/KeyHighlights";
 import { parseAlsoReadBlock } from "@/components/AlsoRead";
 import AlsoReadMount from "@/components/AlsoReadMount";
-
+import KeyHighlightsMount from "@/components/KeyHighlightsMount";
 
 
 interface BlogPostPageProps {
@@ -564,6 +564,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </div>
             </ArticleImageLightbox>
             <AlsoReadMount />
+            <KeyHighlightsMount />
 
             {/* Author Bio */}
             <div className="mt-10 pt-6 border-t border-border">
