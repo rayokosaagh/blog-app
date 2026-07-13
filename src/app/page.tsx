@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import PopupAd from "@/components/PopupAd";
+import PopupAd from "@/components/ads/PopupAd";
 import BackToTop from "@/components/ui/BackToTop";
 import { FadeIn } from "@/components/ui/AnimatedSection";
 import Carousel from "@/components/ui/Carousel";
