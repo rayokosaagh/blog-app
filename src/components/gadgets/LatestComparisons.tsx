@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import LatestComparisonsClient from "@/components/LatestComparisonsClient";
+import LatestComparisonsClient from "@/components/gadgets/LatestComparisonsClient";
 
 export default async function LatestComparisons({ take = 4 }: { take?: number }) {
   const comparisons = await prisma.comparison.findMany({

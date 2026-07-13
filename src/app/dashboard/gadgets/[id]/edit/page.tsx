@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import GadgetProductForm from "@/components/GadgetProductForm";
+import GadgetProductForm from "@/components/gadgets/GadgetProductForm";
 
 export default async function EditGadgetPage({
   params,

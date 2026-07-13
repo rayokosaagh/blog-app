@@ -5,14 +5,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, LayoutGroup } from "framer-motion";
 import { GadgetCategoryDef, SpecField } from "@/lib/gadgets/types";
 
-import { CategoryOption, Product, ProductLite } from "./gadgets/compare/types";
-import CategorySelector from "./gadgets/compare/CategorySelector";
-import ProductSlots from "./gadgets/compare/ProductSlots";
-import ControlsBar from "./gadgets/compare/ControlsBar";
-import JumpNav from "./gadgets/compare/JumpNav";
-import FocusedSpecBar from "./gadgets/compare/FocusedSpecBar";
-import DesktopTable from "./gadgets/compare/DesktopTable";
-import MobileTable from "./gadgets/compare/MobileTable";
+import { CategoryOption, Product, ProductLite } from "./compare/types";
+import CategorySelector from "./compare/CategorySelector";
+import ProductSlots from "./compare/ProductSlots";
+import ControlsBar from "./compare/ControlsBar";
+import JumpNav from "./compare/JumpNav";
+import FocusedSpecBar from "./compare/FocusedSpecBar";
+import DesktopTable from "./compare/DesktopTable";
+import MobileTable from "./compare/MobileTable";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];

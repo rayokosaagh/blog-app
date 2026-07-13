@@ -1,5 +1,5 @@
 // src/app/compare/page.tsx
-import GadgetCompare from "@/components/GadgetCompare";
+import GadgetCompare from "@/components/gadgets/GadgetCompare";
 import Navbar from "@/components/layout/Navbar";
 
 const MAX_COMPARE_SLOTS = 8;

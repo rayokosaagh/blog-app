@@ -14,7 +14,7 @@ import TrendingNews from "@/components/feeds/TrendingNews";
 import LatestNews from "@/components/feeds/LatestNews";
 import MobileNewsHighlights from "@/components/feeds/MobileNewsHighlights";
 import LatestPostsFeed from "@/components/feeds/LatestPostsFeed";
-import LatestComparisons from "@/components/LatestComparisons";
+import LatestComparisons from "@/components/gadgets/LatestComparisons";
 import NewsletterForm from "@/components/NewsletterForm";
 import SectionDivider from "@/components/ui/SectionDivider";
 

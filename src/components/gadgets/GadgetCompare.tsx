@@ -1,7 +1,7 @@
 // src/components/GadgetCompare.tsx
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
-import GadgetCompareClient from "@/components/GadgetCompareClient";
+import GadgetCompareClient from "@/components/gadgets/GadgetCompareClient";
 
 interface GadgetCompareProps {
   defaultCategory?: string;

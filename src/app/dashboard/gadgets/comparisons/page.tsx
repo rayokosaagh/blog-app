@@ -1,6 +1,6 @@
 // src/app/dashboard/gadgets/comparisons/page.tsx
 import { prisma } from "@/lib/prisma";
-import ComparisonManager from "@/components/ComparisonManager";
+import ComparisonManager from "@/components/gadgets/ComparisonManager";
 import { CATEGORY_LIST } from "@/lib/gadgets/categories";
 
 export default async function GadgetComparisonsPage() {

@@ -1,5 +1,5 @@
 // src/app/dashboard/gadgets/new/page.tsx
-import GadgetProductForm from "@/components/GadgetProductForm";
+import GadgetProductForm from "@/components/gadgets/GadgetProductForm";
 
 export default function NewGadgetPage() {
   return (
