@@ -6,10 +6,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import SignOutButton from "@/components/SignOutButton";
-import NavbarSearch from "@/components/NavbarSearch";
+import SignOutButton from "@/components/layout/SignOutButton";
+import NavbarSearch from "@/components/layout/NavbarSearch";
 import ThemeToggle from "@/components/ThemeToggle";
-import ExploreMenu from "@/components/ExploreMenu";
+import ExploreMenu from "@/components/layout/ExploreMenu";
 import { Newspaper, Scale, Gauge, LogOut, X, Bookmark } from "lucide-react";
 
 const NAV_LINKS = [

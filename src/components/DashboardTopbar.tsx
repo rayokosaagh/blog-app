@@ -2,7 +2,7 @@
 "use client";
 
 import ThemeToggle from "@/components/ThemeToggle";
-import SignOutButton from "@/components/SignOutButton";
+import SignOutButton from "@/components/layout/SignOutButton";
 import { LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 

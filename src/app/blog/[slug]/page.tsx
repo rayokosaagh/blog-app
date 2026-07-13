@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import TocSidebar from "@/components/TocSidebar";
-import SocialSidebar from "@/components/SocialSidebar";
+import SocialSidebar from "@/components/layout/SocialSidebar";
 import type { Metadata } from "next";
-import MobileNav from "@/components/MobileNav";
+import MobileNav from "@/components/layout/MobileNav";
 import BackToTop from "@/components/BackToTop";
 import Poll from "@/components/Poll";
 import RatingMeter from "@/components/RatingMeter";
