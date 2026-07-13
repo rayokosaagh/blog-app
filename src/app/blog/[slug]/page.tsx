@@ -27,7 +27,7 @@ import { parseKeyHighlightsBlock } from "@/components/KeyHighlights";
 import { parseAlsoReadBlock } from "@/components/AlsoRead";
 import AlsoReadMount from "@/components/AlsoReadMount";
 import KeyHighlightsMount from "@/components/KeyHighlightsMount";
-
+import { parseDropCapLedeBlock } from "@/components/DropCapLede";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -268,6 +268,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   processedContent = parseBannerShortcodes(processedContent, banners);
   processedContent = parseKeyHighlightsBlock(processedContent);
   processedContent = parseAlsoReadBlock(processedContent);
+  processedContent = parseDropCapLedeBlock(processedContent);
   processedContent = stripTrailingEmptyBlocks(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
@@ -397,6 +398,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               .rich-text-render p:empty,
               .rich-text-render p:has(> br:only-child) { display: none; }
               .rich-text-render > *:last-child { margin-bottom: 0; }
+              
+              /* --- Drop cap + bold lede on the article's opening --- */
+/* --- Drop cap + bold lede on the article's opening --- */
+.rich-text-render .drop-cap {
+  float: left;
+  font-size: 3.4rem;
+  line-height: 0.8;
+  font-weight: 700;
+  padding: 0.05em 0.08em 0 0;
+  color: var(--foreground);
+}
+.rich-text-render .lede-bold {
+  font-weight: 700;
+  color: var(--foreground);
+}
 
               /* --- Headings: double-bar accent (h2 only) --- */
               .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {

@@ -1,26 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { createRoot, type Root } from "react-dom/client";
 import KeyHighlightsCard from "./KeyHighlightsCard";
 
 const MOUNT_SELECTOR = "[data-key-highlights-mount]";
 const DATA_SCRIPT_SELECTOR = "script[data-key-highlights-json]";
 
-/**
- * Boots <KeyHighlightsCard /> into every server-rendered "Key highlights"
- * placeholder on the page. Renders `null` itself — mount this once anywhere
- * in the article page, it doesn't need to be a direct parent of the
- * placeholders. See AlsoReadMount.tsx for the full rationale (same pattern).
- */
-export default function KeyHighlightsMount() {
-  useEffect(() => {
-    const roots: Root[] = [];
+const nodeRoots = new WeakMap<HTMLElement, Root>();
 
+export default function KeyHighlightsMount() {
+  const pathname = usePathname();
+
+  useEffect(() => {
     const mountAll = () => {
       const nodes = document.querySelectorAll<HTMLElement>(MOUNT_SELECTOR);
       nodes.forEach((node) => {
-        if (node.dataset.mounted === "true") return;
+        if (nodeRoots.has(node)) return;
 
         const script = node.querySelector<HTMLScriptElement>(DATA_SCRIPT_SELECTOR);
         if (!script?.textContent) return;
@@ -32,11 +29,9 @@ export default function KeyHighlightsMount() {
           return;
         }
 
-        node.dataset.mounted = "true";
         node.innerHTML = "";
-
         const root = createRoot(node);
-        roots.push(root);
+        nodeRoots.set(node, root);
         root.render(<KeyHighlightsCard items={items} />);
       });
     };
@@ -48,11 +43,8 @@ export default function KeyHighlightsMount() {
 
     return () => {
       observer.disconnect();
-      roots.forEach((root) => {
-        queueMicrotask(() => root.unmount());
-      });
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }
