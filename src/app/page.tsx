@@ -8,7 +8,7 @@ import PopupAd from "@/components/PopupAd";
 import BackToTop from "@/components/ui/BackToTop";
 import { FadeIn } from "@/components/ui/AnimatedSection";
 import Carousel from "@/components/ui/Carousel";
-import Poll from "@/components/Poll";
+import Poll from "@/components/polls/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
 import TrendingNews from "@/components/feeds/TrendingNews";
 import LatestNews from "@/components/feeds/LatestNews";

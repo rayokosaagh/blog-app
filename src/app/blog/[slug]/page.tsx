@@ -8,7 +8,7 @@ import SocialSidebar from "@/components/layout/SocialSidebar";
 import type { Metadata } from "next";
 import MobileNav from "@/components/layout/MobileNav";
 import BackToTop from "@/components/ui/BackToTop";
-import Poll from "@/components/Poll";
+import Poll from "@/components/polls/Poll";
 import RatingMeter from "@/components/blog/RatingMeter";
 import KeepReading from "@/components/feeds/KeepReading";
 import CommentSection from "@/components/blog/CommentSection";
