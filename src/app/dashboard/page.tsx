@@ -2,7 +2,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/DashboardClient";
-import StatCard from "@/components/StatCard";
+import StatCard from "@/components/ui/StatCard";
 import AnalyticsCharts from "@/components/AnalyticsCharts";
 import TopPostsPanel from "@/components/TopPostsPanel";
 import ContentExtrasPanel from "@/components/ContentExtrasPanel";

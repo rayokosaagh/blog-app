@@ -1,4 +1,4 @@
-import { FadeIn } from "@/components/AnimatedSection";
+import { FadeIn } from "@/components/ui/AnimatedSection";
 
 export default function Footer() {
   return (

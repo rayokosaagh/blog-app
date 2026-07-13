@@ -5,9 +5,9 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PopupAd from "@/components/PopupAd";
-import BackToTop from "@/components/BackToTop";
-import { FadeIn } from "@/components/AnimatedSection";
-import Carousel from "@/components/Carousel";
+import BackToTop from "@/components/ui/BackToTop";
+import { FadeIn } from "@/components/ui/AnimatedSection";
+import Carousel from "@/components/ui/Carousel";
 import Poll from "@/components/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
 import TrendingNews from "@/components/TrendingNews";
@@ -16,7 +16,7 @@ import MobileNewsHighlights from "@/components/MobileNewsHighlights";
 import LatestPostsFeed from "@/components/LatestPostsFeed";
 import LatestComparisons from "@/components/LatestComparisons";
 import NewsletterForm from "@/components/NewsletterForm";
-import SectionDivider from "@/components/SectionDivider";
+import SectionDivider from "@/components/ui/SectionDivider";
 
 
 // Safety-net revalidation: even if revalidatePath("/") from the view

@@ -2,8 +2,8 @@
 
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
-import PageTransition from "@/components/PageTransition";
-import TopProgressBar from "@/components/TopProgressBar";
+import PageTransition from "@/components/ui/PageTransition";
+import TopProgressBar from "@/components/ui/TopProgressBar";
 
 interface ProvidersProps {
   children: React.ReactNode;

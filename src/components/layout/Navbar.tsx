@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import SignOutButton from "@/components/layout/SignOutButton";
 import NavbarSearch from "@/components/layout/NavbarSearch";
-import ThemeToggle from "@/components/ThemeToggle";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import ExploreMenu from "@/components/layout/ExploreMenu";
 import { Newspaper, Scale, Gauge, LogOut, X, Bookmark } from "lucide-react";
 
