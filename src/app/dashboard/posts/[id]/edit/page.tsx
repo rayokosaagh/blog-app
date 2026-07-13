@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import TagPicker from "@/components/blog/TagPicker";
-import NotifySubscribersButton from "@/components/NotifySubscribersButton";
+import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
 
 
 
