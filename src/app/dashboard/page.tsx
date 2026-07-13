@@ -1,11 +1,11 @@
 // app/dashboard/page.tsx
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import DashboardClient from "@/components/DashboardClient";
+import DashboardClient from "@/components/dashboard/DashboardClient";
 import StatCard from "@/components/ui/StatCard";
-import AnalyticsCharts from "@/components/AnalyticsCharts";
+import AnalyticsCharts from "@/components/dashboard/AnalyticsCharts";
 import TopPostsPanel from "@/components/feeds/TopPostsPanel";
-import ContentExtrasPanel from "@/components/ContentExtrasPanel";
+import ContentExtrasPanel from "@/components/dashboard/ContentExtrasPanel";
 import {
   FileText,
   CheckCircle2,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import DeleteButton from "@/components/DeleteButton";
+import DeleteButton from "@/components/dashboard/DeleteButton";
 import AnimatedPostCard from "@/components/blog/AnimatedPostCard";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
 

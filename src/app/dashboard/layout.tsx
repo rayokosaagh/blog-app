@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import SidebarNav from "@/components/layout/SideBarNav";
-import DashboardTopbar from "@/components/DashboardTopbar";
+import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],

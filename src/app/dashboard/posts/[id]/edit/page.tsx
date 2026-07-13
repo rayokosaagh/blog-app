@@ -9,7 +9,7 @@ import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersBu
 
 
 
-const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
+const Editor = dynamic(() => import("@/components/dashboard/Editor"), { ssr: false });
 
 export default function EditPostPage({
   params,

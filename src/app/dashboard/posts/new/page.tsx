@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import TagPicker from "@/components/blog/TagPicker";
 
-const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
+const Editor = dynamic(() => import("@/components/dashboard/Editor"), { ssr: false });
 
 export default function NewPostPage() {
   const router = useRouter();
