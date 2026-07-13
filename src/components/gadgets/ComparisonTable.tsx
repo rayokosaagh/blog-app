@@ -69,7 +69,7 @@ export default function ComparisonTable({
       {/* Jump nav */}
       <nav className="flex gap-3 overflow-x-auto text-sm border-y border-zinc-200 dark:border-zinc-800 py-2 mb-4">
         {groups.map((g) => (
-  
+  <a
     key={g.title}
     href={`#${g.title.toLowerCase()}`}
     className="whitespace-nowrap text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
