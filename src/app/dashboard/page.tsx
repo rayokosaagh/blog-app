@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/DashboardClient";
 import StatCard from "@/components/ui/StatCard";
 import AnalyticsCharts from "@/components/AnalyticsCharts";
-import TopPostsPanel from "@/components/TopPostsPanel";
+import TopPostsPanel from "@/components/feeds/TopPostsPanel";
 import ContentExtrasPanel from "@/components/ContentExtrasPanel";
 import {
   FileText,

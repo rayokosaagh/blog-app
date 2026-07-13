@@ -10,9 +10,9 @@ import MobileNav from "@/components/layout/MobileNav";
 import BackToTop from "@/components/ui/BackToTop";
 import Poll from "@/components/Poll";
 import RatingMeter from "@/components/blog/RatingMeter";
-import KeepReading from "@/components/KeepReading";
+import KeepReading from "@/components/feeds/KeepReading";
 import CommentSection from "@/components/blog/CommentSection";
-import RelatedArticles from "@/components/RelatedArticles";
+import RelatedArticles from "@/components/feeds/RelatedArticles";
 import TagIcon from "@/components/blog/TagIcon";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import ViewTracker from "@/components/blog/ViewTracker";
@@ -23,10 +23,10 @@ import ParallaxHeroImage from "@/components/ui/ParallaxHeroImage";
 import ArticleImageLightbox from "@/components/blog/ArticleImageLightbox";
 import { auth } from "@/auth";
 import BookmarkButton from "@/components/BookmarkButton";
-import { parseKeyHighlightsBlock } from "@/components/KeyHighlights";
-import { parseAlsoReadBlock } from "@/components/AlsoRead";
-import AlsoReadMount from "@/components/AlsoReadMount";
-import KeyHighlightsMount from "@/components/KeyHighlightsMount";
+import { parseKeyHighlightsBlock } from "@/components/feeds/KeyHighlights";
+import { parseAlsoReadBlock } from "@/components/feeds/AlsoRead";
+import AlsoReadMount from "@/components/feeds/AlsoReadMount";
+import KeyHighlightsMount from "@/components/feeds/KeyHighlightsMount";
 import { parseDropCapLedeBlock } from "@/components/blog/DropCapLede";
 
 interface BlogPostPageProps {
