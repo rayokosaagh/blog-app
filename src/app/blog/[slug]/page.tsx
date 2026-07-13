@@ -22,7 +22,7 @@ import ReadingProgressBar from "@/components/ui/ReadingProgressBar";
 import ParallaxHeroImage from "@/components/ui/ParallaxHeroImage";
 import ArticleImageLightbox from "@/components/blog/ArticleImageLightbox";
 import { auth } from "@/auth";
-import BookmarkButton from "@/components/BookmarkButton";
+import BookmarkButton from "@/components/bookmarks/BookmarkButton";
 import { parseKeyHighlightsBlock } from "@/components/feeds/KeyHighlights";
 import { parseAlsoReadBlock } from "@/components/feeds/AlsoRead";
 import AlsoReadMount from "@/components/feeds/AlsoReadMount";

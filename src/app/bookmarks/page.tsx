@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import BookmarksClient from "@/components/BookmarksClient";
+import BookmarksClient from "@/components/bookmarks/BookmarksClient";
 
 export default async function BookmarksPage() {
   const session = await auth();
