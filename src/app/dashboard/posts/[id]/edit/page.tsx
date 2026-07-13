@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import TagPicker from "@/components/TagPicker";
+import TagPicker from "@/components/blog/TagPicker";
 import NotifySubscribersButton from "@/components/NotifySubscribersButton";
 
 

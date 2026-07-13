@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer
 import { Bookmark } from "lucide-react";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import { formatRelativeTime } from "@/lib/postUtils";
-import TagIcon from "@/components/TagIcon";
+import TagIcon from "@/components/blog/TagIcon";
 
 export interface FeedTag {
   id: string;

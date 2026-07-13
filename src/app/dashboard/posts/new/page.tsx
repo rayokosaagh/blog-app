@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import TagPicker from "@/components/TagPicker";
+import TagPicker from "@/components/blog/TagPicker";
 
 const Editor = dynamic(() => import("@/components/Editor"), { ssr: false });
 

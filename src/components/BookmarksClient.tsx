@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, AlertTriangle, X } from "lucide-react";
-import AnimatedPostCard from "@/components/AnimatedPostCard";
+import AnimatedPostCard from "@/components/blog/AnimatedPostCard";
 
 interface BookmarkedPost {
   bookmarkId: string;

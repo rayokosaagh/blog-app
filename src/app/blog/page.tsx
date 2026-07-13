@@ -2,9 +2,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import TagIcon from "@/components/TagIcon";
-import BlogFilters from "@/components/BlogFilters";
-import AnimatedPostsGrid from "@/components/AnimatedPostsGrid";
+import TagIcon from "@/components/blog/TagIcon";
+import BlogFilters from "@/components/blog/BlogFilters";
+import AnimatedPostsGrid from "@/components/blog/AnimatedPostsGrid";
 import type { Prisma } from "@/generated/prisma";
 
 export default async function BlogPage({

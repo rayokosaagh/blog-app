@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Compass, Search, X, ChevronDown, ArrowRight } from "lucide-react";
-import TagIcon from "@/components/TagIcon";
+import TagIcon from "@/components/blog/TagIcon";
 
 type SearchResult = {
   id: string;
