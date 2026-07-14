@@ -83,3 +83,7 @@ div[data-youtube-video] iframe {
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
+.table-wrap {
+  overflow-x: auto;
+}

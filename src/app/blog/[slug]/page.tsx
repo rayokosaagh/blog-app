@@ -28,6 +28,9 @@ import { parseAlsoReadBlock } from "@/components/feeds/AlsoRead";
 import AlsoReadMount from "@/components/feeds/AlsoReadMount";
 import KeyHighlightsMount from "@/components/feeds/KeyHighlightsMount";
 import { parseDropCapLedeBlock } from "@/components/blog/DropCapLede";
+import TableProcessor from "@/components/blog/TableProcessor";
+import { parseSpecificationsBlock } from "@/components/feeds/Specifications";
+import SpecificationsMount from "@/components/feeds/SpecificationsMount";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -73,10 +76,6 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "");
 
-      // Two headings with identical (or similarly-punctuated) text would
-      // otherwise reduce to the same slug — and downstream, the same React
-      // key in TocSidebar. Suffix repeats so every heading gets a unique,
-      // still-readable id.
       const seenCount = seenIds.get(baseId) ?? 0;
       seenIds.set(baseId, seenCount + 1);
       const id = seenCount === 0 ? baseId : `${baseId}-${seenCount + 1}`;
@@ -87,13 +86,7 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
         level: tag.toLowerCase() as "h1" | "h2" | "h3" | "h4",
       });
 
-      // Clickable hash anchor for h2/h3 — deep-links to that section
-      const anchor =
-        tag === "h2" || tag === "h3"
-          ? `<a href="#${id}" class="heading-anchor" aria-label="Link to ${cleanText}">#</a>`
-          : "";
-
-      return `<${tag}${attributes ? " " + attributes.trim() : ""} id="${id}">${anchor}${content}</${tag}>`;
+      return `<${tag}${attributes ? " " + attributes.trim() : ""} id="${id}">${content}</${tag}>`;
     }
   );
 
@@ -127,6 +120,13 @@ function parseAdsShortcodes(html: string, ads: any[]): string {
     updatedHtml = updatedHtml.replace(regex, () => generateAdString(ad));
   });
   return updatedHtml;
+}
+
+function stripEmptyParagraphs(html: string): string {
+  return html.replace(
+    /<p[^>]*>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>/gi,
+    ""
+  );
 }
 
 function generateBannerString(banner: { link: string; image: string; title: string }) {
@@ -178,6 +178,16 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     description: post.content.replace(/<[^>]*>/g, "").substring(0, 160),
     openGraph: post.featuredImage ? { images: [post.featuredImage] } : undefined,
   };
+}
+
+function wrapTables(html: string): string {
+  return html.replace(
+    /<table([^>]*)>([\s\S]*?)<\/table>/gi,
+    (_match, attrs, inner) => {
+      const encoded = btoa(inner);
+      return `<!--TABLE_PLACEHOLDER_${encoded}-->`;
+    }
+  );
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
@@ -264,12 +274,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     Math.ceil(post.content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200)
   );
 
-  let processedContent = parseAdsShortcodes(post.content, ads);
-  processedContent = parseBannerShortcodes(processedContent, banners);
-  processedContent = parseKeyHighlightsBlock(processedContent);
-  processedContent = parseAlsoReadBlock(processedContent);
-  processedContent = parseDropCapLedeBlock(processedContent);
-  processedContent = stripTrailingEmptyBlocks(processedContent);
+let processedContent = parseAdsShortcodes(post.content, ads);
+processedContent = stripEmptyParagraphs(processedContent);   // ← new
+processedContent = parseBannerShortcodes(processedContent, banners);
+processedContent = parseKeyHighlightsBlock(processedContent);
+processedContent = parseAlsoReadBlock(processedContent);
+processedContent = parseDropCapLedeBlock(processedContent);
+processedContent = wrapTables(processedContent);
+processedContent = parseSpecificationsBlock(processedContent);
+processedContent = stripTrailingEmptyBlocks(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
 
@@ -393,14 +406,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <FadeIn delay={0.1} className="w-full max-w-4xl">
           <div className="bg-card border border-border rounded-2xl shadow-xl px-8 md:px-10 pt-12 pb-8 transition-shadow duration-300 hover:shadow-2xl">
             <style>{`
-              .rich-text-render { color: var(--foreground); }
-              .rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.35rem; font-size: 1.0625rem; }
-              .rich-text-render p:empty,
-              .rich-text-render p:has(> br:only-child) { display: none; }
-              .rich-text-render > *:last-child { margin-bottom: 0; }
-              
-              /* --- Drop cap + bold lede on the article's opening --- */
-/* --- Drop cap + bold lede on the article's opening --- */
+            .rich-text-render { color: var(--foreground); }
+.rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.15rem; font-size: 1.0625rem; }
+.rich-text-render p:empty,
+.rich-text-render p:has(> br:only-child) { display: none; }
+.rich-text-render > *:last-child { margin-bottom: 0; }
+
+/* --- Drop cap + bold lede --- */
 .rich-text-render .drop-cap {
   float: left;
   font-size: 3.4rem;
@@ -414,173 +426,166 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   color: var(--foreground);
 }
 
-              /* --- Headings: double-bar accent (h2 only) --- */
-              .rich-text-render h1, .rich-text-render h2, .rich-text-render h3, .rich-text-render h4 {
-                color: var(--foreground);
-                font-weight: 700;
-                letter-spacing: -0.01em;
-                line-height: 1.3;
-                scroll-margin-top: 100px;
-                position: relative;
-              }
+/* --- Headings: shared scroll offset --- */
+.rich-text-render h1,
+.rich-text-render h2,
+.rich-text-render h3,
+.rich-text-render h4 {
+  scroll-margin-top: 100px;
+}
 
-              .rich-text-render h1 {
-                font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.1rem);
-                margin-top: 2.5rem;
-                margin-bottom: 1rem;
-              }
+/* H1: gradient text */
+.rich-text-render h1 {
+  font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(90deg, var(--foreground), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-              .rich-text-render h2 {
-                font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.625rem);
-                margin-top: 3rem;
-                margin-bottom: 1.15rem;
-                padding-left: 1.35rem;
-              }
-              .rich-text-render h2::before {
-                content: "";
-                position: absolute;
-                left: 0;
-                top: 0.14em;
-                bottom: 0.14em;
-                width: 4px;
-                border-radius: 2px;
-                background: var(--accent);
-              }
-              .rich-text-render h2::after {
-                content: "";
-                position: absolute;
-                left: 9px;
-                top: 0.14em;
-                bottom: 0.14em;
-                width: 2px;
-                border-radius: 1px;
-                background: var(--border);
-              }
+/* H2: minimal underline */
+.rich-text-render h2 {
+  font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.625rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  margin-top: 2.25rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--accent);
+  color: var(--foreground);
+  display: inline-block;
+}
+.rich-text-render h2:first-child {
+  margin-top: 0;
+}
 
-              .rich-text-render h3 {
-                font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.2rem);
-                font-weight: 600;
-                margin-top: 2.25rem;
-                margin-bottom: 0.7rem;
-              }
+/* H3: clean structural divider */
+.rich-text-render h3 {
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
 
-              .rich-text-render h4 {
-                font-size: 1rem;
-                font-weight: 600;
-                color: var(--muted-foreground);
-                margin-top: 1.75rem;
-                margin-bottom: 0.6rem;
-              }
+/* H4: pill label */
+.rich-text-render h4 {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
 
-              /* Clickable hash anchor */
-              .rich-text-render .heading-anchor {
-                position: absolute;
-                left: -1.5rem;
-                top: 0.15em;
-                font-size: 0.8em;
-                font-weight: 500;
-                color: var(--muted-foreground);
-                text-decoration: none;
-                opacity: 0;
-                transition: opacity 0.15s ease, color 0.15s ease;
-              }
-              .rich-text-render h2:hover .heading-anchor,
-              .rich-text-render h3:hover .heading-anchor,
-              .rich-text-render .heading-anchor:focus-visible {
-                opacity: 0.6;
-              }
-              .rich-text-render .heading-anchor:hover { opacity: 1 !important; color: var(--accent); }
-              @media (max-width: 640px) {
-                .rich-text-render .heading-anchor {
-                  position: static;
-                  margin-right: 0.4rem;
-                  opacity: 0.4;
-                }
-              }
+/* --- Images --- */
+.rich-text-render img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 2rem auto;
+  display: block;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  transition: transform 0.4s ease;
+}
+.rich-text-render img:hover { transform: scale(1.015); }
 
-              /* --- Images --- */
-              .rich-text-render img {
-                max-width: 100%;
-                height: auto;
-                border-radius: 12px;
-                margin: 2rem auto;
-                display: block;
-                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-                transition: transform 0.4s ease;
-              }
-              .rich-text-render img:hover { transform: scale(1.015); }
+/* --- Lists --- */
+.rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
+.rich-text-render ul { list-style-type: disc; }
+.rich-text-render ol { list-style-type: decimal; }
+.rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
+.rich-text-render li::marker { color: var(--accent); }
 
-              /* --- Lists --- */
-              .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
-              .rich-text-render ul { list-style-type: disc; }
-              .rich-text-render ol { list-style-type: decimal; }
-              .rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
-              .rich-text-render li::marker { color: var(--accent); }
+/* --- Table: flat header, thin grid --- */
+.rich-text-render .table-wrap {
+  margin: 2.75rem 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
 
-              /* --- Table: "spec sheet" treatment --- */
-              .rich-text-render table {
-                width: 100%;
-                border-collapse: separate;
-                border-spacing: 0;
-                margin: 2.5rem 0;
-                border: 1px solid var(--border);
-                border-radius: 14px;
-                overflow: hidden;
-                font-size: 0.9375rem;
-                box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
-              }
+.rich-text-render .table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.rich-text-render .table-scroll::-webkit-scrollbar { height: 6px; }
+.rich-text-render .table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
 
-              .rich-text-render thead th {
-                background: linear-gradient(
-                  180deg,
-                  color-mix(in srgb, var(--accent) 8%, transparent),
-                  color-mix(in srgb, var(--accent-2) 4%, transparent)
-                );
-                font-weight: 700;
-                font-size: 0.75rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: var(--foreground);
-                padding: 0.9rem 1.15rem;
-                border-bottom: 2px solid var(--border);
-                text-align: left;
-              }
-              .rich-text-render thead th:first-child { border-top-left-radius: 13px; }
-              .rich-text-render thead th:last-child { border-top-right-radius: 13px; }
+.rich-text-render table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: 0.9rem;
+}
 
-              .rich-text-render td {
-                padding: 0.85rem 1.15rem;
-                border-bottom: 1px solid var(--border);
-                font-variant-numeric: tabular-nums;
-                color: var(--muted-foreground);
-              }
-              .rich-text-render td:first-child {
-                font-weight: 600;
-                color: var(--foreground);
-              }
-              .rich-text-render tbody tr:last-child td { border-bottom: none; }
-              .rich-text-render tbody tr:last-child td:first-child { border-bottom-left-radius: 13px; }
-              .rich-text-render tbody tr:last-child td:last-child { border-bottom-right-radius: 13px; }
+.rich-text-render thead th {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.rich-text-render thead th + th {
+  border-left: 1px solid var(--border);
+}
 
-              .rich-text-render tbody tr {
-                transition: background-color 0.15s ease;
-              }
-              .rich-text-render tbody tr:hover td {
-                background: color-mix(in srgb, var(--accent) 5%, transparent);
-              }
+.rich-text-render td {
+  padding: 0.95rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+.rich-text-render td + td {
+  border-left: 1px solid var(--border);
+}
+.rich-text-render tbody tr:last-child td { border-bottom: none; }
+
+.rich-text-render td:first-child {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.rich-text-render tbody tr {
+  transition: background 0.15s ease;
+}
+.rich-text-render tbody tr:hover td {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
             `}</style>
 
             <ArticleImageLightbox>
-              <div className="overflow-x-auto rounded-xl">
-                <div
-                  className="rich-text-render prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: modifiedHtml }}
-                  suppressHydrationWarning
-                />
-              </div>
-            </ArticleImageLightbox>
+  <div className="rich-text-render">
+    <TableProcessor html={modifiedHtml} />
+  </div>
+</ArticleImageLightbox>
             <AlsoReadMount />
             <KeyHighlightsMount />
+            <SpecificationsMount />
 
             {/* Author Bio */}
             <div className="mt-10 pt-6 border-t border-border">
