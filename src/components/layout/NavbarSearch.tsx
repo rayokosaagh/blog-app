@@ -65,17 +65,16 @@ export default function NavbarSearch() {
   }, [trimmedQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Don't let a too-short, overly-broad query hit the results page
-    if (trimmedQuery.length < MIN_QUERY_LENGTH) {
-      setIsOpen(true);
-      return;
-    }
+  if (trimmedQuery.length < MIN_QUERY_LENGTH) {
+    setIsOpen(true);
+    return;
+  }
 
-    setIsOpen(false);
-    router.push(`/blog?search=${encodeURIComponent(trimmedQuery)}`);
-  };
+  setIsOpen(false);
+  router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+};
 
   const handleClear = () => {
     setQuery("");

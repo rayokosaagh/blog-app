@@ -54,26 +54,23 @@ export default async function BlogPage({
 
   const [posts, activeTags, allTags, authors, availableYearsRaw] = await Promise.all([
     prisma.post.findMany({
-      where: {
-        published: true,
-        ...(search && {
-          OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { content: { contains: search, mode: "insensitive" } },
-          ],
-        }),
-        ...(tagSlugs.length > 0 && {
-          AND: tagSlugs.map((slug) => ({
-            tags: { some: { slug } },
-          })),
-        }),
-        ...(author && { authorId: author }),
-        ...(createdAtFilter && { createdAt: createdAtFilter }),
-        ...(monthOnlyIds && { id: { in: monthOnlyIds } }),
-      },
-      orderBy: { createdAt: "desc" },
-      include: { author: true, tags: true },
+  where: {
+    published: true,
+    ...(search && {
+      title: { contains: search, mode: "insensitive" },
     }),
+    ...(tagSlugs.length > 0 && {
+      AND: tagSlugs.map((slug) => ({
+        tags: { some: { slug } },
+      })),
+    }),
+    ...(author && { authorId: author }),
+    ...(createdAtFilter && { createdAt: createdAtFilter }),
+    ...(monthOnlyIds && { id: { in: monthOnlyIds } }),
+  },
+  orderBy: { createdAt: "desc" },
+  include: { author: true, tags: true },
+}),
     tagSlugs.length > 0
       ? prisma.tag.findMany({ where: { slug: { in: tagSlugs } } })
       : Promise.resolve([]),

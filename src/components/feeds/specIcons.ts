@@ -4,7 +4,8 @@ import {
   CircuitBoard,
   BatteryCharging,
   Camera,
-  Webcam,
+  Aperture,
+  ScanFace,
   Keyboard,
   Fingerprint,
   MemoryStick,
@@ -22,6 +23,8 @@ import {
   ScanLine,
   Weight,
   Info,
+  Layers,
+  Radar,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,14 +34,17 @@ export interface SpecAccent {
 }
 
 const RULES: { keywords: string[]; icon: LucideIcon; accent: SpecAccent }[] = [
+  { keywords: ["design", "build", "construction"], icon: Layers, accent: { bar: "bg-gray-500", icon: "text-gray-600 dark:text-gray-400" } },
   { keywords: ["display", "screen", "resolution"], icon: Monitor, accent: { bar: "bg-blue-500", icon: "text-blue-600 dark:text-blue-400" } },
   { keywords: ["chipset", "processor", "cpu", "soc"], icon: Cpu, accent: { bar: "bg-violet-500", icon: "text-violet-600 dark:text-violet-400" } },
   { keywords: ["gpu", "graphics"], icon: CircuitBoard, accent: { bar: "bg-cyan-500", icon: "text-cyan-600 dark:text-cyan-400" } },
   { keywords: ["battery", "charging", "adapter", "fast charg"], icon: BatteryCharging, accent: { bar: "bg-amber-500", icon: "text-amber-600 dark:text-amber-400" } },
-  { keywords: ["webcam"], icon: Webcam, accent: { bar: "bg-rose-500", icon: "text-rose-600 dark:text-rose-400" } },
+  { keywords: ["front camera", "selfie camera"], icon: ScanFace, accent: { bar: "bg-fuchsia-500", icon: "text-fuchsia-600 dark:text-fuchsia-400" } },
+  { keywords: ["rear camera", "back camera", "primary camera"], icon: Aperture, accent: { bar: "bg-pink-500", icon: "text-pink-600 dark:text-pink-400" } },
   { keywords: ["camera"], icon: Camera, accent: { bar: "bg-pink-500", icon: "text-pink-600 dark:text-pink-400" } },
   { keywords: ["keyboard", "trackpad"], icon: Keyboard, accent: { bar: "bg-yellow-500", icon: "text-yellow-600 dark:text-yellow-400" } },
   { keywords: ["security", "fingerprint", "face unlock"], icon: Fingerprint, accent: { bar: "bg-red-500", icon: "text-red-600 dark:text-red-400" } },
+  { keywords: ["sensors", "gyroscope", "accelerometer", "compass"], icon: Radar, accent: { bar: "bg-purple-500", icon: "text-purple-600 dark:text-purple-400" } },
   { keywords: ["ram", "memory"], icon: MemoryStick, accent: { bar: "bg-teal-500", icon: "text-teal-600 dark:text-teal-400" } },
   { keywords: ["storage", "rom"], icon: HardDrive, accent: { bar: "bg-indigo-500", icon: "text-indigo-600 dark:text-indigo-400" } },
   { keywords: ["weight"], icon: Weight, accent: { bar: "bg-slate-500", icon: "text-slate-600 dark:text-slate-400" } },

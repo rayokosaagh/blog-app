@@ -125,7 +125,7 @@ export default function Navbar() {
         >
           <Link
             href="/"
-            className="text-xl font-bold tracking-wide hover:text-[#6f42c1] dark:hover:text-white transition-colors"
+            className="text-xl font-bold tracking-wide hover:text-[#2563eb] dark:hover:text-white transition-colors"
           >
             Blog
           </Link>
@@ -161,8 +161,8 @@ export default function Navbar() {
                       href={link.href}
                       className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
                         active
-                          ? "text-[#6f42c1] dark:text-white"
-                          : "text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white"
+                          ? "text-[#2563eb] dark:text-white"
+                          : "text-gray-600 dark:text-gray-200 hover:text-[#2563eb] dark:hover:text-white"
                       }`}
                     >
                       {active && (
@@ -197,7 +197,7 @@ export default function Navbar() {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/40 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-white hover:bg-white/60 dark:hover:bg-white/20 hover:text-[#6f42c1] dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/40 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-white hover:bg-white/60 dark:hover:bg-white/20 hover:text-[#2563eb] dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               >
                 {session.user?.image ? (
                   <img src={session.user.image} alt="Profile" className="w-full h-full rounded-full object-cover" />
@@ -263,7 +263,7 @@ export default function Navbar() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/login"
-                className="px-5 py-2 rounded-full border border-white/60 dark:border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-md text-gray-700 dark:text-white hover:text-[#6f42c1] dark:hover:text-white hover:border-[#6f42c1] dark:hover:border-white hover:bg-white/50 dark:hover:bg-white/10 transition-all duration-200 font-medium"
+                className="px-5 py-2 rounded-full border border-white/60 dark:border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-md text-gray-700 dark:text-white hover:text-[#2563eb] dark:hover:text-white hover:border-[#2563eb] dark:hover:border-white hover:bg-white/50 dark:hover:bg-white/10 transition-all duration-200 font-medium"
               >
                 Sign In
               </Link>
@@ -276,7 +276,7 @@ export default function Navbar() {
           whileHover={{ scale: 1.1, rotate: 10 }}
           whileTap={{ scale: 0.9 }}
           aria-label={isOpen ? "Close menu" : "Open menu"}
-          className="relative z-10 md:hidden p-2 rounded-full bg-white/30 dark:bg-white/10 backdrop-blur-md text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/20 transition-colors focus:outline-none"
+          className="relative z-10 md:hidden p-2 rounded-full bg-white/30 dark:bg-white/10 backdrop-blur-md text-gray-600 dark:text-gray-200 hover:text-[#2563eb] dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/20 transition-colors focus:outline-none"
         >
           {isOpen ? (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -344,7 +344,7 @@ export default function Navbar() {
                   <button
                     onClick={() => setIsOpen(false)}
                     aria-label="Close menu"
-                    className="shrink-0 p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-[#6f42c1] dark:hover:text-white transition-colors"
+                    className="shrink-0 p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-[#2563eb] dark:hover:text-white transition-colors"
                   >
                     <X className="h-4.5 w-4.5" />
                   </button>
@@ -369,8 +369,8 @@ export default function Navbar() {
                             href={link.href}
                             className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl transition-colors ${
                               active
-                                ? "bg-white/60 dark:bg-white/10 text-[#6f42c1] dark:text-white backdrop-blur-md"
-                                : "text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10"
+                                ? "bg-white/60 dark:bg-white/10 text-[#2563eb] dark:text-white backdrop-blur-md"
+                                : "text-gray-600 dark:text-gray-200 hover:text-[#2563eb] dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10"
                             }`}
                           >
                             <Icon className="h-4 w-4 shrink-0" />
@@ -386,8 +386,8 @@ export default function Navbar() {
                           href="/bookmarks"
                           className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl transition-colors ${
                             isActiveLink("/bookmarks")
-                              ? "bg-white/60 dark:bg-white/10 text-[#6f42c1] dark:text-white backdrop-blur-md"
-                              : "text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10"
+                              ? "bg-white/60 dark:bg-white/10 text-[#2563eb] dark:text-white backdrop-blur-md"
+                              : "text-gray-600 dark:text-gray-200 hover:text-[#2563eb] dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10"
                           }`}
                         >
                           <Bookmark className="h-4 w-4 shrink-0" />
@@ -407,7 +407,7 @@ export default function Navbar() {
                       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <Link
                           href="/login"
-                          className="flex justify-center items-center gap-2 w-full py-2.5 rounded-xl bg-white/40 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-white hover:text-[#6f42c1] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/20 transition-all duration-200 font-medium text-sm"
+                          className="flex justify-center items-center gap-2 w-full py-2.5 rounded-xl bg-white/40 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-white hover:text-[#2563eb] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/20 transition-all duration-200 font-medium text-sm"
                         >
                           Sign In
                         </Link>

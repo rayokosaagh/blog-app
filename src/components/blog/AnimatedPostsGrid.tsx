@@ -1,3 +1,4 @@
+// src/components/blog/AnimatedPostsGrid.tsx
 "use client";
 
 import { useState } from "react";
@@ -152,6 +153,7 @@ export default function AnimatedPostsGrid({
   const hasMore = visibleCount < rest.length;
 
   const leadTags = sortTagsByOrder(lead.tags, lead.tagOrder);
+  const sideListIsFull = sideList.length >= 4;
 
   return (
     <AnimatePresence mode="wait">
@@ -165,7 +167,11 @@ export default function AnimatedPostsGrid({
       >
         {/* Magazine section — lead + side list + secondary grid */}
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6 items-stretch">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6 ${
+              sideListIsFull ? "items-stretch" : "items-start"
+            }`}
+          >
             {/* Lead story */}
             <motion.div
               variants={itemVariants}
@@ -224,19 +230,23 @@ export default function AnimatedPostsGrid({
               </Link>
             </motion.div>
 
-            {/* Side list — stretches to exactly match the lead story's height, thumbnails stay fixed-size and undistorted */}
+            {/* Side list — stretches to exactly match the lead story's height only when
+                there are enough items (4) to fill it naturally; otherwise sizes to content
+                and top-aligns, so 1–3 items don't get stretched into a huge empty card. */}
             {sideList.length > 0 && (
-              <div className="flex flex-col gap-3 h-full">
+              <div className={`flex flex-col gap-3 ${sideListIsFull ? "h-full" : ""}`}>
                 {sideList.map((post) => (
                   <motion.div
                     key={post.id}
                     variants={itemVariants}
                     exit="exit"
-                    className="group bg-card rounded-2xl shadow-sm hover:shadow-md dark:shadow-none transition-shadow duration-300 flex-1"
+                    className={`group bg-card rounded-2xl shadow-sm hover:shadow-md dark:shadow-none transition-shadow duration-300 ${
+                      sideListIsFull ? "flex-1" : ""
+                    }`}
                   >
                     <Link
                       href={`/blog/${post.slug}`}
-                      className="flex items-center gap-3 h-full px-3"
+                      className="flex items-center gap-3 h-full px-3 py-3"
                     >
                       <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden rounded-xl self-center">
                         {post.featuredImage ? (
@@ -389,4 +399,4 @@ const itemVariants = {
     y: -8,
     transition: { duration: 0.18, ease: "easeIn" as const },
   },
-};
+}; 

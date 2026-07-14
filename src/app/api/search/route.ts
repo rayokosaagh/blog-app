@@ -1,9 +1,12 @@
+// src/app/api/search/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const query = searchParams.get('q')?.trim();
+  const limitParam = Number(searchParams.get('limit'));
+  const take = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 5;
 
   if (!query || query.length < 2) {
     return NextResponse.json({ results: [] });
@@ -20,7 +23,7 @@ export async function GET(req: NextRequest) {
         slug: true,
         featuredImage: true,
       },
-      take: 5,
+      take,
     });
 
     return NextResponse.json({ results: posts });
