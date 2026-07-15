@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { Users as UsersIcon, Search, ChevronDown, CheckCircle2, Trash, Plus, X } from "lucide-react";
 
 type Role = "ADMIN" | "EDITOR";
 type ActionType = "added" | "updated" | "deleted" | null;
@@ -212,71 +213,91 @@ export default function UsersPage() {
         <img
           src={user.image}
           alt={user.name}
-          className={`${dim} rounded-full object-cover ring-2 ring-white transition-transform group-hover:scale-110`}
+          className={`${dim} rounded-full object-cover ring-2 ring-white dark:ring-zinc-900 transition-transform group-hover:scale-110`}
         />
       );
     }
     return (
-      <div className={`${dim} rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium transition-transform group-hover:scale-110`}>
+      <div className={`${dim} rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold transition-transform group-hover:scale-110`}>
         {user.name?.charAt(0).toUpperCase()}
       </div>
     );
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Loading users...</p></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-sm text-zinc-400">Loading users...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-500 mt-1">
-            {filteredUsers.length} of {users.length} users
-          </p>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <UsersIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <h1
+                className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Users
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                {filteredUsers.length} of {users.length} users
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Add user</span>
+          </button>
         </div>
-        <button
-          onClick={openAddModal}
-          className="bg-blue-600 text-white px-6 py-3 rounded-2xl hover:bg-blue-700 active:scale-95 transition-all duration-200 font-medium shadow-sm"
-        >
-          + Add User
-        </button>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative group">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <input
             type="text"
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-gray-300 rounded-3xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-gray-900 placeholder-gray-400"
+            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
           />
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
         </div>
 
-        <div className="sm:w-56 relative" ref={dropdownRef}>
+        <div className="relative sm:w-52" ref={dropdownRef}>
           <button
             onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-            className="w-full border border-gray-300 rounded-3xl px-6 py-4 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-left flex items-center justify-between text-gray-900"
+            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
           >
             <span>
-              {roleFilter === "ALL" && "All Roles"}
-              {roleFilter === "ADMIN" && "Admin Only"}
-              {roleFilter === "EDITOR" && "Editor Only"}
+              {roleFilter === "ALL" && "All roles"}
+              {roleFilter === "ADMIN" && "Admin only"}
+              {roleFilter === "EDITOR" && "Editor only"}
             </span>
-            <span className={`transition-transform duration-300 ${showRoleDropdown ? "rotate-180" : ""}`}>▼</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showRoleDropdown ? "rotate-180" : ""}`}
+            />
           </button>
 
           {showRoleDropdown && (
-            <div className="absolute mt-3 w-full bg-white rounded-3xl shadow-xl border border-gray-200 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
               {[
-                { value: "ALL", label: "All Roles" },
-                { value: "ADMIN", label: "Admin Only" },
-                { value: "EDITOR", label: "Editor Only" }
+                { value: "ALL", label: "All roles" },
+                { value: "ADMIN", label: "Admin only" },
+                { value: "EDITOR", label: "Editor only" },
               ].map((option) => (
                 <div
                   key={option.value}
@@ -284,8 +305,10 @@ export default function UsersPage() {
                     setRoleFilter(option.value as "ALL" | Role);
                     setShowRoleDropdown(false);
                   }}
-                  className={`px-6 py-3.5 hover:bg-gray-100 cursor-pointer transition-colors ${
-                    roleFilter === option.value ? "bg-blue-50 text-blue-700 font-medium" : ""
+                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
+                    roleFilter === option.value
+                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
+                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                   }`}
                 >
                   {option.label}
@@ -296,92 +319,116 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {fetchError && (
+        <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm">
+          {fetchError}
+        </div>
+      )}
+
       {/* Success Banner */}
       {successAction && (
-        <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top duration-300">
-          <span className="text-xl">✅</span>
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-sm">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
           <span>
-            <strong>"{successName}"</strong>{" "}
-            {successAction === "added" && "has been added successfully."}
-            {successAction === "updated" && "has been updated successfully."}
-            {successAction === "deleted" && "has been deleted successfully."}
+            <strong>{successName}</strong>{" "}
+            {successAction === "added" && "has been added."}
+            {successAction === "updated" && "has been updated."}
+            {successAction === "deleted" && "has been deleted."}
           </span>
         </div>
       )}
 
-      {/* Table with Liquid Animation */}
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">User</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Email</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Role</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Posts</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Joined</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredUsers.length === 0 ? (
+      {/* Table */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
               <tr>
-                <td colSpan={6} className="p-12 text-center text-gray-400">No users found</td>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">User</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Email</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Role</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Posts</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Joined</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Actions</th>
               </tr>
-            ) : (
-              filteredUsers.map((user, index) => (
-                <tr 
-                  key={user.id} 
-                  className="group hover:bg-gray-50 transition-all duration-300 hover:-translate-y-0.5"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <td className="p-5">
-                    <div className="flex items-center gap-4">
-                      <Avatar user={user} />
-                      <p className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{user.name}</p>
-                    </div>
-                  </td>
-                  <td className="p-5 text-sm text-gray-600">{user.email}</td>
-                  <td className="p-5">
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
-                      user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="p-5 text-sm text-gray-600">{user._count.posts} posts</td>
-                  <td className="p-5 text-sm text-gray-600">
-                    {new Date(user.createdAt).toDateString()}
-                  </td>
-                  <td className="p-5">
-                    <div className="flex items-center gap-4 opacity-80 group-hover:opacity-100 transition-all">
-                      <button onClick={() => openEditModal(user)} className="text-blue-600 hover:text-blue-700 font-medium transition-colors">Edit</button>
-                      <button onClick={() => openDeleteModal(user)} className="text-red-600 hover:text-red-700 font-medium transition-colors">Delete</button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-sm text-zinc-400">
+                    No users found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar user={user} />
+                        <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{user.name}</p>
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm text-zinc-500 dark:text-zinc-400">{user.email}</td>
+                    <td className="p-4">
+                      <span
+                        className={`text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide ${
+                          user.role === "ADMIN"
+                            ? "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                            : "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm text-zinc-500 dark:text-zinc-400">{user._count.posts} posts</td>
+                    <td className="p-4 text-sm text-zinc-500 dark:text-zinc-400">
+                      {new Date(user.createdAt).toDateString()}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-semibold transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(user)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-semibold transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Delete Modal */}
       {showDeleteModal && userToDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
             <div className="p-10">
-              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">🗑️</span>
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Trash className="h-7 w-7 text-red-600 dark:text-red-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 text-center">Delete User?</h2>
-              <p className="text-gray-600 text-center mt-3">
-                Are you sure you want to delete <strong>"{userToDelete.name}"</strong>?
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">Delete user?</h2>
+              <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">
+                Are you sure you want to delete{" "}
+                <strong className="text-zinc-700 dark:text-zinc-300">{userToDelete.name}</strong>?
               </p>
             </div>
-            <div className="border-t flex">
+            <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
               <button
-                onClick={() => { setShowDeleteModal(false); setUserToDelete(null); }}
-                className="flex-1 py-5 text-gray-600 font-medium hover:bg-gray-100 active:scale-95 transition-all rounded-bl-3xl"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="flex-1 py-5 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all rounded-bl-3xl"
               >
                 Cancel
               </button>
@@ -398,70 +445,126 @@ export default function UsersPage() {
 
       {/* Add / Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-                {editingUser ? "Edit User" : "Add New User"}
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {editingUser ? "Edit user" : "Add new user"}
+                </h2>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-              {error && <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl mb-6">{error}</div>}
+              {error && (
+                <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl mb-6 text-sm">
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
+                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Profile photo</label>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                       {form.image ? (
                         <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-blue-700 font-medium text-xl">
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold text-xl">
                           {form.name ? form.name.charAt(0).toUpperCase() : "?"}
                         </span>
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="cursor-pointer inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700">
+                      <label className="cursor-pointer inline-flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                         <span>{uploading ? "Uploading..." : form.image ? "Change photo" : "Upload photo"}</span>
                         <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
                       </label>
                       {form.image && (
-                        <button type="button" onClick={() => setForm((prev) => ({ ...prev, image: "" }))} className="text-sm text-red-500 hover:text-red-700">Remove photo</button>
+                        <button
+                          type="button"
+                          onClick={() => setForm((prev) => ({ ...prev, image: "" }))}
+                          className="text-sm text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-left"
+                        >
+                          Remove photo
+                        </button>
                       )}
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Name</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                    required
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                    required
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password {editingUser && <span className="text-gray-400">(leave blank to keep current)</span>}
+                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+                    Password{" "}
+                    {editingUser && (
+                      <span className="text-zinc-400 dark:text-zinc-500 normal-case font-normal">
+                        (leave blank to keep current)
+                      </span>
+                    )}
                   </label>
-                  <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500" autoComplete="new-password" />
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                    autoComplete="new-password"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })} className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Role</label>
+                  <select
+                    value={form.role}
+                    onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                  >
                     <option value="EDITOR">Editor</option>
                     <option value="ADMIN">Admin</option>
                   </select>
                 </div>
 
-                <div className="flex gap-4 pt-4">
-                  <button type="submit" disabled={saving || uploading} className="flex-1 bg-blue-600 text-white py-3.5 rounded-2xl font-medium active:scale-[0.985] transition-all disabled:opacity-70">
-                    {saving ? "Saving..." : editingUser ? "Save Changes" : "Add User"}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={saving || uploading}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-70"
+                  >
+                    {saving ? "Saving..." : editingUser ? "Save changes" : "Add user"}
                   </button>
-                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3.5 rounded-2xl font-medium text-gray-600 hover:bg-gray-100 active:scale-95 transition-all">Cancel</button>
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>

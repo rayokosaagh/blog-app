@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { FileText, Search, ChevronDown, Plus } from "lucide-react";
 import DeleteButton from "@/components/dashboard/DeleteButton";
 import AnimatedPostCard from "@/components/blog/AnimatedPostCard";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
@@ -72,62 +73,78 @@ export default function PostsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Loading posts...</p>
+        <p className="text-sm text-zinc-400">Loading posts...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Posts</h1>
-          <p className="text-gray-500 mt-1">
-            {filteredPosts.length} of {posts.length} total posts
-          </p>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <h1
+                className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                All posts
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                {filteredPosts.length} of {posts.length} total posts
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/posts/new"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">New post</span>
+          </Link>
         </div>
-        <Link
-          href="/dashboard/posts/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          + New Post
-        </Link>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative group">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <input
             type="text"
             placeholder="Search by title or slug..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 placeholder-gray-400"
+            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
           />
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</div>
         </div>
 
         {/* Custom Dropdown */}
-        <div className="sm:w-56 relative" ref={dropdownRef}>
+        <div className="relative sm:w-52" ref={dropdownRef}>
           <button
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-            className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-left flex items-center justify-between text-gray-900"
+            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
           >
             <span>
-              {statusFilter === "ALL" && "All Posts"}
-              {statusFilter === "PUBLISHED" && "Published Only"}
-              {statusFilter === "DRAFT" && "Drafts Only"}
+              {statusFilter === "ALL" && "All posts"}
+              {statusFilter === "PUBLISHED" && "Published only"}
+              {statusFilter === "DRAFT" && "Drafts only"}
             </span>
-            <span className={`transition-transform duration-200 ${showStatusDropdown ? "rotate-180" : ""}`}>▼</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`}
+            />
           </button>
 
           {showStatusDropdown && (
-            <div className="absolute mt-2 w-full bg-white rounded-2xl shadow-xl border border-gray-200 py-2 z-50">
+            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
               {[
-                { value: "ALL", label: "All Posts" },
-                { value: "PUBLISHED", label: "Published Only" },
-                { value: "DRAFT", label: "Drafts Only" },
+                { value: "ALL", label: "All posts" },
+                { value: "PUBLISHED", label: "Published only" },
+                { value: "DRAFT", label: "Drafts only" },
               ].map((option) => (
                 <div
                   key={option.value}
@@ -135,8 +152,10 @@ export default function PostsPage() {
                     setStatusFilter(option.value as "ALL" | "PUBLISHED" | "DRAFT");
                     setShowStatusDropdown(false);
                   }}
-                  className={`px-5 py-3 hover:bg-gray-100 cursor-pointer transition-colors ${
-                    statusFilter === option.value ? "bg-blue-50 text-blue-700 font-medium" : ""
+                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
+                    statusFilter === option.value
+                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
+                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                   }`}
                 >
                   {option.label}
@@ -151,12 +170,14 @@ export default function PostsPage() {
       <div className="space-y-4">
         {filteredPosts.length === 0 ? (
           <AnimatedPostCard index={0}>
-            <div className="bg-white rounded-xl p-12 text-center text-gray-500">
-              <p className="text-5xl mb-4">📝</p>
-              <p className="text-lg font-medium">No posts found</p>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-12 text-center">
+              <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No posts found</p>
               <Link
                 href="/dashboard/posts/new"
-                className="text-blue-600 hover:underline mt-2 inline-block"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium mt-2 inline-block"
               >
                 Create your first post
               </Link>
@@ -165,37 +186,37 @@ export default function PostsPage() {
         ) : (
           filteredPosts.map((post, index) => (
             <AnimatedPostCard key={post.id} index={index}>
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden flex">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden flex flex-col sm:flex-row">
                 {/* Featured Image */}
                 {post.featuredImage ? (
                   <img
                     src={post.featuredImage}
                     alt={post.title}
-                    className="w-48 h-36 object-cover flex-shrink-0"
+                    className="w-full h-40 sm:w-48 sm:h-36 object-cover flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-48 h-36 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
-                    <span className="text-4xl">📝</span>
+                  <div className="w-full h-40 sm:w-48 sm:h-36 bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-8 w-8 text-blue-300 dark:text-blue-400/40" />
                   </div>
                 )}
 
                 {/* Post Info */}
-                <div className="flex-1 p-6 flex flex-col justify-between">
+                <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between min-w-0">
                   <div>
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="text-lg font-bold text-gray-900">
+                      <div className="min-w-0">
+                        <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">
                           {post.title}
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                           /{post.slug}
                         </p>
                       </div>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${
+                        className={`text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide flex-shrink-0 ${
                           post.published
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
+                            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
                         }`}
                       >
                         {post.published ? "Published" : "Draft"}
@@ -204,10 +225,9 @@ export default function PostsPage() {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between mt-4">
-                    <p className="text-sm text-gray-500">
-                      By {post.author.name} ·{" "}
-                      {new Date(post.createdAt).toDateString()}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      By {post.author.name} · {new Date(post.createdAt).toDateString()}
                     </p>
 
                     {/* Actions */}
@@ -217,7 +237,7 @@ export default function PostsPage() {
                           <Link
                             href={`/blog/${post.slug}`}
                             target="_blank"
-                            className="text-sm text-gray-500 hover:text-gray-700"
+                            className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                           >
                             View →
                           </Link>
@@ -226,14 +246,11 @@ export default function PostsPage() {
                       )}
                       <Link
                         href={`/dashboard/posts/${post.id}/edit`}
-                        className="text-sm text-blue-600 hover:underline font-medium"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold"
                       >
                         Edit
                       </Link>
-                      <DeleteButton
-                        postId={post.id}
-                        postTitle={post.title}
-                      />
+                      <DeleteButton postId={post.id} postTitle={post.title} />
                     </div>
                   </div>
                 </div>

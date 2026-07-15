@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { ArrowLeft, FilePlus2, ImageIcon, X, CheckCircle2 } from "lucide-react";
 import TagPicker from "@/components/blog/TagPicker";
 
 const Editor = dynamic(() => import("@/components/dashboard/Editor"), { ssr: false });
@@ -104,21 +106,23 @@ export default function NewPostPage() {
   if (success) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center max-w-md">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">✅</span>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-12 text-center max-w-md">
+          <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Post {published ? "Published" : "Saved"}!
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+            Post {published ? "published" : "saved"}
           </h2>
-          <p className="text-gray-500 mb-2">
-            "{title}" has been {published ? "published successfully" : "saved as a draft"}.
+          <p className="text-zinc-500 dark:text-zinc-400 mb-2">
+            <strong className="text-zinc-700 dark:text-zinc-300">{title}</strong> has been{" "}
+            {published ? "published" : "saved as a draft"}.
           </p>
-          <p className="text-sm text-gray-400">
-            Redirecting to posts...
-          </p>
-          <div className="mt-6 w-full bg-gray-100 rounded-full h-1">
-            <div className="bg-green-500 h-1 rounded-full animate-[width_2s_ease-in-out]" style={{ width: "100%", transition: "width 2s" }} />
+          <p className="text-sm text-zinc-400 dark:text-zinc-500">Redirecting to posts...</p>
+          <div className="mt-6 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1">
+            <div
+              className="bg-emerald-500 h-1 rounded-full"
+              style={{ width: "100%", transition: "width 2s" }}
+            />
           </div>
         </div>
       </div>
@@ -126,15 +130,37 @@ export default function NewPostPage() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">New Post</h1>
-        <p className="text-gray-500 mt-1">Create a new blog post</p>
+    <div className="space-y-6">
+      <Link
+        href="/dashboard/posts"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Posts
+      </Link>
+
+      {/* Header */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 sm:p-6 flex items-center gap-4">
+          <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+            <FilePlus2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="min-w-0">
+            <h1
+              className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              New post
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Create a new blog post</p>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-6 sm:p-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl mb-6 text-sm">
             {error}
           </div>
         )}
@@ -142,63 +168,66 @@ export default function NewPostPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
               required
             />
           </div>
 
           {/* Slug */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Slug
             </label>
             <input
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
               required
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5" style={{ fontFamily: "var(--font-mono)" }}>
               URL: /blog/{slug || "my-awesome-blog-post"}
             </p>
           </div>
 
           {/* Featured Image */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Featured Image
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Featured image
             </label>
             {featuredImage ? (
               <div className="relative">
                 <img
                   src={featuredImage}
                   alt="Featured"
-                  className="w-full h-48 object-cover rounded-lg"
+                  className="w-full h-48 object-cover rounded-xl"
                 />
                 <button
                   type="button"
                   onClick={() => setFeaturedImage("")}
-                  className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700"
+                  className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700 transition-colors"
+                  aria-label="Remove image"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
                 <div className="text-center">
-                  <p className="text-4xl mb-2">🖼️</p>
-                  <p className="text-sm font-medium text-gray-700">
+                  <div className="h-12 w-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                    <ImageIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     {uploading ? "Uploading..." : "Click to upload featured image"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                     PNG, JPG, GIF, WEBP up to 5MB
                   </p>
                 </div>
@@ -215,7 +244,7 @@ export default function NewPostPage() {
 
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Content
             </label>
             <Editor content={content} onChange={setContent} />
@@ -231,9 +260,9 @@ export default function NewPostPage() {
               id="published"
               checked={published}
               onChange={(e) => setPublished(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded"
+              className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500/40"
             />
-            <label htmlFor="published" className="text-sm font-medium text-gray-700">
+            <label htmlFor="published" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Publish immediately
             </label>
           </div>
@@ -243,14 +272,14 @@ export default function NewPostPage() {
             <button
               type="submit"
               disabled={loading || uploading}
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
             >
-              {loading ? "Creating..." : published ? "Publish Post" : "Save Draft"}
+              {loading ? "Creating..." : published ? "Publish post" : "Save draft"}
             </button>
             <button
               type="button"
               onClick={() => router.back()}
-              className="text-gray-600 hover:text-gray-900 font-medium"
+              className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors"
             >
               Cancel
             </button>

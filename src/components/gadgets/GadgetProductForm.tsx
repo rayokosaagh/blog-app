@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ImagePlus,
+  X,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
 
 interface GadgetProductFormProps {
@@ -19,6 +27,27 @@ interface GadgetProductFormProps {
   };
 }
 
+const inputClass =
+  "w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed";
+
+const labelClass = "block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5";
+
+function FormCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+      <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+        <h2
+          className="text-sm font-bold text-zinc-900 dark:text-zinc-50"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {title}
+        </h2>
+      </div>
+      <div className="p-6 space-y-5">{children}</div>
+    </div>
+  );
+}
+
 export default function GadgetProductForm({ mode, productId, initial }: GadgetProductFormProps) {
   const router = useRouter();
   const [category, setCategory] = useState(initial?.categorySlug ?? CATEGORY_LIST[0]?.slug ?? "");
@@ -31,7 +60,7 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
   const [specs, setSpecs] = useState<Record<string, any>>(initial?.specs ?? {});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false); // drives the success screen
+  const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const def = getCategoryDef(category);
@@ -69,12 +98,10 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
       setError("Image upload failed. Please try again.");
     } finally {
       setUploading(false);
-      // allow re-selecting the same file later
       e.target.value = "";
     }
   }
 
-  // Auto-generate a slug from the name if the user hasn't typed one manually (create mode only)
   function handleNameChange(value: string) {
     setName(value);
     if (mode === "create") {
@@ -118,7 +145,7 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
       try {
         data = await res.json();
       } catch {
-        // non-JSON error body (e.g. crashed before responding)
+        // non-JSON error body
       }
 
       if (!res.ok) {
@@ -131,7 +158,7 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
 
       setTimeout(() => {
         router.push("/dashboard/gadgets");
-      }, 1500);
+      }, 1200);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -139,212 +166,275 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
     }
   }
 
-  // Success screen — same pattern as the banners page
-  if (saved) {
-    return (
-      <div className="flex items-center justify-center h-[60vh] animate-in fade-in duration-500">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-12 text-center max-w-md scale-95 animate-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-            <span className="text-4xl">✅</span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-zinc-50 mb-3">
-            {mode === "create" ? "Product Added!" : "Product Updated!"}
-          </h2>
-          <p className="text-gray-600 dark:text-zinc-400 text-lg">
-            "{name}" has been {mode === "create" ? "added" : "updated"} successfully.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm p-3 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {/* Basic fields */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm dark:border dark:border-zinc-800 space-y-4">
-        <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">Basic Info</h2>
-
-        <div>
-          <label className="block text-sm text-zinc-500 mb-1">Category</label>
-          <select
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              setSpecs({}); // clear specs — a different category has different fields
-            }}
-            disabled={mode === "edit"} // switching category post-creation would orphan specs; keep it simple
-            className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-          >
-            {CATEGORY_LIST.map((c) => (
-              <option key={c.slug} value={c.slug}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-zinc-500 mb-1">Name</label>
-            <input
-              value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              required
-              className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-zinc-500 mb-1">Brand</label>
-            <input
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              required
-              className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm text-zinc-500 mb-1">Slug (used in URLs)</label>
-          <input
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            required
-            disabled={mode === "edit"}
-            className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2 disabled:opacity-60"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-zinc-500 mb-1">Product Image</label>
-
-          {image ? (
-            <div className="relative group w-full h-48">
-              <img
-                src={image}
-                alt="Preview"
-                className="w-full h-48 object-cover rounded-2xl border border-zinc-200 dark:border-zinc-700"
-              />
-              <button
-                type="button"
-                onClick={() => setImage("")}
-                className="absolute top-3 right-3 bg-red-600 text-white rounded-full w-9 h-9 flex items-center justify-center hover:bg-red-700 transition-transform active:scale-90"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-zinc-800 transition-all">
-              <div className="text-center">
-                <p className="text-5xl mb-3">🖼️</p>
-                <p className="font-medium text-zinc-700 dark:text-zinc-300">
-                  {uploading ? "Uploading..." : "Click to upload a product image"}
-                </p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-            </label>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl pb-24">
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="flex items-start gap-2.5 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm px-4 py-3 rounded-xl"
+            >
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </motion.div>
           )}
+        </AnimatePresence>
 
-          <div className="mt-2">
-            <label className="block text-xs text-zinc-400 mb-1">Or paste an image URL directly</label>
+        {/* Basic info */}
+        <FormCard title="Basic info">
+          <div>
+            <label className={labelClass}>Category</label>
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setSpecs({});
+              }}
+              disabled={mode === "edit"}
+              className={inputClass}
+            >
+              {CATEGORY_LIST.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {mode === "edit" && (
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                Category can't be changed after creation.
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Name</label>
+              <input
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                required
+                placeholder="e.g. Galaxy S25 Ultra"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Brand</label>
+              <input
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                required
+                placeholder="e.g. Samsung"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Slug</label>
             <input
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2 text-sm"
-              placeholder="https://..."
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              required
+              disabled={mode === "edit"}
+              placeholder="used-in-urls"
+              className={`${inputClass} font-mono text-xs`}
+              style={{ fontFamily: "var(--font-mono)" }}
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm text-zinc-500 mb-1">Starting Price</label>
-          <input
-            type="number"
-            value={priceFrom}
-            onChange={(e) => setPriceFrom(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-            placeholder="250000"
-          />
-        </div>
+          <div>
+            <label className={labelClass}>Product image</label>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
-          Published (visible in comparisons)
-        </label>
-      </div>
-
-      {/* Dynamic spec groups — this is the part driven entirely by the registry */}
-      {def?.groups.map((group) => (
-        <div key={group.title} className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm dark:border dark:border-zinc-800 space-y-4">
-          <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">{group.title}</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {group.fields.map((field) => (
-              <div key={field.key}>
-                <label className="block text-sm text-zinc-500 mb-1">
-                  {field.label} {field.unit && `(${field.unit})`}
-                </label>
-
-                {field.type === "boolean" ? (
-                  <select
-                    value={specs[field.key] ?? ""}
-                    onChange={(e) => updateSpec(field.key, e.target.value === "true")}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-                  >
-                    <option value="">—</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
-                ) : field.type === "select" ? (
-                  <select
-                    value={specs[field.key] ?? ""}
-                    onChange={(e) => updateSpec(field.key, e.target.value)}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-                  >
-                    <option value="">—</option>
-                    {field.options?.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                ) : field.type === "multiline" ? (
-                  <textarea
-                    value={specs[field.key] ?? ""}
-                    onChange={(e) => updateSpec(field.key, e.target.value)}
-                    rows={3}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-                  />
-                ) : (
-                  <input
-                    type={field.type === "number" ? "number" : "text"}
-                    value={specs[field.key] ?? ""}
-                    onChange={(e) =>
-                      updateSpec(field.key, field.type === "number" ? Number(e.target.value) : e.target.value)
-                    }
-                    className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-                  />
-                )}
+            {image ? (
+              <div className="relative w-full h-48 rounded-xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-700">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImage("")}
+                  className="absolute top-3 right-3 bg-black/60 hover:bg-rose-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+                  aria-label="Remove image"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            ))}
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+                <div className="text-center">
+                  {uploading ? (
+                    <Loader2 className="h-6 w-6 text-blue-500 mx-auto mb-2 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-6 w-6 text-zinc-400 mx-auto mb-2" />
+                  )}
+                  <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                    {uploading ? "Uploading…" : "Click to upload an image"}
+                  </p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                    PNG or JPG, up to a few MB
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+            )}
+
+            <div className="mt-2.5">
+              <label className="block text-xs text-zinc-400 dark:text-zinc-500 mb-1">
+                Or paste an image URL
+              </label>
+              <input
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                className={`${inputClass} text-xs`}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Starting price</label>
+            <input
+              type="number"
+              value={priceFrom}
+              onChange={(e) => setPriceFrom(e.target.value)}
+              className={inputClass}
+              placeholder="250000"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Published</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                Visible in comparisons when on.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={published}
+              onClick={() => setPublished((p) => !p)}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                published ? "bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"
+              }`}
+            >
+              <span
+                className={`inline-block h-4.5 w-4.5 h-[18px] w-[18px] transform rounded-full bg-white shadow transition-transform ${
+                  published ? "translate-x-[22px]" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+        </FormCard>
+
+        {/* Dynamic spec groups */}
+        {def?.groups.map((group) => (
+          <FormCard key={group.title} title={group.title}>
+            <div className="grid grid-cols-2 gap-4">
+              {group.fields.map((field) => (
+                <div key={field.key}>
+                  <label className={labelClass}>
+                    {field.label} {field.unit && <span className="font-normal">({field.unit})</span>}
+                  </label>
+
+                  {field.type === "boolean" ? (
+                    <select
+                      value={specs[field.key] ?? ""}
+                      onChange={(e) => updateSpec(field.key, e.target.value === "true")}
+                      className={inputClass}
+                    >
+                      <option value="">—</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  ) : field.type === "select" ? (
+                    <select
+                      value={specs[field.key] ?? ""}
+                      onChange={(e) => updateSpec(field.key, e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">—</option>
+                      {field.options?.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === "multiline" ? (
+                    <textarea
+                      value={specs[field.key] ?? ""}
+                      onChange={(e) => updateSpec(field.key, e.target.value)}
+                      rows={3}
+                      className={`${inputClass} resize-none`}
+                    />
+                  ) : (
+                    <input
+                      type={field.type === "number" ? "number" : "text"}
+                      value={specs[field.key] ?? ""}
+                      onChange={(e) =>
+                        updateSpec(
+                          field.key,
+                          field.type === "number" ? Number(e.target.value) : e.target.value
+                        )
+                      }
+                      className={inputClass}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </FormCard>
+        ))}
+
+        {/* Sticky action bar */}
+        <div className="fixed bottom-0 left-0 right-0 lg:left-64 z-30 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-3xl flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="inline-flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? "Saving…" : mode === "create" ? "Add product" : "Save changes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/gadgets")}
+              disabled={saving}
+              className="px-5 py-2.5 rounded-xl text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-60"
+            >
+              Cancel
+            </button>
           </div>
         </div>
-      ))}
+      </form>
 
-      <button
-        type="submit"
-        disabled={saving || uploading}
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-60"
-      >
-        {saving ? "Saving..." : mode === "create" ? "Add Product" : "Save Changes"}
-      </button>
-    </form>
+      {/* Success toast */}
+      <AnimatePresence>
+        {saved && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 right-6 z-50 bg-white dark:bg-zinc-900 rounded-xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 shadow-lg p-4 flex items-center gap-3 max-w-sm"
+          >
+            <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+            <p className="text-sm text-zinc-700 dark:text-zinc-200">
+              <span className="font-medium">{name}</span>{" "}
+              {mode === "create" ? "was added" : "was updated"}.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

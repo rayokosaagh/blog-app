@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit2, Trash2, Calendar, BarChart3, X, ArrowLeft } from "lucide-react";
 
 interface PollOption {
   id: string;
@@ -133,67 +133,102 @@ export default function PollsPage() {
     }
   };
 
+  const handleBackToList = () => {
+    setView("list");
+    resetForm();
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Polls</h1>
-        {view === "list" && (
-          <button
-            onClick={() => setView("add")}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium"
-          >
-            <Plus size={20} />
-            New Poll
-          </button>
-        )}
+      {/* Header */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <h1
+                className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Polls
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Create and manage polls shown on the site
+              </p>
+            </div>
+          </div>
+          {view === "list" && (
+            <button
+              onClick={() => setView("add")}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">New poll</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {view === "list" ? (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
           {loading ? (
-            <p className="p-8 text-center">Loading polls...</p>
+            <p className="p-8 text-center text-sm text-zinc-400">Loading polls...</p>
           ) : !Array.isArray(polls) || polls.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No polls yet. Create your first one!
+            <div className="p-12 text-center text-sm text-zinc-400">
+              No polls yet. Create your first one.
             </div>
           ) : (
-            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {polls.map((poll) => (
-                <div key={poll.id} className="p-6 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-lg">{poll.question}</h3>
-                    <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
+                <div
+                  key={poll.id}
+                  className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-50 truncate">
+                      {poll.question}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                       <span>{poll.options?.length || 0} options</span>
-                      <span>•</span>
+                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
                       <span>{poll.totalVotes || 0} votes</span>
                       {poll.endsAt && (
                         <>
-                          <span>•</span>
+                          <span className="text-zinc-300 dark:text-zinc-700">•</span>
                           <span className="flex items-center gap-1">
-                            <Calendar size={14} /> Ends {new Date(poll.endsAt).toLocaleDateString()}
+                            <Calendar size={13} /> Ends {new Date(poll.endsAt).toLocaleDateString()}
                           </span>
                         </>
                       )}
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        poll.isActive ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-600"
-                      }`}>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                          poll.isActive
+                            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                        }`}
+                      >
                         {poll.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => handleEdit(poll)}
-                      className="p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl"
+                      className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-xl transition-colors"
+                      aria-label="Edit poll"
                     >
-                      <Edit2 size={18} />
+                      <Edit2 size={17} />
                     </button>
                     <button
                       onClick={() => handleDelete(poll.id)}
-                      className="p-3 hover:bg-red-50 dark:hover:bg-red-950 text-red-600 rounded-xl"
+                      className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl transition-colors"
+                      aria-label="Delete poll"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={17} />
                     </button>
                   </div>
                 </div>
@@ -202,97 +237,124 @@ export default function PollsPage() {
           )}
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 rounded-2xl p-8 border border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-2xl font-semibold mb-6">
-            {view === "add" ? "Create New Poll" : "Edit Poll"}
-          </h2>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">Question</label>
-              <input
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-indigo-500"
-                placeholder="What is your favorite...?"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-3">Options</label>
-              {options.map((opt, index) => (
-                <div key={index} className="flex gap-3 mb-3">
-                  <input
-                    type="text"
-                    value={opt}
-                    onChange={(e) => {
-                      const newOptions = [...options];
-                      newOptions[index] = e.target.value;
-                      setOptions(newOptions);
-                    }}
-                    className="flex-1 px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700"
-                    placeholder={`Option ${index + 1}`}
-                  />
-                  {options.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOption(index)}
-                      className="px-4 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-xl"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addOption}
-                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
-              >
-                + Add another option
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">End Date (optional)</label>
-              <input
-                type="date"
-                value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700"
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-              />
-              <label htmlFor="isActive" className="font-medium">Keep poll active</label>
-            </div>
-          </div>
-
-          <div className="flex gap-4 mt-8">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden"
+        >
+          <div className="h-1 bg-blue-500" />
+          <div className="p-6 sm:p-8">
             <button
               type="button"
-              onClick={() => {
-                setView("list");
-                resetForm();
-              }}
-              className="flex-1 py-3.5 border border-zinc-300 dark:border-zinc-700 rounded-xl font-medium"
+              onClick={handleBackToList}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors mb-4"
             >
-              Cancel
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Polls
             </button>
-            <button
-              type="submit"
-              className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium"
+
+            <h2
+              className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-6"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              {view === "add" ? "Create Poll" : "Update Poll"}
-            </button>
+              {view === "add" ? "Create new poll" : "Edit poll"}
+            </h2>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+                  Question
+                </label>
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                  placeholder="What is your favorite...?"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+                  Options
+                </label>
+                <div className="space-y-2.5">
+                  {options.map((opt, index) => (
+                    <div key={index} className="flex gap-2.5">
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={(e) => {
+                          const newOptions = [...options];
+                          newOptions[index] = e.target.value;
+                          setOptions(newOptions);
+                        }}
+                        className="flex-1 border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                        placeholder={`Option ${index + 1}`}
+                      />
+                      {options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeOption(index)}
+                          className="px-3 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                          aria-label="Remove option"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={addOption}
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-semibold mt-3"
+                >
+                  + Add another option
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+                  End date (optional)
+                </label>
+                <input
+                  type="date"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <label htmlFor="isActive" className="flex items-center gap-3 cursor-pointer w-fit">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500/40"
+                />
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Keep poll active
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button
+                type="button"
+                onClick={handleBackToList}
+                className="flex-1 py-3 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
+              >
+                {view === "add" ? "Create poll" : "Update poll"}
+              </button>
+            </div>
           </div>
         </form>
       )}

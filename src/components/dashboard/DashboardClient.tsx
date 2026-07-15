@@ -48,16 +48,18 @@ export default function DashboardClient({ initialRecentPosts }: DashboardClientP
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+      <div className="h-1 bg-blue-500" />
+
       <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
         <h2
-          className="text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+          className="text-base font-bold text-zinc-900 dark:text-zinc-50"
           style={{ fontFamily: "var(--font-display)" }}
         >
           Recent posts
         </h2>
         <Link
           href="/dashboard/posts"
-          className="text-blue-500 hover:text-blue-600 text-xs font-medium transition-colors"
+          className="text-blue-500 hover:text-blue-600 text-xs font-semibold transition-colors"
         >
           View all →
         </Link>

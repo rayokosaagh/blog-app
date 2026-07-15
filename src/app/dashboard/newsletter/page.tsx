@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { Mail, Search, ChevronDown, CheckCircle2, Trash, X } from "lucide-react";
 
 type Status = "CONFIRMED" | "PENDING";
 
@@ -74,6 +75,7 @@ export default function NewsletterPage() {
   }, [subscribers, searchTerm, statusFilter]);
 
   const confirmedCount = subscribers.filter((s) => s.confirmed).length;
+  const pendingCount = subscribers.length - confirmedCount;
 
   function openDeleteModal(subscriber: Subscriber) {
     setSubscriberToDelete({ id: subscriber.id, email: subscriber.email });
@@ -103,53 +105,86 @@ export default function NewsletterPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><p className="text-gray-500">Loading subscribers...</p></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-sm text-zinc-400">Loading subscribers...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Newsletter</h1>
-          <p className="text-gray-500 mt-1">
-            {filteredSubscribers.length} of {subscribers.length} subscribers · {confirmedCount} confirmed
-          </p>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 sm:p-6 flex items-center gap-4">
+          <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+            <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="min-w-0">
+            <h1
+              className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Newsletter
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              {filteredSubscribers.length} of {subscribers.length} subscribers · {confirmedCount} confirmed
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Metric row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-5">
+          <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{subscribers.length}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Total subscribers</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-5">
+          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{confirmedCount}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Confirmed</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-5 col-span-2 sm:col-span-1">
+          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Pending</p>
         </div>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative group">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <input
             type="text"
             placeholder="Search by email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-gray-300 rounded-3xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-gray-900 placeholder-gray-400"
+            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
           />
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400">🔍</div>
         </div>
 
-        <div className="sm:w-56 relative" ref={dropdownRef}>
+        <div className="relative sm:w-52" ref={dropdownRef}>
           <button
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-            className="w-full border border-gray-300 rounded-3xl px-6 py-4 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-left flex items-center justify-between text-gray-900"
+            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
           >
             <span>
-              {statusFilter === "ALL" && "All Statuses"}
-              {statusFilter === "CONFIRMED" && "Confirmed Only"}
-              {statusFilter === "PENDING" && "Pending Only"}
+              {statusFilter === "ALL" && "All statuses"}
+              {statusFilter === "CONFIRMED" && "Confirmed only"}
+              {statusFilter === "PENDING" && "Pending only"}
             </span>
-            <span className={`transition-transform duration-300 ${showStatusDropdown ? "rotate-180" : ""}`}>▼</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`}
+            />
           </button>
 
           {showStatusDropdown && (
-            <div className="absolute mt-3 w-full bg-white rounded-3xl shadow-xl border border-gray-200 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
               {[
-                { value: "ALL", label: "All Statuses" },
-                { value: "CONFIRMED", label: "Confirmed Only" },
-                { value: "PENDING", label: "Pending Only" }
+                { value: "ALL", label: "All statuses" },
+                { value: "CONFIRMED", label: "Confirmed only" },
+                { value: "PENDING", label: "Pending only" },
               ].map((option) => (
                 <div
                   key={option.value}
@@ -157,8 +192,10 @@ export default function NewsletterPage() {
                     setStatusFilter(option.value as "ALL" | Status);
                     setShowStatusDropdown(false);
                   }}
-                  className={`px-6 py-3.5 hover:bg-gray-100 cursor-pointer transition-colors ${
-                    statusFilter === option.value ? "bg-blue-50 text-blue-700 font-medium" : ""
+                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
+                    statusFilter === option.value
+                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
+                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                   }`}
                 >
                   {option.label}
@@ -171,91 +208,116 @@ export default function NewsletterPage() {
 
       {/* Fetch Error */}
       {fetchError && (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl">{fetchError}</div>
+        <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm">
+          {fetchError}
+        </div>
       )}
 
       {/* Success Banner */}
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top duration-300">
-          <span className="text-xl">✅</span>
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-sm">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
           <span>
-            <strong>"{successMessage}"</strong> has been removed successfully.
+            <strong>{successMessage}</strong> has been removed.
           </span>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Email</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Status</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Subscribed</th>
-              <th className="text-left p-5 text-sm font-medium text-gray-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredSubscribers.length === 0 ? (
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
               <tr>
-                <td colSpan={4} className="p-12 text-center text-gray-400">No subscribers found</td>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Email</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Status</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Subscribed</th>
+                <th className="text-left p-4 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Actions</th>
               </tr>
-            ) : (
-              filteredSubscribers.map((subscriber, index) => (
-                <tr
-                  key={subscriber.id}
-                  className="group hover:bg-gray-50 transition-all duration-300 hover:-translate-y-0.5"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <td className="p-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-sm transition-transform group-hover:scale-110">
-                        {subscriber.email.charAt(0).toUpperCase()}
-                      </div>
-                      <p className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{subscriber.email}</p>
-                    </div>
-                  </td>
-                  <td className="p-5">
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
-                      subscriber.confirmed ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                    }`}>
-                      {subscriber.confirmed ? "CONFIRMED" : "PENDING"}
-                    </span>
-                  </td>
-                  <td className="p-5 text-sm text-gray-600">
-                    {new Date(subscriber.createdAt).toDateString()}
-                  </td>
-                  <td className="p-5">
-                    <div className="flex items-center gap-4 opacity-80 group-hover:opacity-100 transition-all">
-                      <button onClick={() => openDeleteModal(subscriber)} className="text-red-600 hover:text-red-700 font-medium transition-colors">Remove</button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {filteredSubscribers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-12 text-center text-sm text-zinc-400">
+                    No subscribers found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredSubscribers.map((subscriber) => (
+                  <tr
+                    key={subscriber.id}
+                    className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-sm shrink-0">
+                          {subscriber.email.charAt(0).toUpperCase()}
+                        </div>
+                        <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                          {subscriber.email}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide ${
+                          subscriber.confirmed
+                            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        }`}
+                      >
+                        {subscriber.confirmed ? "Confirmed" : "Pending"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm text-zinc-500 dark:text-zinc-400">
+                      {new Date(subscriber.createdAt).toDateString()}
+                    </td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => openDeleteModal(subscriber)}
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-semibold transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Delete Modal */}
       {showDeleteModal && subscriberToDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
             <div className="p-10">
-              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">🗑️</span>
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Trash className="h-7 w-7 text-red-600 dark:text-red-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 text-center">Remove Subscriber?</h2>
-              <p className="text-gray-600 text-center mt-3">
-                Are you sure you want to remove <strong>"{subscriberToDelete.email}"</strong>?
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">
+                Remove subscriber?
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">
+                Are you sure you want to remove{" "}
+                <strong className="text-zinc-700 dark:text-zinc-300">{subscriberToDelete.email}</strong>?
               </p>
-              {error && <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl mt-4 text-sm">{error}</div>}
+              {error && (
+                <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl mt-4 text-sm text-center">
+                  {error}
+                </div>
+              )}
             </div>
-            <div className="border-t flex">
+            <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
               <button
-                onClick={() => { setShowDeleteModal(false); setSubscriberToDelete(null); setError(""); }}
-                className="flex-1 py-5 text-gray-600 font-medium hover:bg-gray-100 active:scale-95 transition-all rounded-bl-3xl"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSubscriberToDelete(null);
+                  setError("");
+                }}
                 disabled={deleting}
+                className="flex-1 py-5 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all rounded-bl-3xl disabled:opacity-60"
               >
                 Cancel
               </button>

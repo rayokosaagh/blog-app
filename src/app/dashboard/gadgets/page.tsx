@@ -2,7 +2,18 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Package,
+  Search,
+  ChevronDown,
+  Plus,
+  Layers,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 
 interface Product {
   id: string;
@@ -13,21 +24,16 @@ interface Product {
   category: { name: string; slug: string };
 }
 
-type ActionType = "deleted" | null;
-
 export default function GadgetsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [successAction, setSuccessAction] = useState<ActionType>(null);
-  const [deletedName, setDeletedName] = useState("");
+  const [deletedName, setDeletedName] = useState<string | null>(null);
 
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -38,15 +44,14 @@ export default function GadgetsPage() {
     loadProducts();
   }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const onClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowCategoryDropdown(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
   async function loadProducts() {
@@ -62,14 +67,14 @@ export default function GadgetsPage() {
   }
 
   const categories = useMemo(() => {
-    const map = new Map<string, string>(); // slug -> name
+    const map = new Map<string, string>();
     products.forEach((p) => map.set(p.category.slug, p.category.name));
     return Array.from(map.entries());
   }, [products]);
 
   const selectedCategoryLabel = useMemo(() => {
-    if (selectedCategory === "all") return "All Categories";
-    return categories.find(([slug]) => slug === selectedCategory)?.[1] ?? "All Categories";
+    if (selectedCategory === "all") return "All categories";
+    return categories.find(([slug]) => slug === selectedCategory)?.[1] ?? "All categories";
   }, [selectedCategory, categories]);
 
   const filteredProducts = useMemo(() => {
@@ -77,16 +82,10 @@ export default function GadgetsPage() {
       const matchesSearch =
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.brand.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "all" || p.category.slug === selectedCategory;
+      const matchesCategory = selectedCategory === "all" || p.category.slug === selectedCategory;
       return matchesSearch && matchesCategory;
     });
   }, [products, searchTerm, selectedCategory]);
-
-  function openDeleteModal(id: string, name: string) {
-    setProductToDelete({ id, name });
-    setShowDeleteModal(true);
-  }
 
   async function confirmDelete() {
     if (!productToDelete) return;
@@ -104,271 +103,352 @@ export default function GadgetsPage() {
         } catch {
           message = `${message} (${res.status} ${res.statusText})`;
         }
-        setShowDeleteModal(false);
+        setProductToDelete(null);
         setErrorMessage(message);
-        setShowErrorModal(true);
         return;
       }
 
-      setDeletedName(productToDelete.name);
-      setShowDeleteModal(false);
-      setSuccessAction("deleted");
+      const name = productToDelete.name;
+      setProductToDelete(null);
       await loadProducts();
-
-      setTimeout(() => {
-        setSuccessAction(null);
-        setDeletedName("");
-      }, 1800);
+      setDeletedName(name);
+      setTimeout(() => setDeletedName(null), 2200);
     } catch {
-      setShowDeleteModal(false);
+      setProductToDelete(null);
       setErrorMessage("Something went wrong. Please try again.");
-      setShowErrorModal(true);
     } finally {
       setDeleting(false);
-      setProductToDelete(null);
     }
   }
 
-  // Success screen (matches banners page pattern)
-  if (successAction) {
-    return (
-      <div className="flex items-center justify-center h-[60vh] animate-in fade-in duration-500">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-12 text-center max-w-md scale-95 animate-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-            <span className="text-4xl">✅</span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-zinc-50 mb-3">
-            Product Deleted!
-          </h2>
-          <p className="text-gray-600 dark:text-zinc-400 text-lg">
-            "{deletedName}" has been removed successfully.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Delete confirmation modal
-  if (showDeleteModal && productToDelete) {
-    return (
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
-          <div className="p-10">
-            <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">🗑️</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-50 text-center">
-              Delete Product?
-            </h2>
-            <p className="text-gray-600 dark:text-zinc-400 text-center mt-3">
-              Are you sure you want to delete <strong>"{productToDelete.name}"</strong>?
-            </p>
-            <p className="text-sm text-red-600 text-center mt-2">This action cannot be undone.</p>
-          </div>
-          <div className="border-t dark:border-zinc-800 flex">
-            <button
-              onClick={() => {
-                setShowDeleteModal(false);
-                setProductToDelete(null);
-              }}
-              disabled={deleting}
-              className="flex-1 py-5 text-gray-600 dark:text-zinc-300 font-medium hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors rounded-bl-3xl active:scale-95 disabled:opacity-60"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={confirmDelete}
-              disabled={deleting}
-              className="flex-1 py-5 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded-br-3xl active:scale-95 disabled:opacity-60"
-            >
-              {deleting ? "Deleting..." : "Yes, Delete"}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error modal (replaces alert())
-  if (showErrorModal) {
-    return (
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
-          <div className="p-10">
-            <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">⚠️</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-50 text-center">
-              Couldn't Delete Product
-            </h2>
-            <p className="text-gray-600 dark:text-zinc-400 text-center mt-3">{errorMessage}</p>
-          </div>
-          <div className="border-t dark:border-zinc-800">
-            <button
-              onClick={() => {
-                setShowErrorModal(false);
-                setErrorMessage("");
-              }}
-              className="w-full py-5 text-gray-900 dark:text-zinc-50 font-semibold hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors rounded-b-3xl active:scale-95"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">Gadgets</h1>
-          <p className="text-zinc-500 mt-1">
-            {filteredProducts.length} of {products.length} products
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link
-            href="/dashboard/gadgets/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            + Add Product
-          </Link>
-          <Link
-            href="/dashboard/gadgets/comparisons"
-            className="border border-zinc-200 dark:border-zinc-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-          >
-            Manage Comparisons
-          </Link>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 sm:p-6 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <h1
+                className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Gadgets
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                {filteredProducts.length} of {products.length} products
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Link
+              href="/dashboard/gadgets/comparisons"
+              className="inline-flex items-center gap-2 border border-zinc-200 dark:border-zinc-700 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline">Comparisons</span>
+            </Link>
+            <Link
+              href="/dashboard/gadgets/new"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add product</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative group">
+      {/* Search & filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <input
             type="text"
             placeholder="Search by name or brand..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 dark:text-zinc-50 placeholder-gray-400"
+            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
           />
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</div>
         </div>
 
-        {/* Custom Category Dropdown */}
-        <div className="sm:w-64 relative" ref={dropdownRef}>
+        <div className="relative sm:w-52" ref={dropdownRef}>
           <button
-            onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-            className="w-full border border-gray-300 dark:border-zinc-700 rounded-2xl px-5 py-3.5 bg-white dark:bg-zinc-800 hover:border-gray-400 dark:hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-left flex items-center justify-between text-gray-900 dark:text-zinc-50"
+            onClick={() => setShowCategoryDropdown((s) => !s)}
+            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
           >
-            <span>{selectedCategoryLabel}</span>
-            <span className={`transition-transform duration-200 ${showCategoryDropdown ? "rotate-180" : ""}`}>▼</span>
+            <span className="truncate">{selectedCategoryLabel}</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 ml-2 transition-transform ${
+                showCategoryDropdown ? "rotate-180" : ""
+              }`}
+            />
           </button>
 
-          {showCategoryDropdown && (
-            <div className="absolute mt-2 w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 py-2 z-50 max-h-72 overflow-y-auto">
-              <div
-                onClick={() => {
-                  setSelectedCategory("all");
-                  setShowCategoryDropdown(false);
-                }}
-                className={`px-5 py-3 hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors ${
-                  selectedCategory === "all" ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-medium" : "text-gray-900 dark:text-zinc-200"
-                }`}
+          <AnimatePresence>
+            {showCategoryDropdown && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-2 w-full max-h-72 overflow-y-auto bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50"
               >
-                All Categories
-              </div>
-              {categories.map(([slug, name]) => (
                 <div
-                  key={slug}
                   onClick={() => {
-                    setSelectedCategory(slug);
+                    setSelectedCategory("all");
                     setShowCategoryDropdown(false);
                   }}
-                  className={`px-5 py-3 hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors ${
-                    selectedCategory === slug ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-medium" : "text-gray-900 dark:text-zinc-200"
+                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
+                    selectedCategory === "all"
+                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
+                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                   }`}
                 >
-                  {name}
+                  All categories
                 </div>
-              ))}
-            </div>
-          )}
+                {categories.map(([slug, name]) => (
+                  <div
+                    key={slug}
+                    onClick={() => {
+                      setSelectedCategory(slug);
+                      setShowCategoryDropdown(false);
+                    }}
+                    className={`px-4 py-2 text-sm cursor-pointer transition-colors truncate ${
+                      selectedCategory === slug
+                        ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
+                        : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                    }`}
+                  >
+                    {name}
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Products List (card rows, same compact size as original table rows) */}
-      <div className="space-y-3">
+      {/* Products list */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-zinc-500">Loading products...</p>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm dark:border dark:border-zinc-800 p-16 text-center text-zinc-500">
-            <p className="text-5xl mb-4">📦</p>
-            <p className="text-lg font-medium">No products found</p>
+          <div className="flex items-center justify-center py-20">
+            <p className="text-sm text-zinc-500 dark:text-zinc-500">Loading products…</p>
           </div>
         ) : (
-          filteredProducts.map((p) => (
-            <div
-              key={p.id}
-              className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm dark:border dark:border-zinc-800 flex items-center gap-4 p-4"
-            >
-              {/* Thumbnail - same 64x64 size as original */}
-              <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center flex-shrink-0">
-                {p.image ? (
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                ) : (
-                  <Package className="text-zinc-400" size={22} />
-                )}
-              </div>
-
-              {/* Name + Brand */}
-              <div className="flex-1 min-w-0">
-                <h2 className="font-medium text-base text-zinc-900 dark:text-zinc-50 truncate">
-                  {p.name}
-                </h2>
-                <p className="text-sm text-zinc-500 mt-0.5">{p.brand}</p>
-              </div>
-
-              {/* Category badge */}
-              <span className="hidden sm:inline-block text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex-shrink-0">
-                {p.category.name}
-              </span>
-
-              {/* Published badge */}
-              <span
-                className={`hidden sm:inline-block text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${
-                  p.published
-                    ? "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400"
-                    : "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-400"
-                }`}
+          <AnimatePresence mode="popLayout">
+            {filteredProducts.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="p-16 text-center"
               >
-                {p.published ? "Published" : "Draft"}
-              </span>
+                <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+                  <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                  No products found
+                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                  Try a different search term or category.
+                </p>
+              </motion.div>
+            ) : (
+              filteredProducts.map((p, i) => (
+                <motion.div
+                  key={p.id}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, delay: i * 0.03 }}
+                  className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800 last:border-b-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors flex items-center gap-4"
+                >
+                  <div className="w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center shrink-0">
+                    {p.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="text-zinc-400" size={20} />
+                    )}
+                  </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <Link
-                  href={`/dashboard/gadgets/${p.id}/edit`}
-                  className="text-sm text-blue-600 hover:underline font-medium"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => openDeleteModal(p.id, p.name)}
-                  className="text-sm text-red-600 hover:underline font-medium"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                      {p.name}
+                    </p>
+                    <p
+                      className="text-xs text-zinc-500 dark:text-zinc-500 mt-1"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      {p.brand}
+                    </p>
+                  </div>
+
+                  <span className="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                    {p.category.name}
+                  </span>
+
+                  <span
+                    className={`hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0 ${
+                      p.published
+                        ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    {p.published ? "Published" : "Draft"}
+                  </span>
+
+                  <div className="flex items-center gap-4 shrink-0">
+                    <Link
+                      href={`/dashboard/gadgets/${p.id}/edit`}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => setProductToDelete({ id: p.id, name: p.name })}
+                      className="text-sm text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 font-semibold transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {productToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => !deleting && setProductToDelete(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 max-w-sm w-full overflow-hidden"
+            >
+              <div className="h-1 bg-rose-500" />
+              <div className="p-6">
+                <div className="w-11 h-11 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-4">
+                  <Trash2 className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                </div>
+                <h2
+                  className="text-base font-bold text-zinc-900 dark:text-zinc-50"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Delete product?
+                </h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                  This will permanently remove{" "}
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {productToDelete.name}
+                  </span>
+                  . This action can't be undone.
+                </p>
+              </div>
+              <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
+                <button
+                  onClick={() => setProductToDelete(null)}
+                  disabled={deleting}
+                  className="flex-1 py-3.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="flex-1 py-3.5 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors disabled:opacity-60"
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error modal */}
+      <AnimatePresence>
+        {errorMessage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setErrorMessage(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 max-w-sm w-full overflow-hidden"
+            >
+              <div className="h-1 bg-amber-500" />
+              <div className="p-6">
+                <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mb-4">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h2
+                  className="text-base font-bold text-zinc-900 dark:text-zinc-50"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Couldn't delete product
+                </h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">{errorMessage}</p>
+              </div>
+              <div className="border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  onClick={() => setErrorMessage(null)}
+                  className="w-full py-3.5 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success toast */}
+      <AnimatePresence>
+        {deletedName && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 right-6 z-50 bg-white dark:bg-zinc-900 rounded-xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 shadow-lg p-4 flex items-center gap-3 max-w-sm"
+          >
+            <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+            <p className="text-sm text-zinc-700 dark:text-zinc-200">
+              <span className="font-medium">{deletedName}</span> was deleted.
+            </p>
+            <button
+              onClick={() => setDeletedName(null)}
+              className="ml-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

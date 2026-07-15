@@ -42,13 +42,24 @@ export default function SidebarNav({ isAdmin }: { isAdmin: boolean }) {
 
   const items = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
 
+  // Nested routes (e.g. "/dashboard/gadgets" and "/dashboard/gadgets/comparisons")
+  // can both prefix-match the same pathname. Only the longest — i.e. most
+  // specific — match should ever be marked active, otherwise two items
+  // fight over the shared layoutId pill and one renders blank.
+  const activeHref = items.reduce<string | null>((best, item) => {
+    const matches =
+      item.href === "/dashboard"
+        ? pathname === "/dashboard"
+        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+    if (!matches) return best;
+    if (!best || item.href.length > best.length) return item.href;
+    return best;
+  }, null);
+
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
       {items.map((item) => {
-        const active =
-          item.href === "/dashboard"
-            ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+        const active = item.href === activeHref;
         const Icon = item.icon;
 
         return (
@@ -60,7 +71,7 @@ export default function SidebarNav({ isAdmin }: { isAdmin: boolean }) {
             {active && (
               <motion.span
                 layoutId="active-nav-pill"
-                className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-violet-500 shadow-lg shadow-blue-500/25"
+                className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg shadow-blue-500/25"
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
               />
             )}

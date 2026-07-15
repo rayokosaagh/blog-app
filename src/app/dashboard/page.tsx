@@ -6,10 +6,10 @@ import StatCard from "@/components/ui/StatCard";
 import AnalyticsCharts from "@/components/dashboard/AnalyticsCharts";
 import TopPostsPanel from "@/components/feeds/TopPostsPanel";
 import ContentExtrasPanel from "@/components/dashboard/ContentExtrasPanel";
+import TypewriterHeading from "@/components/dashboard/TypewriterHeading";
 import {
   FileText,
   CheckCircle2,
-  PenLine,
   Users2,
   Eye,
   MessageSquare,
@@ -35,7 +35,6 @@ export default async function DashboardPage() {
   const [
     totalPosts,
     publishedPosts,
-    draftPosts,
     totalUsers,
     viewsAgg,
     totalComments,
@@ -54,7 +53,6 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     prisma.post.count(),
     prisma.post.count({ where: { published: true } }),
-    prisma.post.count({ where: { published: false } }),
     prisma.user.count(),
     prisma.post.aggregate({ _sum: { views: true } }),
     prisma.comment.count(),
@@ -113,19 +111,18 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1
+        <TypewriterHeading
+          text={`Welcome back, ${firstName}`}
           className="text-3xl font-semibold text-zinc-900 dark:text-zinc-50"
           style={{ fontFamily: "var(--font-display)" }}
-        >
-          Welcome back, {firstName}
-        </h1>
+        />
         <p className="text-zinc-500 dark:text-zinc-400 mt-1.5">
           Here's what's happening across the blog today.
         </p>
       </div>
 
       {/* Primary content stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <StatCard
           label="Total posts"
           value={totalPosts}
@@ -141,18 +138,11 @@ export default async function DashboardPage() {
           index={1}
         />
         <StatCard
-          label="Drafts"
-          value={draftPosts}
-          icon={<PenLine className="h-4 w-4" />}
-          accent="amber"
-          index={2}
-        />
-        <StatCard
           label="Total users"
           value={totalUsers}
           icon={<Users2 className="h-4 w-4" />}
           accent="violet"
-          index={3}
+          index={2}
         />
       </div>
 
@@ -208,7 +198,6 @@ export default async function DashboardPage() {
       <AnalyticsCharts
         monthlyPostData={monthlyPostData}
         publishedPosts={publishedPosts}
-        draftPosts={draftPosts}
         monthlyUserData={monthlyUserData}
         ratingDistribution={ratingDistribution}
         monthlySubscriberData={monthlySubscriberData}

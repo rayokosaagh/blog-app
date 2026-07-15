@@ -3,7 +3,17 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, AnimatePresence, motion } from "framer-motion";
-import { GripVertical, Trash2, Eye, EyeOff } from "lucide-react";
+import {
+  GripVertical,
+  Trash2,
+  Eye,
+  EyeOff,
+  Plus,
+  Layers,
+  CheckCircle2,
+  AlertTriangle,
+  Trash,
+} from "lucide-react";
 
 interface CategoryOption { slug: string; name: string }
 interface ProductLite { id: string; name: string; brand: string; image?: string | null; categoryId: string; category: { slug: string; name: string } }
@@ -238,85 +248,109 @@ export default function ComparisonManager({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Add new comparison */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm dark:border dark:border-zinc-800 space-y-4">
-        <h2 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">Add Comparison</h2>
-
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm p-3 rounded-lg">
-            {error}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2
+              className="font-bold text-base text-zinc-900 dark:text-zinc-50"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Add comparison
+            </h2>
           </div>
-        )}
 
-        <div>
-          <label className="block text-sm text-zinc-500 mb-1">Category</label>
-          <select
-            value={category}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
+          {error && (
+            <div className="bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 text-sm p-3 rounded-xl">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Category</label>
+            <select
+              value={category}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+            >
+              {categories.map((c) => (
+                <option key={c.slug} value={c.slug}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Product A</label>
+              <select
+                value={productAId}
+                onChange={(e) => setProductAId(e.target.value)}
+                className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+              >
+                <option value="">Select...</option>
+                {categoryProducts.map((p) => (
+                  <option key={p.id} value={p.id}>{p.brand} {p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Product B</label>
+              <select
+                value={productBId}
+                onChange={(e) => setProductBId(e.target.value)}
+                className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+              >
+                <option value="">Select...</option>
+                {categoryProducts.map((p) => (
+                  <option key={p.id} value={p.id}>{p.brand} {p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {categoryProducts.length < 2 && (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              This category needs at least 2 published products before you can add a comparison.
+            </p>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={saving || categoryProducts.length < 2}
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-blue-700 transition-colors"
           >
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>{c.name}</option>
-            ))}
-          </select>
+            {saving ? "Saving..." : "Add to latest comparisons"}
+          </button>
         </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-zinc-500 mb-1">Product A</label>
-            <select
-              value={productAId}
-              onChange={(e) => setProductAId(e.target.value)}
-              className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-            >
-              <option value="">Select...</option>
-              {categoryProducts.map((p) => (
-                <option key={p.id} value={p.id}>{p.brand} {p.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-zinc-500 mb-1">Product B</label>
-            <select
-              value={productBId}
-              onChange={(e) => setProductBId(e.target.value)}
-              className="w-full border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-lg p-2"
-            >
-              <option value="">Select...</option>
-              {categoryProducts.map((p) => (
-                <option key={p.id} value={p.id}>{p.brand} {p.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {categoryProducts.length < 2 && (
-          <p className="text-sm text-amber-600 dark:text-amber-400">
-            This category needs at least 2 published products before you can add a comparison.
-          </p>
-        )}
-
-        <button
-          onClick={handleSave}
-          disabled={saving || categoryProducts.length < 2}
-          className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors"
-        >
-          {saving ? "Saving..." : "Add to Latest Comparisons"}
-        </button>
       </div>
 
       {/* Existing comparisons — drag to reorder */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm dark:border dark:border-zinc-800 overflow-hidden">
-        <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-          <h2 className="font-semibold text-zinc-900 dark:text-zinc-50">Currently Featured</h2>
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+        <div className="h-1 bg-blue-500" />
+        <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2
+              className="font-bold text-base text-zinc-900 dark:text-zinc-50"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Currently featured
+            </h2>
+          </div>
           {comparisons.length > 1 && (
-            <span className="text-xs text-zinc-400">Drag to reorder — top shows first on homepage</span>
+            <span className="text-xs text-zinc-400 hidden sm:inline">Drag to reorder — top shows first</span>
           )}
         </div>
 
         {comparisons.length === 0 ? (
-          <p className="p-6 text-sm text-zinc-400">No comparisons added yet.</p>
+          <p className="p-8 text-sm text-zinc-400 text-center">No comparisons added yet.</p>
         ) : (
           <Reorder.Group
             axis="y"
@@ -334,17 +368,17 @@ export default function ComparisonManager({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+                  className="flex items-center gap-4 p-3 bg-zinc-50/60 dark:bg-zinc-800/40 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-all cursor-grab active:cursor-grabbing"
                 >
                   <GripVertical className="text-zinc-300 dark:text-zinc-600 flex-shrink-0" size={18} />
 
                   <DiagonalThumb item={c} />
 
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                       {c.category.name}
                     </span>
-                    <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                    <p className="font-medium text-sm text-zinc-900 dark:text-zinc-50 truncate">
                       {c.productA.name} <span className="text-zinc-400 font-normal">vs</span> {c.productB.name}
                     </p>
                   </div>
@@ -389,25 +423,25 @@ export default function ComparisonManager({
               className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
             >
               <div className="p-10">
-                <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <span className="text-4xl">🗑️</span>
+                <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Trash className="h-7 w-7 text-red-600 dark:text-red-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-50 text-center">
-                  Remove Comparison?
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">
+                  Remove comparison?
                 </h2>
-                <p className="text-gray-600 dark:text-zinc-400 text-center mt-3">
+                <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">
                   Remove{" "}
-                  <strong>
+                  <strong className="text-zinc-700 dark:text-zinc-300">
                     {comparisonToDelete.productA.name} vs {comparisonToDelete.productB.name}
                   </strong>{" "}
                   from the homepage?
                 </p>
               </div>
-              <div className="border-t dark:border-zinc-800 flex">
+              <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
                 <button
                   onClick={() => setComparisonToDelete(null)}
                   disabled={deleting}
-                  className="flex-1 py-5 text-gray-600 dark:text-zinc-300 font-medium hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors rounded-bl-3xl active:scale-95 disabled:opacity-60"
+                  className="flex-1 py-5 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors rounded-bl-3xl active:scale-95 disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -416,7 +450,7 @@ export default function ComparisonManager({
                   disabled={deleting}
                   className="flex-1 py-5 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded-br-3xl active:scale-95 disabled:opacity-60"
                 >
-                  {deleting ? "Removing..." : "Yes, Remove"}
+                  {deleting ? "Removing..." : "Yes, remove"}
                 </button>
               </div>
             </motion.div>
@@ -444,12 +478,12 @@ export default function ComparisonManager({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
-                className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                className="w-20 h-20 bg-green-50 dark:bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6"
               >
-                <span className="text-4xl">✅</span>
+                <CheckCircle2 className="h-9 w-9 text-green-600 dark:text-green-400" />
               </motion.div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-50 mb-2">Removed!</h2>
-              <p className="text-gray-600 dark:text-zinc-400">
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Removed</h2>
+              <p className="text-zinc-500 dark:text-zinc-400">
                 The comparison has been taken off the homepage.
               </p>
             </motion.div>
@@ -474,18 +508,18 @@ export default function ComparisonManager({
               className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
             >
               <div className="p-10">
-                <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <span className="text-4xl">⚠️</span>
+                <div className="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <AlertTriangle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-50 text-center">
-                  Something Went Wrong
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">
+                  Something went wrong
                 </h2>
-                <p className="text-gray-600 dark:text-zinc-400 text-center mt-3">{errorModalMessage}</p>
+                <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">{errorModalMessage}</p>
               </div>
-              <div className="border-t dark:border-zinc-800">
+              <div className="border-t border-zinc-100 dark:border-zinc-800">
                 <button
                   onClick={() => setErrorModalMessage("")}
-                  className="w-full py-5 text-gray-900 dark:text-zinc-50 font-semibold hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors rounded-b-3xl active:scale-95"
+                  className="w-full py-5 text-zinc-900 dark:text-zinc-50 font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors rounded-b-3xl active:scale-95"
                 >
                   Got it
                 </button>

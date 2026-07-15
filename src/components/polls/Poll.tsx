@@ -172,7 +172,7 @@ export default function Poll() {
 
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8">
+      <div className="bg-card border border-border rounded-2xl px-6 py-8 md:px-8">
         <div className="flex items-center gap-2">
           <BarChart3 size={22} className="text-blue-600" />
           <h2 className="text-2xl font-bold text-foreground">Polls</h2>
@@ -289,8 +289,8 @@ export default function Poll() {
                     onClick={() => handleVote(option.id)}
                     className={`relative w-full text-left rounded-xl border overflow-hidden transition-all duration-300 ${
                       isSelected
-                        ? "border-blue-500 dark:border-blue-400 shadow-sm"
-                        : "border-border hover:border-foreground/20"
+  ? "border-blue-500 dark:border-blue-400"
+  : "border-border hover:border-foreground/20"
                     } ${hasVoted ? "cursor-default" : "cursor-pointer"}`}
                   >
                     {hasVoted && (
