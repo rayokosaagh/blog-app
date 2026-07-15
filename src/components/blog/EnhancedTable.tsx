@@ -215,17 +215,17 @@ export default function EnhancedTable({ html }: { html: string }) {
   // happens post-hydration, so it can never be part of a mismatch.
   if (!hasParsed) {
     return (
-      <div className="my-8 rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-border bg-background/40 h-11 animate-pulse" />
+      <div className="my-8 rounded-none border-2 border-border-heavy bg-card overflow-hidden">
+        <div className="px-4 py-2.5 border-b-2 border-border-heavy bg-muted h-11 animate-pulse" />
         <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-border bg-card p-5 animate-pulse space-y-3"
+              className="rounded-none border-2 border-border-heavy bg-card p-5 animate-pulse space-y-3"
             >
-              <div className="h-4 w-2/3 bg-muted-foreground/10 rounded" />
-              <div className="h-3 w-full bg-muted-foreground/10 rounded" />
-              <div className="h-3 w-5/6 bg-muted-foreground/10 rounded" />
+              <div className="h-4 w-2/3 bg-accent-tint rounded-none" />
+              <div className="h-3 w-full bg-accent-tint rounded-none" />
+              <div className="h-3 w-5/6 bg-accent-tint rounded-none" />
             </div>
           ))}
         </div>
@@ -235,8 +235,8 @@ export default function EnhancedTable({ html }: { html: string }) {
 
   if (!processedData || processedData.rows.length === 0) {
     return (
-      <div className="my-8 p-8 rounded-xl border border-border bg-card text-center">
-        <Table2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+      <div className="my-8 p-8 rounded-none border-2 border-border-heavy bg-card text-center">
+        <Table2 className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
         <p className="text-muted-foreground text-sm">No table data available</p>
       </div>
     );
@@ -244,7 +244,7 @@ export default function EnhancedTable({ html }: { html: string }) {
 
   const SortIcon = ({ columnIndex }: { columnIndex: number }) => {
     if (sortColumn !== columnIndex)
-      return <ArrowUpDown className="w-3 h-3 opacity-30 group-hover:opacity-60 transition-opacity" />;
+      return <ArrowUpDown className="w-3 h-3 opacity-30 group-hover:opacity-70" />;
     if (sortDirection === "asc") return <ChevronUp className="w-3.5 h-3.5 text-accent" />;
     if (sortDirection === "desc") return <ChevronDown className="w-3.5 h-3.5 text-accent" />;
     return <ArrowUpDown className="w-3 h-3 opacity-30" />;
@@ -257,9 +257,9 @@ export default function EnhancedTable({ html }: { html: string }) {
     );
 
   return (
-    <div className="my-8 rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+    <div className="my-8 rounded-none border-2 border-border-heavy bg-card shadow-brutal">
       {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-background/40">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b-2 border-border-heavy bg-muted">
         <div className="flex items-center gap-3 min-w-0">
           {processedData.caption && (
             <span className="text-xs font-medium text-muted-foreground truncate max-w-[200px]">
@@ -281,7 +281,7 @@ export default function EnhancedTable({ html }: { html: string }) {
                     setSortDirection("asc");
                   }
                 }}
-                className="text-xs bg-transparent border border-border rounded-md px-1.5 py-1 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent max-w-[110px]"
+                className="text-xs bg-card border-2 border-border-heavy rounded-none px-1.5 py-1 text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent max-w-[110px]"
               >
                 <option value="">Sort by…</option>
                 {processedData.headers.map((h, i) => (
@@ -293,7 +293,7 @@ export default function EnhancedTable({ html }: { html: string }) {
               {sortColumn !== null && (
                 <button
                   onClick={() => handleSort(sortColumn)}
-                  className="p-1 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/5 transition-colors"
+                  className="p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
                   title="Toggle sort direction"
                 >
                   {sortDirection === "asc" ? (
@@ -309,13 +309,13 @@ export default function EnhancedTable({ html }: { html: string }) {
 
         <div className="flex items-center gap-1">
           {/* View toggle */}
-          <div className="flex items-center rounded-md border border-border overflow-hidden mr-1">
+          <div className="flex items-center rounded-none border-2 border-border-heavy mr-1">
             <button
               onClick={() => setViewMode("cards")}
-              className={`p-1.5 transition-colors ${
+              className={`p-1.5 transition-colors duration-100 ${
                 viewMode === "cards"
-                  ? "bg-accent/10 text-accent"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-accent-2 text-on-accent-2"
+                  : "text-muted-foreground hover:bg-accent-2 hover:text-on-accent-2"
               }`}
               title="Card view"
             >
@@ -323,10 +323,10 @@ export default function EnhancedTable({ html }: { html: string }) {
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-1.5 transition-colors border-l border-border ${
+              className={`p-1.5 transition-colors duration-100 border-l-2 border-border-heavy ${
                 viewMode === "table"
-                  ? "bg-accent/10 text-accent"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-accent-2 text-on-accent-2"
+                  : "text-muted-foreground hover:bg-accent-2 hover:text-on-accent-2"
               }`}
               title="Table view"
             >
@@ -337,10 +337,10 @@ export default function EnhancedTable({ html }: { html: string }) {
           {/* Search toggle */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className={`p-1.5 rounded-md transition-colors ${
+            className={`p-1.5 rounded-none border-2 transition-colors duration-100 ${
               showSearch
-                ? "bg-accent/10 text-accent"
-                : "text-muted-foreground hover:text-accent hover:bg-accent/5"
+                ? "bg-accent-2 text-on-accent-2 border-border-heavy"
+                : "text-muted-foreground border-transparent hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy"
             }`}
             title="Search in table"
           >
@@ -350,7 +350,7 @@ export default function EnhancedTable({ html }: { html: string }) {
           {/* Copy */}
           <button
             onClick={handleCopyTable}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/5 transition-colors"
+            className="p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
             title="Copy table"
           >
             {copied ? (
@@ -363,7 +363,7 @@ export default function EnhancedTable({ html }: { html: string }) {
           {/* Export CSV */}
           <button
             onClick={handleExportCSV}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/5 transition-colors"
+            className="p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
             title="Export as CSV"
           >
             <Download className="w-4 h-4" />
@@ -373,7 +373,7 @@ export default function EnhancedTable({ html }: { html: string }) {
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="px-4 py-2 border-b border-border bg-background/30">
+        <div className="px-4 py-2 border-b-2 border-border-heavy bg-muted">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -382,7 +382,7 @@ export default function EnhancedTable({ html }: { html: string }) {
               placeholder="Search in table..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-colors"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-none border-2 border-border-heavy bg-card focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
             />
             {searchQuery && (
               <button
@@ -422,24 +422,24 @@ const attributes = processedData.rows
       return (
         <div
           key={headerIndex}
-          className={`rounded-xl border border-border bg-card p-5 hover:border-accent/30 hover:shadow-md transition-all duration-200 ${
-            cardMatches ? "border-accent/40 ring-1 ring-accent/20" : ""
+          className={`rounded-none border-2 border-border-heavy bg-card p-5 shadow-brutal-sm ${
+            cardMatches ? "bg-accent-tint" : ""
           }`}
         >
-          <div className="text-base font-semibold text-foreground pb-3 mb-4 border-b border-border">
+          <div className="text-base font-extrabold text-foreground pb-3 mb-4 border-b-2 border-border">
             {productName}
           </div>
           <div className="space-y-0">
             {attributes.map(({ label, value }, idx) => (
               <div
   key={idx}
-  className={idx > 0 ? "pt-3.5 mt-3.5 border-t border-border/50" : ""}
+  className={idx > 0 ? "pt-3.5 mt-3.5 border-t-2 border-border" : ""}
 >
-  <span className="inline-block text-[10px] font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-full uppercase tracking-wide mb-1.5">
+  <span className="inline-block text-[10px] font-extrabold text-on-accent-2 bg-accent-2 px-2 py-0.5 rounded-none uppercase tracking-wide mb-1.5">
     {label}
   </span>
   <div
-    className="text-sm text-foreground font-medium leading-relaxed [&_*]:!text-left"
+    className="text-sm text-foreground font-bold leading-relaxed [&_*]:!text-left"
     dangerouslySetInnerHTML={{ __html: value }}
   />
 </div>
@@ -452,12 +452,12 @@ const attributes = processedData.rows
 ) : (
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b-2 border-border">
+              <tr className="border-b-2 border-border-heavy">
                 {processedData.headers.map((header, i) => (
                   <th
                     key={i}
                     onClick={() => handleSort(i)}
-                    className="group px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer select-none hover:text-accent transition-colors sticky top-0 bg-card z-10"
+                    className="group px-4 py-3 text-left text-xs font-extrabold text-muted-foreground uppercase tracking-wide cursor-pointer select-none hover:text-accent hover:bg-accent-tint transition-colors sticky top-0 bg-card z-10"
                   >
                     <div className="flex items-center gap-1.5">
                       <span className="truncate">{header}</span>
@@ -474,13 +474,13 @@ const attributes = processedData.rows
                 <tr
                   key={rowIndex}
                   className={`border-b border-border transition-colors ${
-                    rowIndex % 2 === 0 ? "bg-transparent" : "bg-background/30"
-                  } hover:bg-accent/5 ${rowMatches(row) ? "ring-1 ring-inset ring-accent/20" : ""}`}
+                    rowIndex % 2 === 0 ? "bg-transparent" : "bg-muted"
+                  } hover:bg-accent-tint ${rowMatches(row) ? "bg-accent-tint" : ""}`}
                 >
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
-                      className="px-4 py-3 text-sm text-foreground/90"
+                      className="px-4 py-3 text-sm text-foreground"
                       dangerouslySetInnerHTML={{ __html: cell }}
                     />
                   ))}
@@ -493,10 +493,10 @@ const attributes = processedData.rows
 
       {/* Footer */}
       {processedData.rows.length > 10 && (
-        <div className="flex items-center justify-end px-4 py-2 border-t border-border bg-background/40">
+        <div className="flex items-center justify-end px-4 py-2 border-t-2 border-border-heavy bg-muted">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-xs font-medium text-muted-foreground hover:text-accent transition-colors"
+            className="text-xs font-bold text-muted-foreground hover:text-accent transition-colors"
           >
             {expanded ? "Show less ▲" : `Show all (${tableData?.rows.length}) ▼`}
           </button>

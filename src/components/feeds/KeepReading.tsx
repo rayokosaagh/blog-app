@@ -17,6 +17,10 @@ interface KeepReadingProps {
   relatedPosts: RelatedPost[];
 }
 
+// Shared focus style — restores visible keyboard focus that the original
+// `focus:outline-none` was silently dropping.
+const FOCUS_RING = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
 export default function KeepReading({ relatedPosts = [] }: KeepReadingProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const postsPerPage = 3;
@@ -37,38 +41,38 @@ export default function KeepReading({ relatedPosts = [] }: KeepReadingProps) {
   return (
     <section className="w-full max-w-5xl mx-auto px-6 py-12 mb-8">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">
+        <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
           Keep Reading
         </h2>
 
         <div className="flex items-center gap-3">
           <button
             onClick={prevSlide}
-            className="p-3.5 rounded-2xl border border-border hover:bg-[#6f42c1] hover:text-white hover:border-[#6f42c1] transition-all duration-200 active:scale-95 focus:outline-none"
+            className={`p-3.5 rounded-none border-2 border-border-heavy shadow-brutal-sm brutal-press hover:bg-accent hover:text-on-accent transition-colors ${FOCUS_RING}`}
             aria-label="Previous posts"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="square" strokeLinejoin="miter" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
           <button
             onClick={nextSlide}
-            className="p-3.5 rounded-2xl border border-border hover:bg-[#6f42c1] hover:text-white hover:border-[#6f42c1] transition-all duration-200 active:scale-95 focus:outline-none"
+            className={`p-3.5 rounded-none border-2 border-border-heavy shadow-brutal-sm brutal-press hover:bg-accent hover:text-on-accent transition-colors ${FOCUS_RING}`}
             aria-label="Next posts"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              <path strokeLinecap="square" strokeLinejoin="miter" d="M9 5l7 7-7 7" />
             </svg>
           </button>
 
-          <Link href="/blog" className="text-sm font-medium text-accent hover:underline ml-4">
+          <Link href="/blog" className="text-xs font-extrabold uppercase tracking-wide text-accent hover:underline ml-4">
             View all posts →
           </Link>
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl">
+      <div className="relative overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -82,9 +86,9 @@ export default function KeepReading({ relatedPosts = [] }: KeepReadingProps) {
               <Link
                 key={post.id}
                 href={`/blog/${post.slug}`}
-                className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border hover:border-accent hover:shadow-xl transition-all duration-300"
+                className={`group flex flex-col bg-card rounded-none overflow-hidden border-2 border-border-heavy shadow-brutal brutal-press ${FOCUS_RING}`}
               >
-                <div className="w-full aspect-[4/3] overflow-hidden bg-muted relative">
+                <div className="w-full aspect-[4/3] overflow-hidden border-b-2 border-border-heavy relative">
                   {post.featuredImage ? (
                     <motion.img
                       src={post.featuredImage}
@@ -94,15 +98,22 @@ export default function KeepReading({ relatedPosts = [] }: KeepReadingProps) {
                       transition={{ duration: 0.6 }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/40 dark:to-indigo-800/30" />
+                    <div className="w-full h-full bg-accent-tint flex items-center justify-center">
+                      <span className="text-2xl opacity-40">✦</span>
+                    </div>
                   )}
                 </div>
                 <div className="p-5 flex flex-col flex-1">
-                  <h3 className="font-bold text-foreground leading-snug mb-3 line-clamp-2 group-hover:text-accent transition-colors">
-                    {post.title}
+                  <h3 className="font-extrabold text-foreground leading-snug mb-3 line-clamp-2">
+                    <span
+                      className="box-decoration-clone bg-[length:0%_100%] group-hover:bg-[length:100%_100%] bg-no-repeat bg-left transition-[background-size] duration-100 ease-out group-hover:text-on-accent-2"
+                      style={{ backgroundImage: "linear-gradient(var(--accent-2), var(--accent-2))" }}
+                    >
+                      {post.title}
+                    </span>
                   </h3>
                   <div className="mt-auto pt-4 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground/80 truncate max-w-[120px]">
+                    <span className="font-bold text-foreground/80 truncate max-w-[120px]">
                       {post.author.name || "Anonymous"}
                     </span>
                     <span>
@@ -122,8 +133,9 @@ export default function KeepReading({ relatedPosts = [] }: KeepReadingProps) {
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                idx === currentIndex ? "bg-[#6f42c1] scale-125" : "bg-border hover:bg-[#6f42c1]/70"
+              aria-label={`Go to page ${idx + 1}`}
+              className={`w-3 h-3 rounded-none border-2 border-border-heavy transition-all duration-200 ${FOCUS_RING} ${
+                idx === currentIndex ? "bg-accent-2 scale-125" : "bg-card hover:bg-accent-2"
               }`}
             />
           ))}

@@ -24,12 +24,7 @@ type TagItem = {
 const MIN_QUERY_LENGTH = 2;
 
 interface ExploreMenuProps {
-  /** "dropdown" floats a glass panel below the trigger (desktop pill nav).
-   *  "inline" expands in place with no absolute positioning, for the
-   *  mobile slide-out drawer, which already scrolls its own content. */
   variant?: "dropdown" | "inline";
-  /** Called after any navigation inside the panel (e.g. to also close the
-   *  mobile drawer the panel lives in). */
   onNavigate?: () => void;
 }
 
@@ -50,8 +45,6 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
   const isQueryTooShort = trimmedQuery.length > 0 && trimmedQuery.length < MIN_QUERY_LENGTH;
   const showResults = trimmedQuery.length >= MIN_QUERY_LENGTH;
 
-  // Close on outside click — dropdown variant only. The inline variant
-  // already lives inside the mobile drawer's own outside-click handling.
   useEffect(() => {
     if (variant !== "dropdown") return;
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,8 +56,6 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [variant]);
 
-  // Lazy-load categories the first time the menu is opened, not on every
-  // page load — most visits will never touch Explore.
   useEffect(() => {
     if (!isOpen || tagsLoaded || tagsLoading) return;
     setTagsLoading(true);
@@ -78,7 +69,6 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
       .finally(() => setTagsLoading(false));
   }, [isOpen, tagsLoaded, tagsLoading]);
 
-  // Debounced live search, same endpoint/contract as NavbarSearch
   useEffect(() => {
     if (!isOpen || trimmedQuery.length < MIN_QUERY_LENGTH) {
       setResults([]);
@@ -118,7 +108,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
     <>
       {/* Search field */}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
           autoFocus={variant === "dropdown"}
           type="text"
@@ -126,12 +116,12 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search all posts..."
-          className="w-full pl-10 pr-9 py-2.5 text-sm rounded-xl
-                     bg-white/60 dark:bg-white/5
-                     border border-white/60 dark:border-white/10
-                     text-gray-900 dark:text-white
-                     placeholder-gray-400 dark:placeholder-gray-500
-                     focus:outline-none focus:ring-2 focus:ring-[#6f42c1]/40
+          className="w-full pl-10 pr-9 py-2.5 text-sm
+                     bg-background
+                     border-[1.5px] border-border-heavy
+                     text-foreground
+                     placeholder-muted-foreground
+                     focus:outline-none focus:ring-2 focus:ring-accent/40
                      transition-colors"
         />
         {query.length > 0 && (
@@ -139,7 +129,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
             type="button"
             onClick={() => setQuery("")}
             aria-label="Clear search"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -158,7 +148,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
               transition={{ duration: 0.15 }}
             >
               {isSearching ? (
-                <div className="flex items-center justify-center py-6 text-gray-400 dark:text-gray-500">
+                <div className="flex items-center justify-center py-6 text-muted-foreground">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : results.length > 0 ? (
@@ -173,20 +163,20 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                       <Link
                         href={`/blog/${post.slug}`}
                         onClick={close}
-                        className="flex items-center gap-3 px-2.5 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 transition-colors group"
+                        className="flex items-center gap-3 px-2.5 py-2 hover:bg-accent-tint transition-colors group"
                       >
                         {post.featuredImage ? (
                           <img
                             src={post.featuredImage}
                             alt={post.title}
-                            className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-600"
+                            className="w-9 h-9 object-cover flex-shrink-0 border-[1.5px] border-border-heavy"
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-base">
+                          <div className="w-9 h-9 bg-accent-tint flex items-center justify-center flex-shrink-0 text-base border-[1.5px] border-border-heavy">
                             📝
                           </div>
                         )}
-                        <span className="text-sm text-gray-700 dark:text-gray-200 group-hover:text-[#6f42c1] dark:group-hover:text-white font-medium line-clamp-1">
+                        <span className="text-sm text-foreground group-hover:text-accent font-medium line-clamp-1">
                           {post.title}
                         </span>
                       </Link>
@@ -194,7 +184,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                   ))}
                 </ul>
               ) : (
-                <p className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">
+                <p className="py-6 text-center text-sm text-muted-foreground">
                   {isQueryTooShort
                     ? `Type at least ${MIN_QUERY_LENGTH} characters to search`
                     : `No posts found for "${trimmedQuery}"`}
@@ -209,13 +199,13 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <p className="px-0.5 pb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+              <p className="px-0.5 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                 Browse by category
               </p>
               {tagsLoading ? (
                 <div className="grid grid-cols-2 gap-2">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-10 rounded-xl bg-gray-100/70 dark:bg-white/5 animate-pulse" />
+                    <div key={i} className="h-10 bg-accent-tint animate-pulse border-[1.5px] border-border" />
                   ))}
                 </div>
               ) : tags.length > 0 ? (
@@ -230,13 +220,13 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                       <Link
                         href={`/blog?tag=${tag.slug}`}
                         onClick={close}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/40 dark:bg-white/5 hover:bg-white/70 dark:hover:bg-white/10 border border-white/50 dark:border-white/5 transition-colors group"
+                        className="flex items-center gap-2 px-3 py-2.5 bg-background hover:bg-accent-tint border-[1.5px] border-border-heavy transition-colors group"
                       >
                         <TagIcon
                           icon={tag.icon}
-                          className="inline-flex w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full text-gray-500 dark:text-gray-400 group-hover:text-[#6f42c1] dark:group-hover:text-white"
+                          className="inline-flex w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full text-muted-foreground group-hover:text-accent"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-200 group-hover:text-[#6f42c1] dark:group-hover:text-white font-medium truncate">
+                        <span className="text-sm text-foreground group-hover:text-accent font-medium truncate">
                           {tag.name}
                         </span>
                       </Link>
@@ -244,7 +234,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                   ))}
                 </div>
               ) : (
-                <p className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+                <p className="py-4 text-center text-sm text-muted-foreground">
                   No categories yet
                 </p>
               )}
@@ -257,7 +247,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
       <Link
         href="/blog"
         onClick={close}
-        className="mt-3 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-[#6f42c1] dark:text-blue-400 hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
+        className="mt-3 flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold uppercase tracking-wide text-accent hover:bg-accent-tint transition-colors border-[1.5px] border-border-heavy"
       >
         View all posts
         <ArrowRight className="h-3.5 w-3.5" />
@@ -270,7 +260,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
       <div ref={containerRef} className="w-full">
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10 transition-colors"
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-foreground hover:text-accent hover:bg-accent-tint transition-colors"
         >
           <Compass className="h-4 w-4 shrink-0" />
           <span className="flex-1 text-left truncate">Explore</span>
@@ -301,17 +291,12 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
         onClick={() => setIsOpen((v) => !v)}
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.97 }}
-        className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
+        className={`relative flex items-center gap-1.5 px-4 py-2 whitespace-nowrap transition-colors border-[1.5px] ${
           isOpen
-            ? "text-[#6f42c1] dark:text-white"
-            : "text-gray-600 dark:text-gray-200 hover:text-[#6f42c1] dark:hover:text-white"
+            ? "text-accent border-border-heavy bg-accent-tint"
+            : "text-foreground border-transparent hover:text-accent hover:border-border-heavy"
         }`}
       >
-        <span
-          className={`absolute inset-0 -z-10 rounded-full bg-white/70 dark:bg-white/10 backdrop-blur-md ring-1 ring-inset ring-white/70 dark:ring-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-opacity duration-200 ${
-            isOpen ? "opacity-100" : "opacity-0"
-          }`}
-        />
         <Compass className="relative h-4 w-4" />
         <span className="relative">Explore</span>
         <motion.span className="relative" animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -328,9 +313,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className="absolute left-0 mt-3 w-[22rem] origin-top-left"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-              {/* specular sheen, matches header/profile dropdown */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
+            <div className="relative overflow-hidden bg-card border-[1.5px] border-border-heavy">
               <div className="relative p-4">{panelContent}</div>
             </div>
           </motion.div>

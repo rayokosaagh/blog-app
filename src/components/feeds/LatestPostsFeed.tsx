@@ -61,6 +61,11 @@ const TILE_SPANS = [
   "md:col-span-2 md:row-span-1", // 4 — wide
 ];
 
+// Alternates the tile's top accent bar / tag color between the two brand
+// accents, same as the mock's LAPTOPS/MOBILES pill alternation.
+const ACCENT_CYCLE = ["bg-accent", "bg-accent-2"] as const;
+const ACCENT_TEXT_CYCLE = ["text-on-accent", "text-on-accent-2"] as const;
+
 function isBig(index: number) {
   return index % 5 === 0;
 }
@@ -81,6 +86,8 @@ function Tile({
   const orderedTags = sortTagsByOrder(post.tags ?? [], post.tagOrder ?? []);
   const primaryTag = orderedTags[0];
   const big = isBig(index);
+  const accentBg = ACCENT_CYCLE[index % 2];
+  const accentText = ACCENT_TEXT_CYCLE[index % 2];
 
   const variants: Variants = {
     hidden: { opacity: 0, scale: shouldReduceMotion ? 1 : 0.94, y: shouldReduceMotion ? 0 : 16 },
@@ -103,13 +110,6 @@ function Tile({
   };
 
   const span = TILE_SPANS[index % TILE_SPANS.length];
-  // Mobile is deliberately decoupled from the desktop 5-pattern: only the
-  // very first post is a full-width featured card, everything else is a
-  // uniform square in a plain 2-column grid. Reusing the desktop pattern's
-  // repeating "big" tiles on mobile (via TILE_MOBILE_ASPECT) gave every
-  // tile roughly the same footprint anyway, since the col/row-span classes
-  // that actually create the size difference are md:-prefixed and don't
-  // apply below that breakpoint — so mobile looked like a flat photo wall.
   const mobileHero = index === 0;
   const mobileSpan = mobileHero ? "col-span-2" : "col-span-1";
   const mobileAspect = mobileHero ? "aspect-[4/3]" : "aspect-square";
@@ -119,53 +119,44 @@ function Tile({
       variants={variants}
       whileHover={shouldReduceMotion ? undefined : { y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className={`relative rounded-2xl overflow-hidden group ${mobileSpan} ${mobileAspect} md:aspect-auto ${span}`}
+      className={`relative rounded-md overflow-hidden group border-[1.5px] border-border-heavy ${mobileSpan} ${mobileAspect} md:aspect-auto ${span}`}
     >
+      {/* Colored top accent bar — the mock's "5px colored strip" cue,
+          carried over from the flat 3-card grid onto the image tiles. */}
+      <div className={`absolute top-0 left-0 right-0 h-[4px] z-10 ${accentBg}`} />
+
       <Link href={href} className="absolute inset-0 block bg-muted">
         {post.featuredImage ? (
           <img
             src={post.featuredImage}
             alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.07]"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 transition-transform duration-700 ease-out group-hover:scale-[1.07]" />
+          <div className="w-full h-full bg-accent-tint transition-transform duration-700 ease-out group-hover:scale-[1.05]" />
         )}
 
-        {/* Single, simple bottom-only gradient — deliberately avoiding
-            percentage-stop modifiers (e.g. via-45%), which silently no-op
-            on older Tailwind configs and can end up spreading darkness
-            across the whole image instead of just the bottom. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
 
         <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5">
-          {/* line-clamp is the key fix for text taking over the tile —
-              titles now hard-truncate with an ellipsis instead of wrapping
-              indefinitely and growing upward into the badge row.
-              Mobile sizing is controlled separately from desktop ("big")
-              via mobileHero, since the two no longer share a layout. */}
           <h3
-            className={`font-bold text-white leading-tight transition-transform duration-300 group-hover:-translate-y-0.5 ${
+            className={`font-bold text-white leading-tight tracking-tight transition-transform duration-300 group-hover:-translate-y-0.5 ${
               mobileHero ? "text-base line-clamp-3 mb-1.5" : "text-xs line-clamp-2 mb-1"
             } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
           >
             {post.title}
           </h3>
-          <p className={`text-white/75 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
+          <p className={`text-white/90 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
             {post.author.name} · {formatRelativeTime(post.createdAt)}
           </p>
         </div>
       </Link>
 
-      {/* Rendered as a SIBLING of the post Link above, not nested inside it —
-          an <a> inside another <a> is invalid HTML and breaks click
-          targeting, which is why the tag wasn't clickable before. z-10
-          keeps it on top so clicks land on the tag/bookmark, not the card. */}
-      <div className="absolute top-2 left-2 right-2 md:top-3.5 md:left-3.5 md:right-3.5 flex items-start justify-between gap-2 z-10 pointer-events-none">
+      <div className="absolute top-2.5 left-2.5 right-2.5 md:top-4 md:left-4 md:right-4 flex items-start justify-between gap-2 z-10 pointer-events-none">
         {primaryTag ? (
           <Link
             href={`/blog?tag=${primaryTag.slug}`}
-            className={`pointer-events-auto inline-flex items-center gap-1 bg-black/45 backdrop-blur-md border border-white/15 text-white font-semibold uppercase tracking-widest rounded-full shadow-sm hover:bg-black/60 transition-colors ${
+            className={`pointer-events-auto inline-flex items-center gap-1 border-[1.5px] border-border-heavy font-bold uppercase tracking-wider rounded-md ${accentBg} ${accentText} ${
               mobileHero ? "text-[10px] px-2.5 py-0.5" : "text-[9px] px-2 py-0.5"
             } ${big ? "md:text-[11px] md:px-3 md:py-1" : "md:text-[10px] md:px-2.5 md:py-0.5"}`}
           >
@@ -184,7 +175,7 @@ function Tile({
             onClick={toggleSave}
             aria-label={saved ? "Remove from saved" : "Save for later"}
             aria-pressed={saved}
-            className="pointer-events-auto relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-black/45 backdrop-blur-md border border-white/15"
+            className="pointer-events-auto relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-md bg-black/55 border-[1.5px] border-white/30"
           >
             <AnimatePresence>
               {burst > 0 && saved && (
@@ -194,7 +185,7 @@ function Tile({
                   animate={{ scale: 1.9, opacity: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-full bg-white"
+                  className="absolute inset-0 rounded-md bg-white"
                 />
               )}
             </AnimatePresence>
@@ -245,18 +236,18 @@ export default function LatestPostsFeed({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.8 }}
           transition={{ duration: 0.5 }}
-          className="flex items-end justify-between gap-4 mb-6"
+          className="flex items-end justify-between gap-4 mb-6 pb-4 border-b-[1.5px] border-border-heavy"
         >
           <div>
             {eyebrow && (
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent mb-1.5">{eyebrow}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent mb-1.5">{eyebrow}</p>
             )}
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">{heading}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{heading}</h2>
           </div>
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="group/all hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-accent transition-colors shrink-0 pb-1"
+              className="group/all hidden sm:inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-muted-foreground hover:text-accent transition-colors shrink-0 pb-1"
             >
               View all
               <ArrowIcon className="w-4 h-4 transition-transform duration-300 group-hover/all:translate-x-1" />

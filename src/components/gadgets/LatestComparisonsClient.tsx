@@ -33,19 +33,26 @@ const cardEntranceVariants: Variants = {
   },
 };
 
+// Tween, not spring — springs are reserved for position-only moving
+// indicators, not routine content reveals. Matches cardEntranceVariants'
+// curve so the mobile and desktop layouts feel like one system.
 const rowEntranceVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 360, damping: 30 },
+    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
   },
 };
 
 function ProductPortrait({ product }: { product: ComparisonProduct }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-white p-2.5 ring-1 ring-black/5 dark:ring-white/10">
+      {/* bg-white is deliberate, not a hardcode oversight: product photos are
+          shot on white, and framing them in the near-black dark-mode --card
+          color would make them look broken rather than themed. Promote to
+          a --color-product-frame token if this pattern keeps showing up. */}
+      <div className="flex h-24 w-24 items-center justify-center rounded-none bg-white p-2.5 border-2 border-border-heavy">
         {product.image ? (
           <img
             src={product.image}
@@ -53,10 +60,10 @@ function ProductPortrait({ product }: { product: ComparisonProduct }) {
             className="h-full w-full object-contain"
           />
         ) : (
-          <span className="text-[10px] text-zinc-300">No image</span>
+          <span className="text-[10px] text-muted-foreground">No image</span>
         )}
       </div>
-      <p className="mt-3 min-h-[2.5rem] max-w-[9rem] text-center text-sm font-semibold leading-snug text-foreground line-clamp-2">
+      <p className="mt-3 min-h-[2.5rem] max-w-[9rem] text-center text-sm font-bold leading-snug text-foreground line-clamp-2">
         {product.name}
       </p>
     </div>
@@ -74,32 +81,32 @@ function ComparisonCard({
     <motion.div variants={reduceMotion ? undefined : cardEntranceVariants} className="h-full">
       <Link
         href={`/compare?category=${item.category.slug}&p1=${item.productA.slug}&p2=${item.productB.slug}`}
-        className="group relative block h-full overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_16px_32px_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 dark:hover:shadow-none"
+        className="group relative block h-full overflow-hidden rounded-none border-2 border-border-heavy bg-card p-6 shadow-brutal brutal-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         {/* Signature: a single accent bar sweeps in from the left on hover */}
         <span
           aria-hidden
-          className="absolute inset-x-0 top-0 h-[2px] origin-left scale-x-0 bg-accent transition-transform duration-300 ease-out group-hover:scale-x-100"
+          className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-accent transition-transform duration-200 ease-out group-hover:scale-x-100"
         />
 
-        <span className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-accent">
+        <span className="tag-pill mb-4 inline-flex bg-accent text-on-accent">
           {item.category.name}
         </span>
 
         <div className="flex items-center justify-center gap-3">
           <ProductPortrait product={item.productA} />
 
-          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[10px] font-bold tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-accent group-hover:bg-accent group-hover:text-white">
+          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-background text-[10px] font-bold tracking-wide text-muted-foreground transition-colors duration-100 group-hover:border-accent group-hover:bg-accent group-hover:text-on-accent">
             VS
           </span>
 
           <ProductPortrait product={item.productB} />
         </div>
 
-        <div className="mt-5 flex items-center justify-center gap-1.5 border-t border-border pt-4 text-xs font-medium text-muted-foreground transition-colors duration-300 group-hover:text-accent">
+        <div className="mt-5 flex items-center justify-center gap-1.5 border-t-2 border-border pt-4 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-100 group-hover:text-accent">
           <span>Compare now</span>
           <svg
-            className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+            className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -114,9 +121,9 @@ function ComparisonCard({
 }
 
 // Compact horizontal row used on small screens: two thumbnails + VS badge on the
-// left, category/product names in the middle, chevron on the right. Keeps the
-// same visual language (accent color, VS badge, sweep-in arrow) as the desktop
-// card but in a much shorter footprint so several fit on screen at once.
+// left, category/product names in the middle, chevron on the right. Reads as
+// one continuous list inside a single card, so it gets the list-row-hover
+// treatment (bg-accent-tint) rather than its own card/press styling.
 function ComparisonRow({
   item,
   isLast,
@@ -130,54 +137,49 @@ function ComparisonRow({
     <motion.div variants={reduceMotion ? undefined : rowEntranceVariants}>
       <Link
         href={`/compare?category=${item.category.slug}&p1=${item.productA.slug}&p2=${item.productB.slug}`}
-        className="group block"
+        className={`group flex items-center gap-3 rounded-none py-3 px-2 -mx-2 transition-colors duration-100 hover:bg-accent-tint focus-visible:bg-accent-tint focus-visible:outline-none ${
+          !isLast ? "border-b-2 border-border" : ""
+        }`}
       >
-        <motion.div
-          whileTap={{ scale: 0.97 }}
-          whileHover={{ x: 2 }}
-          transition={{ type: "spring", stiffness: 420, damping: 22 }}
-          className={`flex items-center gap-3 py-3 ${!isLast ? "border-b border-border" : ""}`}
+        {/* Overlapping thumbnail pair + VS badge */}
+        <div className="relative flex shrink-0 items-center">
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
+            {item.productA.image ? (
+              <img src={item.productA.image} alt={item.productA.name} className="h-full w-full object-contain" />
+            ) : (
+              <span className="text-[8px] text-muted-foreground">No image</span>
+            )}
+          </div>
+          <span className="relative z-10 -mx-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-none border-2 border-card bg-background text-[9px] font-bold tracking-wide text-muted-foreground transition-colors duration-100 group-hover:border-card group-hover:bg-accent group-hover:text-on-accent">
+            VS
+          </span>
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
+            {item.productB.image ? (
+              <img src={item.productB.image} alt={item.productB.name} className="h-full w-full object-contain" />
+            ) : (
+              <span className="text-[8px] text-muted-foreground">No image</span>
+            )}
+          </div>
+        </div>
+
+        {/* Text block */}
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-accent">{item.category.name}</p>
+          <p className="mt-0.5 truncate text-sm font-bold text-foreground">
+            {item.productA.name} <span className="text-muted-foreground">vs</span> {item.productB.name}
+          </p>
+        </div>
+
+        {/* Chevron */}
+        <svg
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-accent"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
         >
-          {/* Overlapping thumbnail pair + VS badge */}
-          <div className="relative flex shrink-0 items-center">
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-black/5 dark:ring-white/10">
-              {item.productA.image ? (
-                <img src={item.productA.image} alt={item.productA.name} className="h-full w-full object-contain" />
-              ) : (
-                <span className="text-[8px] text-zinc-300">No image</span>
-              )}
-            </div>
-            <span className="relative z-10 -mx-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-card bg-background text-[9px] font-bold tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-card group-hover:bg-accent group-hover:text-white">
-              VS
-            </span>
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-black/5 dark:ring-white/10">
-              {item.productB.image ? (
-                <img src={item.productB.image} alt={item.productB.name} className="h-full w-full object-contain" />
-              ) : (
-                <span className="text-[8px] text-zinc-300">No image</span>
-              )}
-            </div>
-          </div>
-
-          {/* Text block */}
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium text-accent">{item.category.name}</p>
-            <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
-              {item.productA.name} <span className="text-muted-foreground">vs</span> {item.productB.name}
-            </p>
-          </div>
-
-          {/* Chevron */}
-          <svg
-            className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-accent"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </motion.div>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
       </Link>
     </motion.div>
   );
@@ -197,21 +199,20 @@ export default function LatestComparisonsClient({
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+      <div className="mb-6 flex items-center gap-3 pb-4 border-b-2 border-border-heavy">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-accent shadow-brutal-sm">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-on-accent">
             <path d="M8 7l4-4 4 4M8 17l4 4 4-4M12 3v18" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-accent">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
-            </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-accent">
+            {/* Static square indicator — a looping ping animation is exactly
+                the kind of continuous idle-loop motion the system removes. */}
+            <span className="inline-flex h-1.5 w-1.5 rounded-none bg-accent" />
             Head-to-Head
           </span>
-          <h2 className="text-lg font-bold leading-tight text-foreground">
+          <h2 className="text-lg font-extrabold leading-tight text-foreground">
             Latest Comparisons
           </h2>
         </div>
@@ -223,7 +224,7 @@ export default function LatestComparisonsClient({
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-60px" }}
-        className="sm:hidden rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none"
+        className="sm:hidden rounded-none border-2 border-border-heavy bg-card shadow-brutal p-4"
       >
         {comparisons.map((c, i) => (
           <ComparisonRow key={c.id} item={c} isLast={i === comparisons.length - 1} reduceMotion={reduceMotion} />

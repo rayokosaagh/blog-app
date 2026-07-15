@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { X } from "lucide-react";
 
 interface PopupAd {
   id: string;
@@ -52,7 +53,7 @@ export default function PopupAd() {
       setVisible(false);
       setClosing(false);
       setAd(null);
-    }, 350);
+    }, 260);
   };
 
   if (!mounted || !visible || !ad) return null;
@@ -86,7 +87,7 @@ export default function PopupAd() {
           className="popup-ad-close"
           aria-label="Close advertisement"
         >
-          ✕
+          <X size={18} />
         </button>
 
         {ad.linkUrl ? (
@@ -97,35 +98,30 @@ export default function PopupAd() {
             className="popup-ad-image-wrapper"
             onClick={handleClose}
           >
-            {/* Entrance zoom-in lives on this wrapper */}
+            {/* Entrance fade/rise lives on this wrapper */}
             <div className="popup-ad-image-mount">
-              {/* This inner div natively accepts styled-jsx and handles the hover zoom */}
-              <div className="popup-ad-image-scale">
-                <Image
-                  src={ad.imageUrl!}
-                  alt={ad.title}
-                  fill
-                  className="popup-ad-image"
-                  sizes="(max-width: 768px) 100vw, 560px"
-                  priority
-                />
-              </div>
+              <Image
+                src={ad.imageUrl!}
+                alt={ad.title}
+                fill
+                className="popup-ad-image"
+                sizes="(max-width: 768px) 100vw, 560px"
+                priority
+              />
             </div>
             <span className="popup-ad-cta-overlay">{ad.linkText}</span>
           </a>
         ) : (
           <div className="popup-ad-image-wrapper">
             <div className="popup-ad-image-mount">
-              <div className="popup-ad-image-scale">
-                <Image
-                  src={ad.imageUrl!}
-                  alt={ad.title}
-                  fill
-                  className="popup-ad-image"
-                  sizes="(max-width: 768px) 100vw, 560px"
-                  priority
-                />
-              </div>
+              <Image
+                src={ad.imageUrl!}
+                alt={ad.title}
+                fill
+                className="popup-ad-image"
+                sizes="(max-width: 768px) 100vw, 560px"
+                priority
+              />
             </div>
           </div>
         )}
@@ -136,7 +132,6 @@ export default function PopupAd() {
           position: fixed;
           inset: 0;
           background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(5px);
           z-index: 998;
         }
 
@@ -146,12 +141,13 @@ export default function PopupAd() {
           left: 50%;
           transform: translate(-50%, -50%);
           z-index: 999;
-          background: #111;
-          border-radius: 20px;
+          background: var(--card);
+          border: 4px solid var(--border-heavy);
+          border-radius: 0;
           width: min(560px, calc(100vw - 32px));
           max-height: 90vh;
           overflow: hidden;
-          box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+          box-shadow: var(--shadow-xl);
         }
 
         .sr-only {
@@ -171,7 +167,7 @@ export default function PopupAd() {
           display: block;
           width: 100%;
           aspect-ratio: 4 / 5;
-          background: #111;
+          background: var(--card);
           overflow: hidden;
           cursor: pointer;
         }
@@ -179,21 +175,9 @@ export default function PopupAd() {
         .popup-ad-image-mount {
           position: absolute;
           inset: 0;
-          animation: zoomIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+          animation: revealIn 0.4s ease-out forwards;
         }
 
-        /* NEW: Added this layer to handle the hover transition cleanly */
-        .popup-ad-image-scale {
-          position: absolute;
-          inset: 0;
-          transition: transform 0.4s ease;
-        }
-
-        .popup-ad-image-wrapper:hover .popup-ad-image-scale {
-          transform: scale(1.08);
-        }
-
-        /* Used :global() to ensure styled-jsx pierces the Next.js component */
         :global(.popup-ad-image) {
           object-fit: cover;
           object-position: center;
@@ -204,68 +188,77 @@ export default function PopupAd() {
           bottom: 20px;
           left: 50%;
           transform: translateX(-50%);
-          padding: 13px 30px;
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(8px);
-          color: #111;
-          border-radius: 999px;
-          font-weight: 600;
-          font-size: 0.95rem;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+          padding: 11px 26px;
+          background: var(--accent-2);
+          color: var(--on-accent-2);
+          border: 2px solid var(--border-heavy);
+          border-radius: 0;
+          font-weight: 800;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          box-shadow: var(--shadow-sm);
           z-index: 5;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          transition: transform 120ms ease, box-shadow 120ms ease;
         }
 
         .popup-ad-image-wrapper:hover .popup-ad-cta-overlay {
-          transform: translateX(-50%) scale(1.05);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+          transform: translate(calc(-50% + 2px), 2px);
+          box-shadow: 0 0 0 0 var(--shadow-color);
         }
 
         .popup-ad-close {
           position: absolute;
           top: 16px;
           right: 16px;
-          width: 40px;
-          height: 40px;
-          background: rgba(0, 0, 0, 0.55);
-          backdrop-filter: blur(4px);
-          color: white;
-          border: none;
-          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          background: var(--card);
+          border: 2px solid var(--border-heavy);
+          border-radius: 0;
+          color: var(--foreground);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 16px;
           cursor: pointer;
           z-index: 10;
+          transition: background-color 100ms ease, color 100ms ease;
         }
 
-        .popup-fade-in { animation: fadeIn 0.4s ease forwards; }
-        .popup-fade-out { animation: fadeOut 0.35s ease forwards; }
+        .popup-ad-close:hover {
+          background: var(--accent-2);
+          color: var(--on-accent-2);
+        }
 
+        .popup-fade-in { animation: fadeIn 0.2s ease forwards; }
+        .popup-fade-out { animation: fadeOut 0.2s ease forwards; }
+
+        /* Translate + opacity only — no scale, no overshoot. A spring-style
+           bounce here is exactly the kind of soft/organic motion the system
+           replaces with a plain, decisive tween. */
         .popup-pop-in {
-          animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: popIn 0.25s ease-out forwards;
         }
         .popup-pop-out {
-          animation: popOut 0.35s ease forwards;
+          animation: popOut 0.2s ease-in forwards;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
         @keyframes popIn {
-          from { opacity: 0; transform: translate(-50%, -50%) scale(0.75); }
-          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          from { opacity: 0; transform: translate(-50%, -46%); }
+          to { opacity: 1; transform: translate(-50%, -50%); }
         }
 
         @keyframes popOut {
-          from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-          to { opacity: 0; transform: translate(-50%, -48%) scale(0.9); }
+          from { opacity: 1; transform: translate(-50%, -50%); }
+          to { opacity: 0; transform: translate(-50%, -46%); }
         }
 
-        @keyframes zoomIn {
-          from { transform: scale(1.15); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
+        @keyframes revealIn {
+          from { transform: translateY(8px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
     </>,

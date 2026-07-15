@@ -18,7 +18,6 @@ import LatestComparisons from "@/components/gadgets/LatestComparisons";
 import NewsletterForm from "@/components/newsletter/NewsletterForm";
 import SectionDivider from "@/components/ui/SectionDivider";
 
-
 // Safety-net revalidation: even if revalidatePath("/") from the view
 // route is ever missed (e.g. multi-instance deploys, edge caching),
 // the homepage will never be more than 60s stale.
@@ -31,6 +30,17 @@ export const revalidate = 60;
 const SECTION_GAP = "gap-10 sm:gap-14 lg:gap-16";
 const SECTION_TOP_PADDING = "pt-10 sm:pt-14 lg:pt-16";
 const SECTION_BOTTOM_PADDING = "pb-10 sm:pb-14 lg:pb-16";
+
+// Category chips shown under the hero — mirrors the gadget categories
+// already modeled in src/lib/gadgets/categories. Kept as a small static
+// list here rather than importing the category config, since only the
+// slug + label are needed for a homepage nav chip.
+const HERO_CATEGORIES = [
+  { label: "Laptops", href: "/compare?category=laptops" },
+  { label: "Mobiles", href: "/compare?category=mobiles" },
+  { label: "Earbuds", href: "/compare?category=earbuds" },
+  { label: "Smartwatches", href: "/compare?category=smartwatches" },
+];
 
 export default async function HomePage() {
   const session = await auth();
@@ -57,29 +67,52 @@ export default async function HomePage() {
       <PopupAd />
 
       <main className={`flex flex-col ${SECTION_GAP} ${SECTION_TOP_PADDING} ${SECTION_BOTTOM_PADDING}`}>
-        {/* Banner Carousel + flanking Trending / Latest */}
+        {/* Banner Carousel + flanking Trending / Latest — original 3-column layout */}
         {banners.length > 0 && (
           <section className="max-w-[1600px] mx-auto px-6 w-full">
-            <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-              {/* Left - Trending (desktop only) */}
-              <div className="hidden lg:block lg:w-72 flex-shrink-0">
-                <TrendingNews />
+            <div className="pt-6 border-t-4 border-border-heavy">
+              <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+                {/* Left - Trending (desktop only) */}
+                <div className="hidden lg:block lg:w-72 flex-shrink-0">
+                  <div className="h-full rounded-none border-2 border-border-heavy bg-card px-5 py-4 shadow-brutal">
+                    <TrendingNews />
+                  </div>
+                </div>
+
+                {/* Center - Carousel */}
+                <div className="w-full flex-1 min-w-0 rounded-none border-2 border-border-heavy shadow-brutal overflow-hidden">
+                  <Carousel banners={banners} />
+                </div>
+
+                {/* Right - Latest (desktop only) */}
+                <div className="hidden lg:block lg:w-72 flex-shrink-0">
+                  <div className="h-full rounded-none border-2 border-border-heavy bg-card px-5 py-4 shadow-brutal">
+                    <LatestNews />
+                  </div>
+                </div>
               </div>
 
-              {/* Center - Carousel */}
-              <div className="w-full flex-1 min-w-0">
-                <Carousel banners={banners} />
+              {/* Mobile-only: Trending/Latest tabs, right below carousel */}
+              <div className="mt-6">
+                <MobileNewsHighlights />
               </div>
 
-              {/* Right - Latest (desktop only) */}
-              <div className="hidden lg:block lg:w-72 flex-shrink-0">
-                <LatestNews />
+              {/* Category chip row */}
+              <div className="flex flex-wrap gap-3 py-5 mt-6 border-t-2 border-border">
+                {HERO_CATEGORIES.map((cat, i) => (
+                  <Link
+                    key={cat.href}
+                    href={cat.href}
+                    className={`tag-pill brutal-press ${
+                      i % 2 === 0
+                        ? "bg-accent text-on-accent"
+                        : "bg-accent-2 text-on-accent-2"
+                    }`}
+                  >
+                    {cat.label}
+                  </Link>
+                ))}
               </div>
-            </div>
-
-            {/* Mobile-only: Trending/Latest tabs, right below carousel */}
-            <div className="mt-6">
-              <MobileNewsHighlights />
             </div>
           </section>
         )}
@@ -119,14 +152,14 @@ export default async function HomePage() {
             {/* Center - Latest Posts (bento mosaic, both mobile and desktop) */}
             <div className="w-full lg:max-w-[900px] mx-auto">
               <FadeIn>
-                <div className="mb-12 text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 mb-3 justify-center lg:justify-start w-full lg:w-auto">
-                    <Sparkles className="w-4 h-4 text-accent" />
-                    <span className="text-xs font-bold tracking-[0.14em] uppercase text-accent">
+                <div className="mb-10 text-center lg:text-left pb-4 border-b-4 border-border-heavy">
+                  <div className="inline-flex items-center gap-2 mb-3 justify-center lg:justify-start w-full lg:w-auto bg-accent-2 text-on-accent-2 border-2 border-border-heavy px-3 py-1 w-fit">
+                    <Sparkles className="w-4 h-4" />
+                    <span className="text-xs font-extrabold tracking-[0.14em] uppercase">
                       Fresh off the press
                     </span>
                   </div>
-                  <h3 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 tracking-tight">
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-2 tracking-tight">
                     Latest Posts
                   </h3>
                   <p className="text-muted-foreground">
@@ -137,7 +170,7 @@ export default async function HomePage() {
 
               {recentPosts.length === 0 ? (
                 <FadeIn>
-                  <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
+                  <div className="bg-card border-2 border-border-heavy rounded-none p-12 text-center text-muted-foreground shadow-brutal">
                     <p className="text-lg">No posts published yet</p>
                   </div>
                 </FadeIn>
@@ -152,10 +185,9 @@ export default async function HomePage() {
                       href="/blog"
                       className="
                         group inline-flex items-center gap-2 px-5 py-2.5
-                        rounded-full border border-border bg-card
-                        text-sm font-medium text-foreground
-                        transition-all duration-200
-                        hover:border-accent hover:text-accent hover:gap-3
+                        rounded-none border-2 border-border-heavy bg-background
+                        text-xs font-extrabold uppercase tracking-wide text-foreground
+                        shadow-brutal-sm brutal-press
                       "
                     >
                       View all posts

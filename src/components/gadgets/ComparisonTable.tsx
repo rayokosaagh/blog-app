@@ -33,85 +33,96 @@ export default function ComparisonTable({
         <div />
         {products.map((p) => (
           <div key={p.id} className="text-center px-2">
-            {p.image && (
-              <div className="mx-auto mb-1 h-20 w-20 flex items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+            <div className="mx-auto mb-1 h-20 w-20 flex items-center justify-center rounded-none border-2 border-border-heavy bg-accent-tint">
+              {p.image ? (
                 <img src={p.image} alt={p.name} className="h-full w-full object-contain" />
-              </div>
+              ) : (
+                <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
+                  {p.brand?.slice(0, 2)}
+                </span>
+              )}
+            </div>
+            {p.priceFrom && (
+              <p className="text-xs font-bold text-muted-foreground">Starting from {p.priceFrom}</p>
             )}
-            {p.priceFrom && <p className="text-xs text-gray-500 dark:text-zinc-400">Starting from {p.priceFrom}</p>}
-            <p className="font-semibold text-zinc-900 dark:text-zinc-50">{p.name}</p>
+            <p className="font-extrabold text-foreground">{p.name}</p>
           </div>
         ))}
       </div>
 
       {/* Toggles */}
-      <div className="flex gap-4 justify-end my-3 text-sm text-zinc-700 dark:text-zinc-300">
-        <label className="flex items-center gap-1">
+      <div className="flex gap-4 justify-end my-3 text-xs font-bold uppercase tracking-wide text-foreground">
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={highlightDiff}
             onChange={(e) => setHighlightDiff(e.target.checked)}
-            className="accent-blue-600 dark:accent-blue-400"
+            className="accent-[var(--accent)] w-4 h-4 rounded-none border-2 border-border-heavy"
           />
           Highlight Differences
         </label>
-        <label className="flex items-center gap-1">
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={onlyDiff}
             onChange={(e) => setOnlyDiff(e.target.checked)}
-            className="accent-blue-600 dark:accent-blue-400"
+            className="accent-[var(--accent)] w-4 h-4 rounded-none border-2 border-border-heavy"
           />
           Show only Differences
         </label>
       </div>
 
       {/* Jump nav */}
-      <nav className="flex gap-3 overflow-x-auto text-sm border-y border-zinc-200 dark:border-zinc-800 py-2 mb-4">
+      <nav className="flex gap-2 overflow-x-auto scrollbar-hide border-y-2 border-border-heavy py-2 mb-4">
         {groups.map((g) => (
-  <a
-    key={g.title}
-    href={`#${g.title.toLowerCase()}`}
-    className="whitespace-nowrap text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-  >
-    {g.title}
-  </a>
-))}
+          
+            key={g.title}
+            href={`#${g.title.toLowerCase()}`}
+            className="tag-pill brutal-press whitespace-nowrap shrink-0 bg-card text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100"
+          >
+            {g.title}
+          </a>
+        ))}
       </nav>
 
       {/* Grouped spec table */}
-      <table className="w-full text-sm border-collapse">
-        <tbody>
-          {groups.map((g) => (
-            <Fragment key={g.title}>
-              <tr id={g.title.toLowerCase()} className="bg-gray-100 dark:bg-zinc-800">
-                <td colSpan={products.length + 1} className="font-semibold p-2 text-zinc-900 dark:text-zinc-100">
-                  {g.title}
-                </td>
-              </tr>
-              {g.fields.map((f) => {
-                const vals = products.map((p) => p.specs?.[f.key]);
-                const differs = new Set(vals.map((v) => JSON.stringify(v))).size > 1;
-                return (
-                  <tr key={f.key} className="border-b border-zinc-100 dark:border-zinc-800">
-                    <td className="p-2 font-medium text-gray-600 dark:text-zinc-400">{f.label}</td>
-                    {vals.map((v, i) => (
-                      <td
-                        key={i}
-                        className={`p-2 whitespace-pre-line text-zinc-800 dark:text-zinc-100 ${
-                          highlightDiff && differs ? "bg-yellow-50 dark:bg-yellow-400/10" : ""
-                        }`}
-                      >
-                        {v === undefined || v === null || v === "" ? "—" : String(v)}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrap">
+        <table className="w-full text-sm border-collapse">
+          <tbody>
+            {groups.map((g) => (
+              <Fragment key={g.title}>
+                <tr id={g.title.toLowerCase()} className="bg-muted border-y-2 border-border-heavy">
+                  <td colSpan={products.length + 1} className="font-extrabold uppercase tracking-wide text-xs p-2 text-foreground">
+                    {g.title}
+                  </td>
+                </tr>
+                {g.fields.map((f) => {
+                  const vals = products.map((p) => p.specs?.[f.key]);
+                  const differs = new Set(vals.map((v) => JSON.stringify(v))).size > 1;
+                  return (
+                    <tr key={f.key} className="border-b-2 border-border">
+                      <td className="p-2 font-bold text-muted-foreground">{f.label}</td>
+                      {vals.map((v, i) => {
+                        const empty = v === undefined || v === null || v === "";
+                        return (
+                          <td
+                            key={i}
+                            className={`p-2 whitespace-pre-line ${
+                              empty ? "text-muted-foreground" : "text-foreground"
+                            } ${highlightDiff && differs ? "bg-accent-tint" : ""}`}
+                          >
+                            {empty ? "—" : String(v)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

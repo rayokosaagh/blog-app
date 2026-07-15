@@ -65,16 +65,16 @@ export default function NavbarSearch() {
   }, [trimmedQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (trimmedQuery.length < MIN_QUERY_LENGTH) {
-    setIsOpen(true);
-    return;
-  }
+    if (trimmedQuery.length < MIN_QUERY_LENGTH) {
+      setIsOpen(true);
+      return;
+    }
 
-  setIsOpen(false);
-  router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
-};
+    setIsOpen(false);
+    router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+  };
 
   const handleClear = () => {
     setQuery("");
@@ -92,20 +92,17 @@ export default function NavbarSearch() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search posts..."
             className="w-full px-5 py-2.5 pr-10 text-sm
-                       bg-white/40 dark:bg-white/10
-                       backdrop-blur-md backdrop-saturate-150
-                       border border-white/60 dark:border-white/10
-                       text-gray-900 dark:text-white
-                       placeholder-gray-500 dark:placeholder-gray-400
-                       rounded-full
-                       focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:bg-white/60 dark:focus:bg-white/15
-                       transition-all duration-300"
+                       bg-background text-foreground placeholder-muted-foreground
+                       border-2 border-border-heavy rounded-none
+                       shadow-brutal-sm
+                       focus:outline-none focus:border-accent
+                       transition-colors duration-100"
           />
 
-          {/* Loading Spinner */}
+          {/* Loading indicator — hard-edged pulse, not a spinning ring */}
           {isLoading && (
             <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <div className="w-4 h-4 border-2 border-gray-400 dark:border-gray-500 rounded-full border-t-transparent animate-spin"></div>
+              <div className="w-2.5 h-2.5 bg-foreground animate-pulse" />
             </div>
           )}
 
@@ -114,7 +111,7 @@ export default function NavbarSearch() {
             <button
               type="button"
               onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full hover:bg-white/40 dark:hover:bg-white/10"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
               aria-label="Clear search"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -127,8 +124,8 @@ export default function NavbarSearch() {
 
       {/* Too-short hint */}
       {isOpen && isQueryTooShort && (
-        <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 rounded-xl shadow-xl">
-          <div className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+        <div className="absolute z-50 w-full mt-2 bg-card border-2 border-border-heavy rounded-none shadow-brutal">
+          <div className="px-5 py-4 text-sm text-muted-foreground text-center">
             Type at least {MIN_QUERY_LENGTH} characters to search
           </div>
         </div>
@@ -136,27 +133,27 @@ export default function NavbarSearch() {
 
       {/* Results Dropdown */}
       {isOpen && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-50 w-full mt-2 bg-card border-2 border-border-heavy rounded-none shadow-brutal">
           <ul className="py-1 max-h-80 overflow-y-auto">
             {results.map((post) => (
               <li key={post.id}>
                 <Link
                   href={`/blog/${post.slug}`}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-4 px-5 py-3 hover:bg-white/50 dark:hover:bg-white/10 transition-colors border-b border-white/40 dark:border-white/10 last:border-0 group"
+                  className="flex items-center gap-4 px-5 py-3 hover:bg-accent-tint transition-colors duration-100 border-b-2 border-border last:border-0 group"
                 >
                   {post.featuredImage ? (
                     <img
                       src={post.featuredImage}
                       alt={post.title}
-                      className="w-10 h-10 rounded-md object-cover flex-shrink-0 border border-gray-200 dark:border-gray-600 group-hover:border-blue-500/30 transition-colors"
+                      className="w-10 h-10 rounded-none object-cover flex-shrink-0 border-2 border-border-heavy"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-gray-600">
+                    <div className="w-10 h-10 rounded-none bg-accent-tint flex items-center justify-center flex-shrink-0 border-2 border-border-heavy">
                       <span className="text-lg">📝</span>
                     </div>
                   )}
-                  <span className="text-sm text-gray-700 dark:text-gray-200 group-hover:text-[#0D3B66] dark:group-hover:text-blue-400 font-medium line-clamp-2">
+                  <span className="text-sm text-foreground group-hover:text-accent font-bold line-clamp-2">
                     {post.title}
                   </span>
                 </Link>
@@ -168,8 +165,8 @@ export default function NavbarSearch() {
 
       {/* No Results */}
       {isOpen && trimmedQuery.length >= MIN_QUERY_LENGTH && results.length === 0 && !isLoading && (
-        <div className="absolute z-50 w-full mt-2 bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 rounded-xl shadow-xl">
-          <div className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+        <div className="absolute z-50 w-full mt-2 bg-card border-2 border-border-heavy rounded-none shadow-brutal">
+          <div className="px-5 py-4 text-sm text-muted-foreground text-center">
             No posts found for "{trimmedQuery}"
           </div>
         </div>

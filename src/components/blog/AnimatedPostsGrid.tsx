@@ -82,18 +82,31 @@ function PostThumb({ post }: { post: PostItem }) {
     <img
       src={post.featuredImage}
       alt={post.title}
-      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+      className="w-full h-full object-cover"
     />
   ) : (
-    <div className="w-full h-full bg-blue-500/10 flex items-center justify-center">
+    <div className="w-full h-full bg-accent-tint flex items-center justify-center">
       <span className="text-2xl opacity-40">✦</span>
     </div>
   );
 }
 
+// Brutalist swap for the old animated gradient underline: an instant
+// hard-edged highlight block behind the text, like a highlighter
+// stroke, rather than a soft drawn-on underline. No easing on the
+// reveal itself — brutalism moves in steps, not fades.
 function Underline({ children }: { children: React.ReactNode }) {
   return (
-    <span className="bg-[linear-gradient(to_right,#2563EB,#2563EB)] dark:bg-[linear-gradient(to_right,#60A5FA,#60A5FA)] bg-no-repeat bg-[length:0%_1px] group-hover:bg-[length:100%_1px] bg-[position:0_100%] transition-[background-size] duration-500 pb-0.5">
+    <span
+      className="
+        box-decoration-clone
+        bg-[length:0%_100%] group-hover:bg-[length:100%_100%]
+        bg-no-repeat bg-left
+        transition-[background-size] duration-100 ease-out
+        group-hover:text-on-accent-2
+      "
+      style={{ backgroundImage: "linear-gradient(var(--accent-2), var(--accent-2))" }}
+    >
       {children}
     </span>
   );
@@ -116,16 +129,16 @@ export default function AnimatedPostsGrid({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="bg-card border border-border rounded-3xl p-16 text-center shadow-sm dark:shadow-none"
+          className="bg-card border-2 border-border-heavy rounded-none p-16 text-center shadow-brutal"
         >
           <p className="text-5xl mb-4">📭</p>
-          <p className="text-foreground text-lg font-medium mb-6">
+          <p className="text-foreground text-lg font-bold mb-6">
             {hasFilters ? "No posts match these filters" : "No posts yet"}
           </p>
           {hasFilters && (
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/15 dark:bg-blue-400/10 dark:hover:bg-blue-400/15 rounded-full text-blue-600 dark:text-blue-400 font-medium text-sm transition-colors group"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-border-heavy rounded-none text-accent font-extrabold text-xs uppercase tracking-wide shadow-brutal-sm brutal-press group"
             >
               <span className="group-hover:-translate-x-1 transition-transform">
                 ←
@@ -176,46 +189,43 @@ export default function AnimatedPostsGrid({
             <motion.div
               variants={itemVariants}
               exit="exit"
-              className="group bg-card rounded-3xl overflow-hidden shadow-sm hover:shadow-xl dark:shadow-none transition-shadow duration-300"
+              className="group bg-card border-2 border-border-heavy rounded-none overflow-hidden shadow-brutal-lg brutal-press-lg"
             >
               <Link href={`/blog/${lead.slug}`} className="flex flex-col h-full">
-                <div className="overflow-hidden rounded-3xl m-2 mb-0 aspect-video">
-                  <div className="w-full h-full rounded-2xl overflow-hidden">
-                    <PostThumb post={lead} />
-                  </div>
+                <div className="overflow-hidden aspect-video border-b-2 border-border-heavy">
+                  <PostThumb post={lead} />
                 </div>
                 <div className="p-6 flex flex-col flex-1">
-                  <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                    <span className="text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide">
+                  <div className="flex items-center gap-2 mb-3 text-xs">
+                    <span className="bg-accent-2 text-on-accent-2 border-2 border-border-heavy px-2 py-0.5 font-extrabold uppercase tracking-wide">
                       Featured
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-border" />
-                    <time>{formatDate(lead.createdAt)}</time>
+                    <time className="text-muted-foreground">{formatDate(lead.createdAt)}</time>
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground leading-snug mb-3">
+                  <h2 className="text-2xl font-extrabold text-foreground leading-snug mb-3">
                     <Underline>{lead.title}</Underline>
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-5">
                     {excerpt(lead.content, 180)}...
                   </p>
-                  <div className="mt-auto flex items-center gap-2.5 pt-5 border-t border-border">
+                  <div className="mt-auto flex items-center gap-2.5 pt-5 border-t-2 border-border">
                     {lead.author.image ? (
                       <img
                         src={lead.author.image}
                         alt={lead.author.name ?? "Author"}
-                        className="w-8 h-8 rounded-full object-cover shrink-0"
+                        className="w-8 h-8 rounded-none object-cover shrink-0 border-2 border-border-heavy"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-blue-600/10 dark:bg-blue-400/10 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs shrink-0">
+                      <div className="w-8 h-8 rounded-none bg-accent text-on-accent flex items-center justify-center font-extrabold text-xs shrink-0 border-2 border-border-heavy">
                         {lead.author.name?.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <span className="text-sm font-medium text-foreground/80 truncate">
+                    <span className="text-sm font-bold text-foreground/80 truncate">
                       {lead.author.name}
                     </span>
                     {leadTags[0] && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-border ml-1" />
+                        <span className="w-1 h-1 bg-border ml-1" />
                         <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                           <TagIcon
                             icon={leadTags[0].icon}
@@ -240,7 +250,7 @@ export default function AnimatedPostsGrid({
                     key={post.id}
                     variants={itemVariants}
                     exit="exit"
-                    className={`group bg-card rounded-2xl shadow-sm hover:shadow-md dark:shadow-none transition-shadow duration-300 ${
+                    className={`group bg-card border-2 border-border-heavy rounded-none shadow-brutal-sm brutal-press ${
                       sideListIsFull ? "flex-1" : ""
                     }`}
                   >
@@ -248,15 +258,15 @@ export default function AnimatedPostsGrid({
                       href={`/blog/${post.slug}`}
                       className="flex items-center gap-3 h-full px-3 py-3"
                     >
-                      <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden rounded-xl self-center">
+                      <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden self-center border-2 border-border-heavy">
                         {post.featuredImage ? (
                           <img
                             src={post.featuredImage}
                             alt={post.title}
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                            className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-accent-tint flex items-center justify-center">
                             <span className="text-xl opacity-40">✦</span>
                           </div>
                         )}
@@ -265,7 +275,7 @@ export default function AnimatedPostsGrid({
                         <p className="text-xs text-muted-foreground mb-1">
                           {formatDate(post.createdAt)}
                         </p>
-                        <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
+                        <p className="text-sm font-bold text-foreground leading-snug line-clamp-2">
                           <Underline>{post.title}</Underline>
                         </p>
                       </div>
@@ -286,27 +296,23 @@ export default function AnimatedPostsGrid({
                     key={post.id}
                     variants={itemVariants}
                     exit="exit"
-                    whileHover={{ y: -4 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                    className="group bg-card rounded-3xl overflow-hidden shadow-sm hover:shadow-xl dark:shadow-none transition-shadow duration-300"
+                    className="group bg-card border-2 border-border-heavy rounded-none overflow-hidden shadow-brutal brutal-press"
                   >
                     <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
-                      <div className="overflow-hidden rounded-3xl m-2 mb-0 aspect-[4/3]">
-                        <div className="w-full h-full rounded-2xl overflow-hidden">
-                          <PostThumb post={post} />
-                        </div>
+                      <div className="overflow-hidden aspect-[4/3] border-b-2 border-border-heavy">
+                        <PostThumb post={post} />
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <div className="flex items-center gap-2 mb-2.5 text-xs text-muted-foreground">
                           <time>{formatDate(post.createdAt)}</time>
                           {tags[0] && (
                             <>
-                              <span className="w-1 h-1 rounded-full bg-border" />
+                              <span className="w-1 h-1 bg-border" />
                               <span>{tags[0].name}</span>
                             </>
                           )}
                         </div>
-                        <h3 className="text-base font-semibold text-foreground leading-snug line-clamp-2">
+                        <h3 className="text-base font-bold text-foreground leading-snug line-clamp-2">
                           <Underline>{post.title}</Underline>
                         </h3>
                       </div>
@@ -321,7 +327,7 @@ export default function AnimatedPostsGrid({
         {/* List with thumbnail — everything past the first 7, styled magazine-review style */}
         {rest.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground mb-2">
               More posts
             </p>
             <div className="flex flex-col">
@@ -336,10 +342,10 @@ export default function AnimatedPostsGrid({
                     <Link
                       href={`/blog/${post.slug}`}
                       className={`group flex items-center gap-5 py-5 ${
-                        i === 0 ? "border-t border-border" : ""
-                      } border-b border-border hover:bg-foreground/[0.02] transition-colors -mx-3 px-3 rounded-xl`}
+                        i === 0 ? "border-t-2 border-border" : ""
+                      } border-b-2 border-border hover:bg-accent-tint transition-colors -mx-3 px-3`}
                     >
-                      <div className="w-32 h-24 sm:w-40 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0">
+                      <div className="w-32 h-24 sm:w-40 sm:h-28 overflow-hidden flex-shrink-0 border-2 border-border-heavy">
                         <PostThumb post={post} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -349,7 +355,7 @@ export default function AnimatedPostsGrid({
                         <p className="text-xs sm:text-sm text-muted-foreground">
                           {post.author.name}
                           <span className="mx-1.5">·</span>
-                          <span className="text-blue-600 dark:text-blue-400">
+                          <span className="text-accent">
                             {formatDate(post.createdAt)}
                           </span>
                         </p>
@@ -364,7 +370,7 @@ export default function AnimatedPostsGrid({
               <div className="flex justify-center pt-8">
                 <button
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600/10 hover:bg-blue-600/15 dark:bg-blue-400/10 dark:hover:bg-blue-400/15 rounded-full text-blue-600 dark:text-blue-400 font-medium text-sm transition-colors group"
+                  className="inline-flex items-center gap-2 px-6 py-3 border-2 border-border-heavy rounded-none text-foreground font-extrabold text-xs uppercase tracking-wide shadow-brutal-sm brutal-press group"
                 >
                   Uncover more posts
                   <span className="group-hover:translate-y-0.5 transition-transform">
@@ -399,4 +405,4 @@ const itemVariants = {
     y: -8,
     transition: { duration: 0.18, ease: "easeIn" as const },
   },
-}; 
+};

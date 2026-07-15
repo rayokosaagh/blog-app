@@ -103,7 +103,7 @@ function stripTrailingEmptyBlocks(html: string): string {
 function generateAdString(ad: { link: string; image: string; title: string }) {
   return `
     <a href="${ad.link}" target="_blank" rel="noopener noreferrer sponsored"
-      class="relative block my-6 w-full h-24 sm:h-28 md:h-32 rounded-xl overflow-hidden border border-border hover:shadow-md transition-shadow bg-card">
+      class="relative block my-6 w-full h-24 sm:h-28 md:h-32 overflow-hidden border-[1.5px] border-border-heavy bg-card">
       <img src="${ad.image}" alt="${ad.title}" class="absolute inset-0 w-full h-full object-cover" />
     </a>
   `;
@@ -132,9 +132,9 @@ function stripEmptyParagraphs(html: string): string {
 function generateBannerString(banner: { link: string; image: string; title: string }) {
   return `
     <a href="${banner.link}" target="_blank" rel="noopener noreferrer sponsored"
-      class="relative block my-10 w-full h-28 sm:h-32 md:h-40 rounded-xl overflow-hidden border border-border hover:shadow-lg transition-shadow bg-card group">
+      class="relative block my-10 w-full h-28 sm:h-32 md:h-40 overflow-hidden border-[1.5px] border-border-heavy bg-card group">
       <img src="${banner.image}" alt="${banner.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
-      <div class="absolute top-2 right-2 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white/90 uppercase tracking-widest">Advertisement</div>
+      <div class="absolute top-2 right-2 bg-accent-2 text-on-accent-2 border-[1.5px] border-border-heavy px-2 py-1 text-[10px] font-bold uppercase tracking-widest">Advertisement</div>
     </a>
   `;
 }
@@ -202,9 +202,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   console.log("POST UPDATED AT:", post.updatedAt, "| CONTENT LENGTH:", post.content.length);
 
-  // NOTE: dumping the full raw content here was flooding the terminal and
-  // truncating before reaching the section we actually needed to inspect.
-  // Log a small window around "Key Highlights" instead.
   const khIdx = post.content.toLowerCase().indexOf("key highlights");
   if (khIdx !== -1) {
     console.log(
@@ -274,15 +271,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     Math.ceil(post.content.replace(/<[^>]*>/g, "").split(/\s+/).length / 200)
   );
 
-let processedContent = parseAdsShortcodes(post.content, ads);
-processedContent = stripEmptyParagraphs(processedContent);   // ← new
-processedContent = parseBannerShortcodes(processedContent, banners);
-processedContent = parseKeyHighlightsBlock(processedContent);
-processedContent = parseAlsoReadBlock(processedContent);
-processedContent = parseDropCapLedeBlock(processedContent);
-processedContent = wrapTables(processedContent);
-processedContent = parseSpecificationsBlock(processedContent);
-processedContent = stripTrailingEmptyBlocks(processedContent);
+  let processedContent = parseAdsShortcodes(post.content, ads);
+  processedContent = stripEmptyParagraphs(processedContent);
+  processedContent = parseBannerShortcodes(processedContent, banners);
+  processedContent = parseKeyHighlightsBlock(processedContent);
+  processedContent = parseAlsoReadBlock(processedContent);
+  processedContent = parseDropCapLedeBlock(processedContent);
+  processedContent = wrapTables(processedContent);
+  processedContent = parseSpecificationsBlock(processedContent);
+  processedContent = stripTrailingEmptyBlocks(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
 
@@ -308,7 +305,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
       <Navbar />
 
       {/* Hero Header */}
-      <div className="relative w-full h-[420px] md:h-[500px] overflow-hidden">
+      <div className="relative w-full h-[420px] md:h-[500px] overflow-hidden border-b-[1.5px] border-border-heavy">
         <style>{`
           @keyframes heroZoomIn {
             from { transform: scale(1.09); }
@@ -324,10 +321,10 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
 
         <FadeIn>
           <div className="absolute top-6 left-0 right-0 max-w-4xl mx-auto px-6 z-20">
-            <nav className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card/80 backdrop-blur-md border border-border rounded-full text-sm text-muted-foreground font-medium shadow-lg transition-shadow duration-300 hover:shadow-xl">
-              <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+            <nav className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card border-[1.5px] border-border-heavy text-sm text-muted-foreground font-medium">
+              <Link href="/" className="hover:text-accent transition-colors">Home</Link>
               <span className="text-border text-xs">/</span>
-              <Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link>
+              <Link href="/blog" className="hover:text-accent transition-colors">Blog</Link>
               <span className="text-border text-xs">/</span>
               <span className="text-foreground truncate max-w-[250px]">{post.title}</span>
             </nav>
@@ -342,7 +339,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
                   <Link
                     key={t.id}
                     href={`/blog?tag=${t.slug}`}
-                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full border border-white/25 transition-all duration-200 hover:scale-105 active:scale-95"
+                    className="inline-flex items-center gap-1.5 bg-accent-2 text-on-accent-2 text-xs font-bold uppercase tracking-widest px-3 py-1 border-[1.5px] border-border-heavy transition-transform duration-150 hover:-translate-y-0.5"
                   >
                     <TagIcon icon={t.icon} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
                     {t.name}
@@ -359,11 +356,11 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
           <FadeIn delay={0.3}>
             <div className="flex items-center gap-4 w-full justify-between">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-white/60 shadow-xl shrink-0 bg-muted transition-transform duration-300 hover:scale-105">
+                <div className="w-14 h-14 overflow-hidden border-[1.5px] border-white shrink-0 bg-card">
                   {post.author.image ? (
                     <img src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl">
+                    <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent font-bold text-2xl">
                       {post.author.name?.charAt(0).toUpperCase() || "U"}
                     </div>
                   )}
@@ -385,7 +382,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
                 <BookmarkButton
                   postId={post.id}
                   initialBookmarked={isBookmarked}
-                  className="bg-white/15 hover:bg-white/25 backdrop-blur-md !text-white rounded-full px-3 py-2 border border-white/25"
+                  className="bg-card !text-foreground px-3 py-2 border-[1.5px] border-border-heavy"
                 />
               </div>
             </div>
@@ -394,7 +391,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
       </div>
 
       {/* Main Content */}
-      <main className="w-full max-w-[1560px] mx-auto px-6 -mt-6 relative z-10 pb-8 md:pb-12 flex flex-col 2xl:flex-row justify-center gap-8 items-start">
+      <main className="w-full max-w-[1560px] mx-auto px-6 mt-8 relative z-10 pb-8 md:pb-12 flex flex-col 2xl:flex-row justify-center gap-8 items-start">
         {/* TOC Sidebar */}
         {toc.length > 0 && (
           <FadeIn className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
@@ -404,7 +401,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
 
         {/* Article Content */}
         <FadeIn delay={0.1} className="w-full max-w-4xl">
-          <div className="bg-card border border-border rounded-2xl shadow-xl px-8 md:px-10 pt-12 pb-8 transition-shadow duration-300 hover:shadow-2xl">
+          <div className="bg-card border-[1.5px] border-border-heavy px-8 md:px-10 pt-12 pb-8">
             <style>{`
             .rich-text-render { color: var(--foreground); }
 .rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.15rem; font-size: 1.0625rem; }
@@ -412,7 +409,6 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
 .rich-text-render p:has(> br:only-child) { display: none; }
 .rich-text-render > *:last-child { margin-bottom: 0; }
 
-/* --- Drop cap + bold lede --- */
 .rich-text-render .drop-cap {
   float: left;
   font-size: 3.4rem;
@@ -426,7 +422,6 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   color: var(--foreground);
 }
 
-/* --- Headings: shared scroll offset --- */
 .rich-text-render h1,
 .rich-text-render h2,
 .rich-text-render h3,
@@ -434,7 +429,6 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   scroll-margin-top: 100px;
 }
 
-/* H1: gradient text */
 .rich-text-render h1 {
   font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem);
   font-weight: 800;
@@ -442,13 +436,9 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   line-height: 1.1;
   margin-top: 2.5rem;
   margin-bottom: 1.5rem;
-  background: linear-gradient(90deg, var(--foreground), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--foreground);
 }
 
-/* H2: minimal underline */
 .rich-text-render h2 {
   font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.625rem);
   font-weight: 700;
@@ -457,7 +447,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   margin-top: 2.25rem;
   margin-bottom: 1.25rem;
   padding-bottom: 0.6rem;
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 3px solid var(--border-heavy);
   color: var(--foreground);
   display: inline-block;
 }
@@ -465,7 +455,6 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   margin-top: 0;
 }
 
-/* H3: clean structural divider */
 .rich-text-render h3 {
   font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
   font-weight: 600;
@@ -473,10 +462,9 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   color: var(--foreground);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1.5px solid var(--border);
 }
 
-/* H4: pill label */
 .rich-text-render h4 {
   display: inline-block;
   font-size: 0.75rem;
@@ -487,35 +475,27 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   margin-top: 2rem;
   margin-bottom: 0.75rem;
   padding: 0.35rem 0.85rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  border: 1.5px solid var(--border-heavy);
 }
 
-/* --- Images --- */
 .rich-text-render img {
   max-width: 100%;
   height: auto;
-  border-radius: 12px;
   margin: 2rem auto;
   display: block;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  transition: transform 0.4s ease;
+  border: 1.5px solid var(--border-heavy);
 }
-.rich-text-render img:hover { transform: scale(1.015); }
 
-/* --- Lists --- */
 .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
 .rich-text-render ul { list-style-type: disc; }
 .rich-text-render ol { list-style-type: decimal; }
 .rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
 .rich-text-render li::marker { color: var(--accent); }
 
-/* --- Table: flat header, thin grid --- */
 .rich-text-render .table-wrap {
   margin: 2.75rem 0;
-  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border-heavy);
 }
 
 .rich-text-render .table-scroll {
@@ -525,8 +505,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
 }
 .rich-text-render .table-scroll::-webkit-scrollbar { height: 6px; }
 .rich-text-render .table-scroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 999px;
+  background: var(--border-heavy);
 }
 
 .rich-text-render table {
@@ -538,19 +517,19 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
 }
 
 .rich-text-render thead th {
-  background: var(--muted);
-  color: var(--muted-foreground);
-  font-weight: 600;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 1rem 1.25rem;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1.5px solid var(--border-heavy);
 }
 .rich-text-render thead th + th {
-  border-left: 1px solid var(--border);
+  border-left: 1.5px solid var(--border-heavy);
 }
 
 .rich-text-render td {
@@ -574,7 +553,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
   transition: background 0.15s ease;
 }
 .rich-text-render tbody tr:hover td {
-  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  background: var(--accent-tint);
 }
             `}</style>
 
@@ -588,9 +567,9 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
             <SpecificationsMount />
 
             {/* Author Bio */}
-            <div className="mt-10 pt-6 border-t border-border">
-              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-4 justify-between bg-muted/40 border border-border/60 rounded-2xl px-5 py-4 sm:px-6 sm:py-5">
-                <Link href="/blog" className="group inline-flex items-center gap-2 text-accent hover:underline font-medium text-sm transition-colors shrink-0">
+            <div className="mt-10 pt-6 border-t-[1.5px] border-border-heavy">
+              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-4 justify-between bg-background border-[1.5px] border-border-heavy px-5 py-4 sm:px-6 sm:py-5">
+                <Link href="/blog" className="group inline-flex items-center gap-2 text-accent hover:underline font-bold text-sm transition-colors shrink-0">
                   <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
                   All posts
                 </Link>
@@ -601,13 +580,13 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
                   postId={post.id}
                   initialBookmarked={isBookmarked}
                   showLabel
-                  className="px-3 py-1.5 rounded-full border border-border hover:border-[#6f42c1] dark:hover:border-white shrink-0"
+                  className="px-3 py-1.5 border-[1.5px] border-border-heavy hover:bg-accent hover:text-on-accent shrink-0"
                 />
 
                 <div className="hidden sm:block h-8 w-px bg-border" />
 
                 <div className="flex items-center gap-3.5 w-full sm:w-auto justify-center sm:justify-end">
-                  <div className="w-11 h-11 rounded-full overflow-hidden bg-muted ring-2 ring-border shrink-0 transition-transform duration-300 hover:scale-105">
+                  <div className="w-11 h-11 overflow-hidden bg-card border-[1.5px] border-border-heavy shrink-0">
                     {post.author.image ? (
                       <img
                         src={post.author.image}
@@ -615,7 +594,7 @@ processedContent = stripTrailingEmptyBlocks(processedContent);
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
+                      <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent font-bold text-lg">
                         {post.author.name?.charAt(0).toUpperCase() || "?"}
                       </div>
                     )}

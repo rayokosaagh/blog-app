@@ -55,11 +55,10 @@ export default function Carousel({ banners }: CarouselProps) {
 
   return (
     <div
-      // Fixed heights on mobile/tablet (no sidebar to match there), but on
-      // desktop (lg+) this fills the height of its flex row, which now uses
-      // items-stretch — so it locks to the same height as the Trending/Latest
-      // sidebar cards instead of a hardcoded 420px.
-      className="relative w-full overflow-hidden rounded-2xl shadow-lg h-48 sm:h-64 md:h-80 lg:h-full"
+      // Editorial frame: thick 1.5px border instead of a soft shadow,
+      // sharp-ish 6px corners instead of rounded-2xl. Fixed heights on
+      // mobile/tablet, fills its flex/grid row on desktop (lg+).
+      className="relative w-full overflow-hidden rounded-md border-[1.5px] border-border-heavy h-48 sm:h-64 md:h-80 lg:h-full"
     >
       {/* Slides */}
       <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -82,25 +81,32 @@ export default function Carousel({ banners }: CarouselProps) {
             />
 
             {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
 
-            {/* Title */}
+            {/* Tag + Title */}
             <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
+              <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-1.5 bg-accent text-on-accent px-3 py-1 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider border-[1.5px] border-white/20 mb-2 sm:mb-3"
+              >
+                Just tested
+              </motion.span>
               <motion.h3
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-white text-lg sm:text-2xl font-bold mb-2 line-clamp-2"
+                transition={{ delay: 0.1 }}
+                className="text-white text-lg sm:text-2xl font-bold mb-3 line-clamp-2 tracking-tight"
               >
                 {banners[current].title}
               </motion.h3>
               <motion.span
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="inline-block bg-white text-gray-900 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium hover:bg-gray-100 transition-colors"
+                transition={{ delay: 0.2 }}
+                className="inline-block bg-white text-gray-900 px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors"
               >
-                Learn More →
+                Read the latest
               </motion.span>
             </div>
           </Link>
@@ -111,8 +117,8 @@ export default function Carousel({ banners }: CarouselProps) {
       {banners.length > 1 && (
         <button
           onClick={(e) => { e.preventDefault(); prev(); }}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-all z-10 hover:scale-110"
-          style={{ backgroundColor: "rgba(79,99,103,0.8)" }}
+          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 transition-all z-10 hover:bg-white/15"
+          style={{ backgroundColor: "rgba(14,17,22,0.55)" }}
         >
           ‹
         </button>
@@ -122,16 +128,16 @@ export default function Carousel({ banners }: CarouselProps) {
       {banners.length > 1 && (
         <button
           onClick={(e) => { e.preventDefault(); next(); }}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white transition-all z-10 hover:scale-110"
-          style={{ backgroundColor: "rgba(79,99,103,0.8)" }}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 transition-all z-10 hover:bg-white/15"
+          style={{ backgroundColor: "rgba(14,17,22,0.55)" }}
         >
           ›
         </button>
       )}
 
-      {/* Dots */}
+      {/* Progress ticks — square, not round dots, matching the mock's blocky tag/rule language */}
       {banners.length > 1 && (
-        <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center gap-2 z-10">
+        <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center gap-1.5 z-10">
           {banners.map((_, i) => (
             <button
               key={i}
@@ -140,10 +146,10 @@ export default function Carousel({ banners }: CarouselProps) {
                 setDirection(i > current ? 1 : -1);
                 setCurrent(i);
               }}
-              className="rounded-full transition-all"
+              className="rounded-[2px] transition-all"
               style={{
-                width: i === current ? "24px" : "8px",
-                height: "8px",
+                width: i === current ? "20px" : "7px",
+                height: "7px",
                 backgroundColor: i === current ? "white" : "rgba(255,255,255,0.5)",
               }}
             />
@@ -153,14 +159,13 @@ export default function Carousel({ banners }: CarouselProps) {
 
       {/* Progress bar */}
       {banners.length > 1 && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/20 z-10">
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-white/20 z-10">
           <motion.div
             key={current}
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
             transition={{ duration: 5, ease: "linear" }}
-            className="h-full"
-            style={{ backgroundColor: "#4F6367" }}
+            className="h-full bg-accent"
           />
         </div>
       )}

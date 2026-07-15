@@ -30,7 +30,11 @@ const EMOJIS = [
   "😅", "😍", "🥳", "😴", "❤️", "❓", "❗", "😎",
 ];
 
-const spring = { type: "spring" as const, stiffness: 400, damping: 32 };
+// Position/height motion (dropdowns opening, replies sliding in, entrance
+// stagger) stays springy — that's allowed under the brutalist system.
+// What's been removed everywhere below is color/shadow *softness*: glow
+// rings, translucent hover fades, gradients, and bouncy whileHover scale
+// on bordered surfaces (those get brutal-press instead).
 const softSpring = { type: "spring" as const, stiffness: 300, damping: 28 };
 
 function formatRelativeTime(date: string) {
@@ -78,7 +82,7 @@ function AnimatedCount({ value }: { value: number }) {
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -10, opacity: 0 }}
-          transition={{ duration: 0.18 }}
+          transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
           className="inline-block tabular-nums"
         >
           {value}
@@ -102,27 +106,27 @@ function EmojiButton({ onSelect }: { onSelect: (emoji: string) => void }) {
 
   return (
     <div className="relative" ref={ref}>
-      <motion.button
+      <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        animate={{ rotate: open ? 15 : 0, color: open ? "rgb(37 99 235)" : undefined }}
-        transition={spring}
-        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+        className={`p-1.5 rounded-none border-2 transition-colors ${
+          open
+            ? "border-border-heavy bg-accent-2 text-on-accent-2"
+            : "border-transparent text-muted-foreground hover:border-border-heavy hover:bg-accent-2 hover:text-on-accent-2"
+        }`}
         aria-label="Insert emoji"
       >
         <Smile size={18} />
-      </motion.button>
+      </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.9 }}
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.9 }}
-            transition={spring}
-            className="absolute bottom-full right-0 mb-2 w-56 grid grid-cols-6 gap-1 p-2 bg-card border border-border rounded-xl shadow-xl z-20 origin-bottom-right"
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full right-0 mb-2 w-56 grid grid-cols-6 gap-1 p-2 bg-card border-2 border-border-heavy rounded-none shadow-brutal z-20 origin-bottom-right"
           >
             {EMOJIS.map((e, i) => (
               <motion.button
@@ -134,10 +138,8 @@ function EmojiButton({ onSelect }: { onSelect: (emoji: string) => void }) {
                 }}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.012, ...spring }}
-                whileHover={{ scale: 1.3, y: -2 }}
-                whileTap={{ scale: 0.9 }}
-                className="text-lg rounded-lg hover:bg-foreground/5 p-1 transition-colors"
+                transition={{ delay: i * 0.012, duration: 0.12 }}
+                className="text-lg rounded-none border-2 border-transparent hover:border-border-heavy hover:bg-accent-2 p-1 transition-colors"
               >
                 {e}
               </motion.button>
@@ -204,13 +206,11 @@ function Composer({
 
   return (
     <div>
-      <motion.div
-        animate={{
-          borderColor: focused ? "rgba(37, 99, 235, 0.5)" : "rgba(0,0,0,0)",
-          boxShadow: focused ? "0 0 0 4px rgba(37, 99, 235, 0.08)" : "0 0 0 0px rgba(37, 99, 235, 0)",
-        }}
-        transition={{ duration: 0.2 }}
-        className="relative bg-muted rounded-xl border border-border"
+      {/* Focus state is now a hard border + shadow snap, not a soft glow ring */}
+      <div
+        className={`relative bg-muted rounded-none border-2 transition-colors ${
+          focused ? "border-border-heavy shadow-brutal-sm" : "border-border"
+        }`}
       >
         <textarea
           ref={textareaRef}
@@ -222,12 +222,12 @@ function Composer({
           autoFocus={autoFocus}
           maxLength={2000}
           rows={3}
-          className="w-full bg-transparent resize-y min-h-[84px] px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none rounded-xl"
+          className="w-full bg-transparent resize-y min-h-[84px] px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none rounded-none"
         />
         <div className="absolute bottom-2.5 right-2.5">
           <EmojiButton onSelect={insertEmoji} />
         </div>
-      </motion.div>
+      </div>
 
       <AnimatePresence>
         {showActions && (
@@ -238,31 +238,26 @@ function Composer({
             transition={softSpring}
             className="flex items-center justify-between overflow-hidden"
           >
-            <motion.span
-              animate={{ color: nearLimit ? "rgb(220 38 38)" : undefined }}
-              className="text-xs text-muted-foreground pt-2 tabular-nums"
+            <span
+              className={`text-xs pt-2 tabular-nums ${nearLimit ? "text-danger font-bold" : "text-muted-foreground"}`}
             >
               {content.length}/2000
-            </motion.span>
+            </span>
             <div className="flex gap-2 pt-2">
               {onCancel && (
-                <motion.button
+                <button
                   type="button"
                   onClick={onCancel}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-foreground/5 transition-colors"
+                  className="px-3.5 py-1.5 rounded-none border-2 border-border-heavy text-sm font-bold text-muted-foreground shadow-brutal-sm brutal-press"
                 >
                   Cancel
-                </motion.button>
+                </button>
               )}
-              <motion.button
+              <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={!content.trim() || posting}
-                whileHover={{ scale: posting ? 1 : 1.03 }}
-                whileTap={{ scale: posting ? 1 : 0.96 }}
-                className="px-3.5 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-none border-2 border-border-heavy text-sm font-extrabold bg-accent text-on-accent disabled:opacity-40 disabled:cursor-not-allowed shadow-brutal-sm brutal-press inline-flex items-center gap-1.5"
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {posting ? (
@@ -287,7 +282,7 @@ function Composer({
                     </motion.span>
                   )}
                 </AnimatePresence>
-              </motion.button>
+              </button>
             </div>
           </motion.div>
         )}
@@ -299,7 +294,7 @@ function Composer({
             initial={{ opacity: 0, y: -4, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: -4, height: 0 }}
-            className="text-red-600 text-xs mt-1.5"
+            className="text-danger font-bold text-xs mt-1.5"
           >
             {error}
           </motion.p>
@@ -346,30 +341,20 @@ function CommentItem({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -8, transition: { duration: 0.15 } }}
       transition={softSpring}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      className={indented ? "mt-4 pl-4 border-l border-border" : "mt-6"}
+      className={indented ? "mt-4 pl-4 border-l-[3px] border-border-heavy" : "mt-6"}
     >
-      <motion.div
-        className="flex gap-3 rounded-xl -mx-2 px-2 py-1.5"
-        animate={{
-          backgroundColor: isNew
-            ? "rgba(37, 99, 235, 0.06)"
-            : hovered
-            ? "rgba(0, 0, 0, 0.015)"
-            : "rgba(0, 0, 0, 0)",
-        }}
-        transition={{ duration: isNew ? 1.2 : 0.2 }}
+      <div
+        className={`flex gap-3 rounded-none -mx-2 px-2 py-1.5 border-2 transition-colors ${
+          isNew ? "bg-accent-tint border-transparent" : hovered ? "border-border" : "border-transparent"
+        }`}
       >
-        <motion.div
-          whileHover={{ scale: 1.06 }}
-          transition={spring}
-          className="w-9 h-9 rounded-full overflow-hidden bg-muted ring-1 ring-border shrink-0"
-        >
+        <div className="w-9 h-9 rounded-none border-2 border-border-heavy overflow-hidden bg-muted shrink-0">
           {comment.author.image ? (
             <img
               src={comment.author.image}
@@ -377,24 +362,24 @@ function CommentItem({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent text-sm font-extrabold">
               {comment.author.name?.charAt(0).toUpperCase() || "?"}
             </div>
           )}
-        </motion.div>
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-extrabold text-foreground">
               {comment.author.name || "Anonymous"}
             </span>
             {comment.author.role === "ADMIN" && (
-              <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-600 text-white">
+              <span className="text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-none border-2 border-border-heavy bg-accent text-on-accent">
                 Admin
               </span>
             )}
             {comment.author.role === "EDITOR" && (
-              <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-foreground/10 text-muted-foreground">
+              <span className="text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-none border-2 border-border-heavy bg-card text-muted-foreground">
                 Staff
               </span>
             )}
@@ -407,21 +392,20 @@ function CommentItem({
             {comment.content}
           </p>
 
-          <motion.div
-            animate={{ opacity: hovered || replying || confirmingDelete ? 1 : 0.7 }}
-            className="flex items-center gap-3 mt-1.5"
+          <div
+            className={`flex items-center gap-3 mt-1.5 transition-opacity ${
+              hovered || replying || confirmingDelete ? "opacity-100" : "opacity-70"
+            }`}
           >
             {session && (
-              <motion.button
+              <button
                 type="button"
                 onClick={() => setReplying((r) => !r)}
-                whileHover={{ scale: 1.05, x: 1 }}
-                whileTap={{ scale: 0.95 }}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                className="text-xs font-bold text-muted-foreground hover:text-accent transition-colors inline-flex items-center gap-1"
               >
                 <ReplyIcon size={12} />
                 Reply
-              </motion.button>
+              </button>
             )}
             {canDelete && (
               <AnimatePresence mode="wait" initial={false}>
@@ -438,14 +422,14 @@ function CommentItem({
                       type="button"
                       onClick={handleDelete}
                       disabled={deleting}
-                      className="font-semibold text-red-600 hover:underline disabled:opacity-50"
+                      className="font-extrabold text-danger hover:underline disabled:opacity-50"
                     >
                       {deleting ? "Deleting…" : "Yes"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmingDelete(false)}
-                      className="text-muted-foreground hover:underline"
+                      className="font-bold text-muted-foreground hover:underline"
                     >
                       No
                     </button>
@@ -455,9 +439,7 @@ function CommentItem({
                     key="trigger"
                     type="button"
                     onClick={() => setConfirmingDelete(true)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="text-xs font-medium text-muted-foreground hover:text-red-600 transition-colors inline-flex items-center gap-1"
+                    className="text-xs font-bold text-muted-foreground hover:text-danger transition-colors inline-flex items-center gap-1"
                   >
                     <Trash2 size={12} />
                     Delete
@@ -465,7 +447,7 @@ function CommentItem({
                 )}
               </AnimatePresence>
             )}
-          </motion.div>
+          </div>
 
           <AnimatePresence>
             {replying && (
@@ -507,7 +489,7 @@ function CommentItem({
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
@@ -566,26 +548,26 @@ export default function CommentSection({ postId }: { postId: string }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8"
+      className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8"
     >
       <div className="flex items-center gap-2">
-        <MessageCircle size={22} className="text-blue-600" />
-        <h2 className="text-2xl font-bold text-foreground">Conversation</h2>
+        <MessageCircle size={22} className="text-accent" />
+        <h2 className="text-2xl font-extrabold text-foreground">Conversation</h2>
       </div>
-      <div className="border-b border-border mt-4 mb-4" />
+      <div className="border-t-2 border-border-heavy mt-4 mb-4" />
 
       <p className="text-sm text-muted-foreground leading-relaxed">
         We&apos;d love to hear your thoughts! Let&apos;s keep it respectful and on-topic. Any
         inappropriate remarks may be removed. Happy commenting!{" "}
         <Link
           href="/privacy-policy"
-          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+          className="text-accent hover:underline font-bold"
         >
           Privacy Policy
         </Link>
       </p>
 
-      <p className="text-sm font-medium text-foreground mt-4 mb-4">
+      <p className="text-sm font-bold text-foreground mt-4 mb-4">
         {loading ? (
           "…"
         ) : (
@@ -607,28 +589,24 @@ export default function CommentSection({ postId }: { postId: string }) {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-muted rounded-xl border border-border p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
+          className="bg-muted rounded-none border-2 border-border-heavy shadow-brutal-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
         >
           <p className="text-sm text-muted-foreground">Sign in to join the conversation.</p>
           <div className="flex gap-2 shrink-0">
-            <motion.button
+            <button
               type="button"
               onClick={() => signIn("google")}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium bg-card border border-border hover:bg-foreground/5 transition-colors"
+              className="px-3.5 py-1.5 rounded-none border-2 border-border-heavy text-sm font-bold bg-card shadow-brutal-sm brutal-press"
             >
               Continue with Google
-            </motion.button>
-            <motion.button
+            </button>
+            <button
               type="button"
               onClick={() => signIn("github")}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-medium bg-card border border-border hover:bg-foreground/5 transition-colors"
+              className="px-3.5 py-1.5 rounded-none border-2 border-border-heavy text-sm font-bold bg-card shadow-brutal-sm brutal-press"
             >
               Continue with GitHub
-            </motion.button>
+            </button>
           </div>
         </motion.div>
       )}
@@ -639,7 +617,7 @@ export default function CommentSection({ postId }: { postId: string }) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-red-600 text-sm mt-3"
+            className="text-danger font-bold text-sm mt-3"
           >
             {error}
           </motion.p>
@@ -657,18 +635,18 @@ export default function CommentSection({ postId }: { postId: string }) {
               transition={{ delay: i * 0.08 }}
             >
               <motion.div
-                className="w-9 h-9 rounded-full bg-muted shrink-0"
+                className="w-9 h-9 border-2 border-border-heavy bg-muted shrink-0"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.15 }}
               />
               <div className="flex-1 space-y-2 pt-0.5">
                 <motion.div
-                  className="h-3 w-32 rounded bg-muted"
+                  className="h-3 w-32 border-2 border-border-heavy bg-muted"
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.15 }}
                 />
                 <motion.div
-                  className="h-3 w-full max-w-sm rounded bg-muted"
+                  className="h-3 w-full max-w-sm border-2 border-border-heavy bg-muted"
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.15 + 0.1 }}
                 />

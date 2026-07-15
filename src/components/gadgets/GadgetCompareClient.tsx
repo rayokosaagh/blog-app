@@ -13,6 +13,7 @@ import JumpNav from "./compare/JumpNav";
 import FocusedSpecBar from "./compare/FocusedSpecBar";
 import DesktopTable from "./compare/DesktopTable";
 import MobileTable from "./compare/MobileTable";
+import Footer from "../layout/Footer";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];
@@ -99,6 +100,8 @@ export default function GadgetCompareClient({
     }
   }
 
+  
+
   async function handlePick(slotIndex: number, productSlug: string) {
     if (!productSlug) {
       handleRemove(slotIndex);
@@ -169,11 +172,18 @@ export default function GadgetCompareClient({
     setFocusedKey((prev) => (prev === key ? null : key));
   }
 
-  function jumpToGroup(title: string) {
+  function getVisibleGroupElement(title: string): HTMLElement | null {
+  const id = title.toLowerCase();
+  const desktopEl = document.getElementById(id);
+  if (desktopEl && desktopEl.offsetParent !== null) return desktopEl;
+  const mobileEl = document.getElementById(`m-${id}`);
+  if (mobileEl && mobileEl.offsetParent !== null) return mobileEl;
+  return null;
+}
+
+function jumpToGroup(title: string) {
   setActiveGroupTitle(title);
-  const el =
-    document.getElementById(`m-${title.toLowerCase()}`) ??
-    document.getElementById(title.toLowerCase());
+  const el = getVisibleGroupElement(title);
   if (el) {
     const y = el.getBoundingClientRect().top + window.scrollY - (headerOffset + 12);
     window.scrollTo({ top: y, behavior: "smooth" });
@@ -221,6 +231,50 @@ export default function GadgetCompareClient({
       .filter((g) => g.fields.length > 0);
   }, [onlyDiff, def, filledProducts, fieldFilter]);
 
+  useEffect(() => {
+  if (groups.length === 0) return;
+
+  const ids = groups.map((g) => g.title.toLowerCase());
+
+function updateActiveGroup() {
+  const triggerLine = headerOffset + 24;
+  let current: string | null = null;
+
+  for (const id of ids) {
+    const el = getVisibleGroupElement(id); // id here is already lowercase title
+    if (!el) continue;
+    const top = el.getBoundingClientRect().top;
+    if (top <= triggerLine) {
+      current = id;
+    } else {
+      break;
+    }
+  }
+
+  if (!current) current = ids[0];
+  const match = groups.find((g) => g.title.toLowerCase() === current);
+  if (match) setActiveGroupTitle((prev) => (prev === match.title ? prev : match.title));
+}
+
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      updateActiveGroup();
+      ticking = false;
+    });
+  }
+
+  updateActiveGroup();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  return () => {
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", onScroll);
+  };
+}, [groups, headerOffset]);
+
   const showComparison = !!def && filledProducts.length >= 2;
 
   return (
@@ -229,10 +283,10 @@ export default function GadgetCompareClient({
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative rounded-3xl border border-border bg-card/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.06)] dark:shadow-none p-4 sm:p-8"
+        className="relative rounded-none border-2 border-border-heavy bg-card shadow-brutal-lg p-4 sm:p-8"
       >
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
             Compare Gadgets
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -246,7 +300,7 @@ export default function GadgetCompareClient({
              `top-16` if your site has a fixed navbar overlapping it. ── */}
         <div
           ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-4 sm:-mx-8 px-4 sm:px-8 pt-1 pb-2 bg-background/95 backdrop-blur-md"
+          className="sticky top-0 z-20 -mx-4 sm:-mx-8 px-4 sm:px-8 pt-1 pb-2 bg-background"
         >
           <CategorySelector categories={categories} category={category} onChange={handleCategoryChange} />
 
@@ -266,8 +320,8 @@ export default function GadgetCompareClient({
                   <motion.span
                     key={i}
                     animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
-                    className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear", delay: i * 0.15 }}
+                    className="h-1.5 w-1.5 rounded-none bg-muted-foreground"
                   />
                 ))}
               </span>
@@ -328,12 +382,17 @@ export default function GadgetCompareClient({
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="text-center text-muted-foreground py-10"
           >
             Pick at least 2 {def?.name.toLowerCase()} to compare.
           </motion.p>
         )}
       </motion.div>
+      <Footer />
     </LayoutGroup>
+    
+    
   );
+  
 }

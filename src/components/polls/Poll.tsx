@@ -31,18 +31,15 @@ function formatEndsIn(endsAt: string | null) {
   });
 }
 
+// Pure translate, no opacity crossfade — a directional slide reads as a
+// mechanical swap; fading the two slides through each other reads soft.
 const variants = {
   enter: (direction: number) => ({
-    x: direction === 0 ? 0 : direction > 0 ? 60 : -60,
-    opacity: 0,
+    x: direction === 0 ? 0 : direction > 0 ? 40 : -40,
   }),
-  center: {
-    x: 0,
-    opacity: 1,
-  },
+  center: { x: 0 },
   exit: (direction: number) => ({
-    x: direction === 0 ? 0 : direction > 0 ? -60 : 60,
-    opacity: 0,
+    x: direction === 0 ? 0 : direction > 0 ? -40 : 40,
   }),
 };
 
@@ -172,19 +169,19 @@ export default function Poll() {
 
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-2xl px-6 py-8 md:px-8">
+      <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8">
         <div className="flex items-center gap-2">
-          <BarChart3 size={22} className="text-blue-600" />
-          <h2 className="text-2xl font-bold text-foreground">Polls</h2>
+          <BarChart3 size={20} className="text-accent" />
+          <h2 className="text-xl font-extrabold text-foreground tracking-tight">Polls</h2>
         </div>
-        <div className="border-b border-border mt-4 mb-6" />
+        <div className="border-t-2 border-border mt-4 mb-6" />
         <div className="space-y-3">
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="h-12 w-full rounded-xl bg-muted"
+              className="h-12 w-full rounded-none bg-muted border-2 border-border"
               animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.15 }}
+              transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.15, ease: "linear" }}
             />
           ))}
         </div>
@@ -202,26 +199,26 @@ export default function Poll() {
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       onHoverStart={() => setIsHovering(true)}
       onHoverEnd={() => setIsHovering(false)}
-      className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8"
+      className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8"
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <BarChart3 size={22} className="text-blue-600" />
-          <h2 className="text-2xl font-bold text-foreground">Polls</h2>
+          <BarChart3 size={20} className="text-accent" />
+          <h2 className="text-xl font-extrabold text-foreground tracking-tight">Polls</h2>
         </div>
 
         {hasMultiple && (
-          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 shrink-0">
+          <span className="tag-pill bg-accent text-on-accent shrink-0 !py-0.5 !px-2 text-[10px]">
             {currentIndex + 1} of {polls.length}
           </span>
         )}
       </div>
 
-      <div className="border-b border-border mt-4 mb-4" />
+      <div className="border-t-2 border-border mt-4 mb-4" />
 
       {/* Navigation */}
       <div className="flex justify-end mb-4">
@@ -229,14 +226,14 @@ export default function Poll() {
           <button
             onClick={goToPrev}
             disabled={!hasMultiple}
-            className="p-2 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 disabled:opacity-40 transition-colors"
+            className="p-2 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy disabled:opacity-40 transition-colors duration-100"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={goToNext}
             disabled={!hasMultiple}
-            className="p-2 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 disabled:opacity-40 transition-colors"
+            className="p-2 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy disabled:opacity-40 transition-colors duration-100"
           >
             <ChevronRight size={18} />
           </button>
@@ -253,11 +250,10 @@ export default function Poll() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.35, ease: "easeInOut" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
             drag={hasMultiple ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.65}
-            whileDrag={{ scale: 0.98 }}
+            dragElastic={0.15}
             onDragStart={() => setIsDragging(true)}
             onDragEnd={handleDragEnd}
             className={hasMultiple ? "cursor-grab active:cursor-grabbing" : ""}
@@ -265,12 +261,12 @@ export default function Poll() {
             {endsInLabel && <p className="text-xs text-muted-foreground mb-4">Ends: {endsInLabel}</p>}
 
             <div className="flex gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center flex-shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <div className="w-9 h-9 rounded-none bg-accent border-2 border-border-heavy flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                   <path d="M7 20V10M12 20V4M17 20v-6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-foreground leading-tight">
+              <h3 className="text-lg font-extrabold text-foreground leading-tight tracking-tight">
                 {currentPoll.question}
               </h3>
             </div>
@@ -281,36 +277,37 @@ export default function Poll() {
                 const isSelected = option.id === currentPoll.votedOptionId;
 
                 return (
-                  <motion.button
+                  <button
                     key={option.id}
-                    whileHover={!hasVoted ? { scale: 1.02, y: -2 } : {}}
-                    whileTap={!hasVoted ? { scale: 0.98 } : {}}
                     disabled={hasVoted || voting}
                     onClick={() => handleVote(option.id)}
-                    className={`relative w-full text-left rounded-xl border overflow-hidden transition-all duration-300 ${
-                      isSelected
-  ? "border-blue-500 dark:border-blue-400"
-  : "border-border hover:border-foreground/20"
-                    } ${hasVoted ? "cursor-default" : "cursor-pointer"}`}
+                    className={`relative w-full text-left rounded-none border-2 overflow-hidden ${
+                      hasVoted
+                        ? isSelected
+                          ? "border-accent"
+                          : "border-border-heavy"
+                        : "border-border-heavy shadow-brutal-sm brutal-press hover:bg-accent-tint cursor-pointer"
+                    } ${hasVoted ? "cursor-default" : ""}`}
                   >
                     {hasVoted && (
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
-                        className="absolute inset-y-0 left-0 bg-blue-100 dark:bg-blue-900/30"
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="absolute inset-y-0 left-0 bg-accent-tint"
                       />
                     )}
 
                     <div className="relative flex items-center justify-between px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs font-semibold flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-none bg-foreground text-background text-xs font-extrabold flex items-center justify-center">
                           {LETTERS[index] ?? index + 1}
                         </div>
-                        <span className="text-sm font-medium text-foreground">{option.label}</span>
+                        <span className="text-sm font-bold text-foreground">{option.label}</span>
                       </div>
-                      {hasVoted && <span className="text-base font-semibold text-blue-600 dark:text-blue-400">{pct}%</span>}
+                      {hasVoted && <span className="text-base font-extrabold text-accent">{pct}%</span>}
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
@@ -324,7 +321,8 @@ export default function Poll() {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-red-600 mt-3 text-sm text-center"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="text-red-600 mt-3 text-sm text-center font-bold"
           >
             {error}
           </motion.p>
@@ -337,10 +335,9 @@ export default function Poll() {
             <button
               key={i}
               onClick={() => goToIndex(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                i === currentIndex
-                  ? "bg-blue-600 dark:bg-blue-400 scale-125"
-                  : "bg-border hover:bg-foreground/20"
+              aria-label={`Go to poll ${i + 1}`}
+              className={`w-2.5 h-2.5 rounded-none border border-border-heavy transition-colors duration-100 ${
+                i === currentIndex ? "bg-accent" : "bg-border hover:bg-foreground"
               }`}
             />
           ))}

@@ -9,13 +9,14 @@ export default async function SocialSidebar() {
   });
 
   return (
-    <div className="bg-card border border-border rounded-2xl shadow-xl px-6 py-8 md:px-8">
+    <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8">
       <div className="flex items-center gap-2">
-        <Share2 size={22} className="text-blue-600" />
-        <h2 className="text-2xl font-bold text-foreground">Socials</h2>
+        <Share2 size={20} className="text-accent" />
+        <h2 className="text-xl font-extrabold text-foreground tracking-tight">Socials</h2>
       </div>
 
-      <div className="border-b border-border mt-4 mb-4" />
+      {/* Internal divider — thin, not the heavy structural border */}
+      <div className="border-t-2 border-border mt-4 mb-4" />
 
       <div className="space-y-3">
         {socials.length === 0 ? (
@@ -29,21 +30,27 @@ export default async function SocialSidebar() {
               href={social.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center justify-between p-3 rounded-xl border border-border hover:border-foreground/20 hover:bg-foreground/5 transition-all duration-200"
-              style={{ '--social-color': social.color } as React.CSSProperties}
+              className="group flex items-center justify-between p-3 rounded-none border-2 border-border-heavy shadow-brutal-sm brutal-press"
+              style={{ "--social-color": social.color } as React.CSSProperties}
             >
               <div className="flex items-center">
+                {/*
+                  Forces the raw icon markup to render in currentColor
+                  instead of whatever fill/stroke is baked into the SVG,
+                  so it inherits text-muted-foreground in both themes and
+                  steps to the brand color on hover, same as the label.
+                */}
                 <div
-                  className="w-6 flex justify-center text-foreground/80 group-hover:text-[var(--social-color)] transition-colors"
+                  className="w-6 flex justify-center text-muted-foreground group-hover:text-[var(--social-color)] transition-colors duration-100 [&_svg]:fill-current [&_svg]:stroke-current [&_svg]:w-5 [&_svg]:h-5"
                   dangerouslySetInnerHTML={{ __html: social.iconSvg }}
                 />
-                <div className="w-px h-5 bg-border mx-3"></div>
-                <span className="font-medium text-foreground group-hover:text-[var(--social-color)] transition-colors">
+                <div className="w-[2px] h-5 bg-border mx-3" />
+                <span className="font-bold text-foreground group-hover:text-[var(--social-color)] transition-colors duration-100">
                   {social.platform}
                 </span>
               </div>
 
-              <span className="text-sm font-medium text-muted-foreground group-hover:text-[var(--social-color)] transition-colors">
+              <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground group-hover:text-[var(--social-color)] transition-colors duration-100">
                 {social.actionText}
               </span>
             </Link>

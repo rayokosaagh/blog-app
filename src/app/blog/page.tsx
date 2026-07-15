@@ -54,23 +54,23 @@ export default async function BlogPage({
 
   const [posts, activeTags, allTags, authors, availableYearsRaw] = await Promise.all([
     prisma.post.findMany({
-  where: {
-    published: true,
-    ...(search && {
-      title: { contains: search, mode: "insensitive" },
+      where: {
+        published: true,
+        ...(search && {
+          title: { contains: search, mode: "insensitive" },
+        }),
+        ...(tagSlugs.length > 0 && {
+          AND: tagSlugs.map((slug) => ({
+            tags: { some: { slug } },
+          })),
+        }),
+        ...(author && { authorId: author }),
+        ...(createdAtFilter && { createdAt: createdAtFilter }),
+        ...(monthOnlyIds && { id: { in: monthOnlyIds } }),
+      },
+      orderBy: { createdAt: "desc" },
+      include: { author: true, tags: true },
     }),
-    ...(tagSlugs.length > 0 && {
-      AND: tagSlugs.map((slug) => ({
-        tags: { some: { slug } },
-      })),
-    }),
-    ...(author && { authorId: author }),
-    ...(createdAtFilter && { createdAt: createdAtFilter }),
-    ...(monthOnlyIds && { id: { in: monthOnlyIds } }),
-  },
-  orderBy: { createdAt: "desc" },
-  include: { author: true, tags: true },
-}),
     tagSlugs.length > 0
       ? prisma.tag.findMany({ where: { slug: { in: tagSlugs } } })
       : Promise.resolve([]),
@@ -95,7 +95,7 @@ export default async function BlogPage({
       : [new Date().getFullYear()];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Header */}
@@ -103,18 +103,18 @@ export default async function BlogPage({
         {/* Soft ambient glow behind the headline — the one signature touch */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-[520px] h-[280px] rounded-full bg-blue-500/10 blur-3xl"
+          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 w-[520px] h-[280px] rounded-full bg-accent/10 blur-3xl"
         />
 
         <div className="relative">
-          <nav className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-xs text-muted-foreground font-medium shadow-sm dark:shadow-none mb-8">
-            <Link href="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          <nav className="inline-flex items-center gap-2 px-4 py-2 bg-card border-[1.5px] border-border-heavy rounded-md text-xs text-muted-foreground font-medium mb-8">
+            <Link href="/" className="hover:text-accent transition-colors">
               Home
             </Link>
             <span className="text-border">/</span>
             {hasFilters ? (
               <>
-                <Link href="/blog" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link href="/blog" className="hover:text-accent transition-colors">
                   Blog
                 </Link>
                 <span className="text-border">/</span>
@@ -153,7 +153,7 @@ export default async function BlogPage({
                   <span key={t.id} className="inline-flex items-center gap-3">
                     <TagIcon
                       icon={t.icon}
-                      className="inline-flex w-9 h-9 md:w-12 md:h-12 [&>svg]:w-full [&>svg]:h-full text-blue-600 dark:text-blue-400"
+                      className="inline-flex w-9 h-9 md:w-12 md:h-12 [&>svg]:w-full [&>svg]:h-full text-accent"
                     />
                     {t.name}
                     {i < activeTags.length - 1 && (

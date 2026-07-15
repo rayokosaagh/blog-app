@@ -49,7 +49,7 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="bg-card rounded-xl border border-border p-5"
+      className="bg-card border-[1.5px] border-border-heavy p-5"
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-5">
@@ -73,9 +73,9 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
               className="group relative flex items-center gap-3.5 py-3"
             >
               {/* Accent bar: flat, grows from 0 height on hover instead of a numbered badge */}
-              <span className="relative w-[3px] self-stretch shrink-0 bg-border overflow-hidden rounded-full">
+              <span className="relative w-[3px] self-stretch shrink-0 bg-border overflow-hidden">
                 <motion.span
-                  className="absolute inset-x-0 bottom-0 bg-accent rounded-full"
+                  className="absolute inset-x-0 bottom-0 bg-accent"
                   initial={{ height: "0%" }}
                   whileHover={{ height: "100%" }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
@@ -83,7 +83,7 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
               </span>
 
               {/* Thumbnail: flat grayscale by default, snaps to full color on hover — the signature move */}
-              <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-border">
+              <div className="w-14 h-14 overflow-hidden shrink-0 bg-border border-[1.5px] border-border-heavy">
                 {post.featuredImage ? (
                   <img
                     src={post.featuredImage}
@@ -91,7 +91,7 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
                     className="w-full h-full object-cover grayscale contrast-[1.05] transition-all duration-300 ease-out group-hover:grayscale-0 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-accent-tint">
                     <span className="text-lg">📝</span>
                   </div>
                 )}

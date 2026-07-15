@@ -1,35 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&display=swap');
 @import "tailwindcss";
 @source "../app/**/*.{ts,tsx}";
 @source "../components/**/*.{ts,tsx}";
 @custom-variant dark (&:where(.dark, .dark *));
 @import "bootstrap-icons/font/bootstrap-icons.css";
 
-/* --- Design tokens --- */
 :root {
   --background: #ffffff;
-  --foreground: #14181f;
+  --foreground: #0e1116;
   --muted-foreground: #4b5566;
   --card: #ffffff;
-  --border: #e2e8f0;
-  --footer-bg: #f7fafc;
+  --border: #d8d8d8;
+  --border-heavy: #000000;
+  --footer-bg: #f2f2f2;
   --accent: #2563eb;
-  --accent: #2563eb;
-  --accent-2: #7c5cff;
-  --font-sans: Arial, Helvetica, sans-serif;
-  --accent-2: #7c5cff;
+  --accent-2: #ffe500;
+  --accent-tint: #eaf1fd;
+  --on-accent: #ffffff;
+  --on-accent-2: #000000;
+  --muted: #f2f2f2;
+  --danger: #dc2626;
+  --on-danger: #ffffff;
+  --font-sans: "Space Grotesk", Arial, Helvetica, sans-serif;
+
+  /* Neo-brutalist shadow system — always keyed to --border-heavy so it
+     flips correctly in dark mode without redefining per-theme. */
+  --shadow-color: var(--border-heavy);
+  --shadow-sm: 3px 3px 0 0 var(--shadow-color);
+  --shadow-md: 4px 4px 0 0 var(--shadow-color);
+  --shadow-lg: 6px 6px 0 0 var(--shadow-color);
+  --shadow-xl: 8px 8px 0 0 var(--shadow-color);
 }
 
 .dark {
-  --background: #0a1322;        /* deep navy-black, not pure black */
-  --foreground: #e8edf4;        /* soft off-white, easier on the eyes than pure white */
-  --muted-foreground: #8b9ab0;  /* cool slate-blue, reads clearly without glowing */
-  --card: #101b2d;              /* visibly lighter than background — real elevation */
-  --border: #233149;            /* navy-tinted border, not generic gray */
-  --footer-bg: #070d17;         /* slightly darker than background, grounds the footer */
-  --accent: #5b9dff;    
-   --accent: #5b9dff;
-  --accent-2: #a78bfa;
-   --accent-2: #a78bfa;        /* brighter blue for AA contrast on dark surfaces */
+  --background: #0b0b0b;
+  --foreground: #f5f5f5;
+  --muted-foreground: #a3a3a3;
+  --card: #1a1a1a;
+  --border: #333333;
+  --border-heavy: #ffffff;
+  --footer-bg: #050505;
+  --accent: #5b9dff;
+  --accent-2: #ffe500;
+  --accent-tint: #16233a;
+  --on-accent: #000000;
+  --on-accent-2: #000000;
+  --muted: #171717;
+  --danger: #f87171;
+  --on-danger: #000000;
 }
 
 @theme {
@@ -38,17 +56,27 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
   --color-border: var(--border);
+  --color-border-heavy: var(--border-heavy);
   --color-footer: var(--footer-bg);
-   --color-accent: var(--accent); 
-   --color-accent: var(--accent);
+  --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
-  --color-accent-2: var(--accent-2);
+  --color-accent-tint: var(--accent-tint);
+  --color-on-accent: var(--on-accent);
+  --color-on-accent-2: var(--on-accent-2);
+  --color-muted: var(--muted);
+  --color-danger: var(--danger);
+  --color-on-danger: var(--on-danger);
+  --font-sans: var(--font-sans);
 }
 
-/* --- Base document --- */
 html,
 body {
   min-height: 100%;
+}
+
+html body,
+html body * {
+  font-family: var(--font-sans) !important;
 }
 
 body {
@@ -56,15 +84,13 @@ body {
   color: var(--color-foreground);
 }
 
-/* --- Components --- */
 div[data-youtube-video] {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   margin: 1.5rem 0;
-  border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 3px solid var(--border-heavy);
 }
 
 div[data-youtube-video] iframe {
@@ -77,13 +103,77 @@ div[data-youtube-video] iframe {
 }
 
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 .table-wrap {
   overflow-x: auto;
 }
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 2px solid var(--border-heavy);
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* Neo-brutalist core utilities                                       */
+/* ------------------------------------------------------------------ */
+
+/* Hard offset shadows. Apply to any card, panel, or raised surface.
+   Always pair with a solid border-heavy — the shadow reads as the
+   "block" the border-boxed element sits on top of. */
+.shadow-brutal-sm { box-shadow: var(--shadow-sm); }
+.shadow-brutal    { box-shadow: var(--shadow-md); }
+.shadow-brutal-lg { box-shadow: var(--shadow-lg); }
+.shadow-brutal-xl { box-shadow: var(--shadow-xl); }
+
+/* The signature interaction: element "presses" toward its shadow on
+   hover, and flattens completely on click — like pushing a physical
+   button into the page. Use on every clickable card, button, and pill.
+   Requires the element to already have one of the shadow-brutal-*
+   classes above and a border-heavy border. */
+.brutal-press {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.brutal-press:hover {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
+}
+.brutal-press:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 var(--shadow-color);
+}
+/* Variant for elements already using shadow-brutal-lg, so hover/active
+   steps down proportionally instead of jumping straight to flat. */
+.brutal-press-lg:hover {
+  transform: translate(3px, 3px);
+  box-shadow: var(--shadow-md);
+}
+.brutal-press-lg:active {
+  transform: translate(6px, 6px);
+  box-shadow: 0 0 0 0 var(--shadow-color);
+}
+
+/* Flat inverted hover for text-only links (nav items, "view all" links
+   with no shadow) — instant color block instead of a fade. */
+.brutal-invert {
+  transition: background-color 100ms ease, color 100ms ease;
+}
+.brutal-invert:hover {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+.brutal-snap { transition: transform 100ms linear, box-shadow 100ms linear; }
