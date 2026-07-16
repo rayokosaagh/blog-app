@@ -12,22 +12,18 @@ interface PageTransitionProps {
 // eased with an expo-out curve for a fast start and smooth, bounce-free settle.
 const EASE = [0.22, 1, 0.36, 1] as const;
 const DISTANCE = 20;
-
 const variants = {
   enter: (direction: 1 | -1) => ({
     opacity: 0,
     x: direction * DISTANCE,
-    filter: "blur(4px)",
   }),
   center: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
   },
   exit: (direction: 1 | -1) => ({
     opacity: 0,
     x: direction * -DISTANCE,
-    filter: "blur(4px)",
   }),
 };
 
@@ -53,18 +49,18 @@ export default function PageTransition({ children }: PageTransitionProps) {
   }, [pathname]);
 
   return (
-    <AnimatePresence mode="wait" initial={false} custom={direction}>
-      <motion.div
-        key={pathname}
-        custom={direction}
-        variants={variants}
-        initial="enter"
-        animate="center"
-        exit="exit"
-        transition={{ duration: 0.45, ease: EASE }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+  <motion.div
+    key={pathname}
+    custom={direction}
+    variants={variants}
+    initial="enter"
+    animate="center"
+    exit="exit"
+    transition={{ duration: 0.25, ease: EASE }}
+  >
+    {children}
+  </motion.div>
+</AnimatePresence>
   );
 }

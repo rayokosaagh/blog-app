@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 
 interface BookmarkButtonProps {
   postId: string;
@@ -60,10 +61,10 @@ export default function BookmarkButton({
       aria-pressed={bookmarked}
       aria-label={bookmarked ? "Remove bookmark" : "Bookmark this post"}
       className={`inline-flex items-center gap-1.5 rounded-none border-2 px-2 py-1 transition-colors duration-100 disabled:opacity-60 ${
-        bookmarked
-          ? "border-border-heavy bg-accent-2 text-on-accent-2"
-          : "border-transparent text-muted-foreground hover:border-border-heavy hover:bg-accent-2 hover:text-on-accent-2"
-      } ${className}`}
+  bookmarked
+    ? "border-accent-bookmark text-accent-bookmark"
+    : "border-transparent text-muted-foreground hover:border-accent-bookmark hover:text-accent-bookmark"
+} ${className}`}
     >
       <Bookmark
         className="h-5 w-5"
