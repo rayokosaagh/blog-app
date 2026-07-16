@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import Underline from "@/components/ui/Underline";
 
 type SearchPost = {
   id: string;
@@ -24,7 +25,7 @@ function formatDate(date: Date) {
 const sectionVariants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.04, delayChildren: 0.05 },
   },
 };
 
@@ -33,7 +34,7 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
+    transition: { duration: 0.25, ease: "easeOut" as const },
   },
   exit: {
     opacity: 0,
@@ -60,38 +61,37 @@ export default function SearchResultsGrid({
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         {posts.map((post) => (
-          <motion.div
-            key={post.id}
-            variants={itemVariants}
-            exit="exit"
-            whileHover={{ y: -4 }}
-            transition={{ type: "spring", stiffness: 300, damping: 24 }}
-            className="group bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300"
-          >
-            <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
-              <div className="aspect-video w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                {post.featuredImage ? (
-                  <img
-                    src={post.featuredImage}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl">
-                    📝
-                  </div>
-                )}
-              </div>
-              <div className="p-4 flex flex-col flex-1">
-                <h2 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 mb-2 transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                  {post.title}
-                </h2>
-                <div className="mt-auto flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2">
-                  <span className="truncate">{post.author?.name ?? "Unknown"}</span>
-                  <span className="flex-shrink-0 ml-2">{formatDate(post.createdAt)}</span>
+          // Outer element: entrance animation only (position + opacity).
+          <motion.div key={post.id} variants={itemVariants} exit="exit" className="h-full">
+            {/* Inner element: press feedback only, no Framer transform props,
+                so brutal-press's CSS :hover isn't fought by an inline transform. */}
+            <div className="group bg-card border-2 border-border-heavy rounded-none shadow-brutal brutal-press overflow-hidden h-full">
+              <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
+                <div className="aspect-video w-full bg-accent-tint overflow-hidden border-b-2 border-border-heavy">
+                  {post.featuredImage ? (
+                    <img
+                      src={post.featuredImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-3xl">
+                      📝
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Link>
+                <div className="p-4 flex flex-col flex-1">
+<h2 className="text-sm font-bold text-foreground line-clamp-2 mb-2">
+  <Underline>{post.title}</Underline>
+</h2>
+
+                  <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground pt-2">
+                    <span className="truncate">{post.author?.name ?? "Unknown"}</span>
+                    <span className="flex-shrink-0 ml-2">{formatDate(post.createdAt)}</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
           </motion.div>
         ))}
       </motion.div>

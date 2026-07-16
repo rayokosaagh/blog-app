@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
+import Underline from "@/components/ui/Underline";
 
 interface TrendingPost {
   id: string;
@@ -27,34 +28,33 @@ function formatDate(date: Date) {
 const containerVariants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, x: -8 },
   visible: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const },
+    x: 0,
+    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const },
   },
 };
 
+// NOTE: This component renders CONTENT ONLY — no outer border/shadow/bg-card
+// of its own. The caller supplies the bordered, shadowed card frame around
+// <TrendingNewsList />. Matches the pattern used by <LatestNewsList />.
 export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
   if (posts.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="bg-card border-[1.5px] border-border-heavy p-5"
-    >
-      {/* Header */}
+    <div>
+      {/* Eyebrow / icon chip label — matches Latest News header pattern */}
       <div className="flex items-center gap-2 mb-5">
-        <Flame className="w-4 h-4 text-accent" fill="currentColor" />
-        <h3 className="text-xs font-bold tracking-[0.14em] uppercase text-foreground">
+        <div className="w-6 h-6 flex items-center justify-center bg-accent-2 border-2 border-border-heavy shrink-0">
+          <Flame className="w-3.5 h-3.5 text-on-accent-2" fill="currentColor" />
+        </div>
+        <h3 className="text-xs font-extrabold uppercase tracking-wide text-accent">
           Trending Now
         </h3>
       </div>
@@ -70,25 +70,23 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
           <motion.div key={post.id} variants={itemVariants}>
             <Link
               href={`/blog/${post.slug}`}
-              className="group relative flex items-center gap-3.5 py-3"
+              className="group relative flex items-center gap-3.5 py-3 -mx-2 px-2 transition-colors duration-100 ease-linear hover:bg-accent-tint"
             >
-              {/* Accent bar: flat, grows from 0 height on hover instead of a numbered badge */}
-              <span className="relative w-[3px] self-stretch shrink-0 bg-border overflow-hidden">
-                <motion.span
-                  className="absolute inset-x-0 bottom-0 bg-accent"
-                  initial={{ height: "0%" }}
-                  whileHover={{ height: "100%" }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                />
+              {/* Rank badge: order carries real meaning here (trending #1 vs #5) */}
+              <span
+                className="flex items-center justify-center w-7 h-7 shrink-0 border-2 border-border-heavy bg-accent text-on-accent text-xs font-extrabold shadow-brutal-sm transition-all duration-150 ease-out group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none"
+                aria-hidden
+              >
+                {i + 1}
               </span>
 
-              {/* Thumbnail: flat grayscale by default, snaps to full color on hover — the signature move */}
-              <div className="w-14 h-14 overflow-hidden shrink-0 bg-border border-[1.5px] border-border-heavy">
+              {/* Thumbnail: hard-bordered block that "presses" on hover, flips from grayscale to full color */}
+              <div className="w-14 h-14 overflow-hidden shrink-0 bg-border border-2 border-border-heavy shadow-brutal-sm transition-all duration-150 ease-out group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none">
                 {post.featuredImage ? (
                   <img
                     src={post.featuredImage}
                     alt={post.title}
-                    className="w-full h-full object-cover grayscale contrast-[1.05] transition-all duration-300 ease-out group-hover:grayscale-0 group-hover:scale-105"
+                    className="w-full h-full object-cover grayscale contrast-[1.05] transition-all duration-200 ease-out group-hover:grayscale-0"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-accent-tint">
@@ -97,14 +95,14 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
                 )}
               </div>
 
-              {/* Title + date, with a flat underline that draws in on hover */}
+              {/* Title + date */}
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground leading-snug line-clamp-2 transition-colors duration-200 group-hover:text-accent">
-                  {post.title}
+                <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
+                  <Underline>{post.title}</Underline>
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <span className="h-[1.5px] w-0 bg-accent transition-all duration-300 ease-out group-hover:w-4" />
-                  <p className="text-xs text-muted-foreground">
+                  <span className="h-[2px] w-3 bg-border-heavy shrink-0" />
+                  <p className="text-xs font-medium text-muted-foreground">
                     {formatDate(post.createdAt)}
                   </p>
                 </div>
@@ -113,11 +111,11 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
 
             {/* Flat divider between rows, skipped after the last item */}
             {i < posts.length - 1 && (
-              <div className="h-px bg-border ml-[19px]" />
+              <div className="h-[1.5px] bg-border ml-[46px]" />
             )}
           </motion.div>
         ))}
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Bookmark } from "lucide-react";
 
 interface BookmarkButtonProps {
@@ -55,17 +54,15 @@ export default function BookmarkButton({
   };
 
   return (
-    <motion.button
+    <button
       onClick={handleClick}
       disabled={isPending}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.9 }}
       aria-pressed={bookmarked}
       aria-label={bookmarked ? "Remove bookmark" : "Bookmark this post"}
-      className={`inline-flex items-center gap-1.5 transition-colors disabled:opacity-60 ${
+      className={`inline-flex items-center gap-1.5 rounded-none border-2 px-2 py-1 transition-colors duration-100 disabled:opacity-60 ${
         bookmarked
-          ? "text-[#6f42c1] dark:text-white"
-          : "text-gray-500 dark:text-gray-300 hover:text-[#6f42c1] dark:hover:text-white"
+          ? "border-border-heavy bg-accent-2 text-on-accent-2"
+          : "border-transparent text-muted-foreground hover:border-border-heavy hover:bg-accent-2 hover:text-on-accent-2"
       } ${className}`}
     >
       <Bookmark
@@ -73,7 +70,7 @@ export default function BookmarkButton({
         strokeWidth={2}
         fill={bookmarked ? "currentColor" : "none"}
       />
-      {showLabel && <span className="text-sm font-medium">{bookmarked ? "Bookmarked" : "Bookmark"}</span>}
-    </motion.button>
+      {showLabel && <span className="text-sm font-bold">{bookmarked ? "Bookmarked" : "Bookmark"}</span>}
+    </button>
   );
 }

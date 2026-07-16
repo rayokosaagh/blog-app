@@ -4,9 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SpecField } from "@/lib/gadgets/types";
 import { Product } from "./types";
 
-// Clicking a spec row "zooms" into it: dims every other row and pops this
-// large-format comparison bar above the table. Lives inside the sticky
-// header (like the jump nav) so it stays pinned on screen.
 export default function FocusedSpecBar({
   focusedField,
   focusedKey,
@@ -25,18 +22,18 @@ export default function FocusedSpecBar({
           initial={{ opacity: 0, height: 0, marginTop: 0 }}
           animate={{ opacity: 1, height: "auto", marginTop: 12 }}
           exit={{ opacity: 0, height: 0, marginTop: 0 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
           className="overflow-hidden"
         >
-          <div className="rounded-2xl border border-accent/30 bg-accent/5 p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-none overflow-hidden">
+          <div className="rounded-none border-2 border-border-heavy bg-card p-4 shadow-brutal-lg overflow-hidden">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-accent">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-accent">
                 Focused spec{focusedField.unit ? ` · ${focusedField.unit}` : ""}
               </p>
               <button
                 type="button"
                 onClick={onClear}
-                className="h-6 w-6 flex items-center justify-center rounded-full bg-card/80 text-muted-foreground hover:text-red-500 text-sm leading-none"
+                className="h-6 w-6 flex items-center justify-center rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100 text-sm leading-none"
                 aria-label="Clear focused spec"
               >
                 ×
@@ -48,9 +45,9 @@ export default function FocusedSpecBar({
                 initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
               >
-                <p className="text-lg font-bold text-foreground mb-3">{focusedField.label}</p>
+                <p className="text-lg font-extrabold text-foreground mb-3">{focusedField.label}</p>
                 <div
                   className="grid gap-3"
                   style={{ gridTemplateColumns: `repeat(${filledProducts.length}, minmax(0,1fr))` }}
@@ -61,10 +58,10 @@ export default function FocusedSpecBar({
                       <motion.div
                         key={p.id}
                         layout
-                        className="rounded-xl p-3 text-center border border-border bg-card"
+                        className="rounded-none p-3 text-center border-2 border-border-heavy bg-card"
                       >
                         <p className="text-xs text-muted-foreground truncate mb-1">{p.name}</p>
-                        <p className="text-xl font-bold text-foreground">
+                        <p className="text-xl font-extrabold text-foreground">
                           {v === undefined || v === null || v === "" ? "—" : String(v)}
                         </p>
                       </motion.div>

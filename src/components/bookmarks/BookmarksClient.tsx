@@ -118,7 +118,7 @@ export default function BookmarksClient() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Your Bookmarks</h1>
+          <h1 className="text-3xl font-extrabold text-foreground">Your Bookmarks</h1>
           <p className="text-muted-foreground mt-1">
             {filteredBookmarks.length} of {bookmarks.length} saved posts
           </p>
@@ -133,7 +133,7 @@ export default function BookmarksClient() {
             placeholder="Search bookmarks by title..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-border rounded-2xl px-5 py-3.5 bg-card focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-foreground placeholder-muted-foreground"
+            className="w-full rounded-none border-2 border-border-heavy shadow-brutal-sm px-5 py-3.5 bg-card focus:outline-none focus:bg-accent-tint transition-colors duration-100 text-foreground placeholder-muted-foreground"
           />
           <div className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">🔍</div>
         </div>
@@ -143,13 +143,13 @@ export default function BookmarksClient() {
       <div className="space-y-4">
         {filteredBookmarks.length === 0 ? (
           <AnimatedPostCard index={0}>
-            <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
+            <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal p-12 text-center text-muted-foreground">
               <p className="text-5xl mb-4">🔖</p>
-              <p className="text-lg font-medium">
+              <p className="text-lg font-bold">
                 {bookmarks.length === 0 ? "No bookmarks yet" : "No bookmarks match your search"}
               </p>
               {bookmarks.length === 0 && (
-                <Link href="/blog" className="text-blue-600 hover:underline mt-2 inline-block">
+                <Link href="/blog" className="text-accent font-bold hover:underline mt-2 inline-block">
                   Browse posts
                 </Link>
               )}
@@ -158,7 +158,7 @@ export default function BookmarksClient() {
         ) : (
           filteredBookmarks.map((post, index) => (
             <AnimatedPostCard key={post.bookmarkId} index={index}>
-              <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex">
+              <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal overflow-hidden flex">
                 {/* Featured Image */}
                 {post.featuredImage ? (
                   <img
@@ -167,7 +167,7 @@ export default function BookmarksClient() {
                     className="w-48 h-36 object-cover flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-48 h-36 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center flex-shrink-0">
+                  <div className="w-48 h-36 bg-accent-tint flex items-center justify-center flex-shrink-0">
                     <span className="text-4xl">📝</span>
                   </div>
                 )}
@@ -175,7 +175,7 @@ export default function BookmarksClient() {
                 {/* Post Info */}
                 <div className="flex-1 p-6 flex flex-col justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-foreground">{post.title}</h2>
+                    <h2 className="text-lg font-extrabold text-foreground">{post.title}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       by {post.author.name || "Unknown"}
                     </p>
@@ -191,14 +191,14 @@ export default function BookmarksClient() {
                     <div className="flex items-center gap-4">
                       <Link
                         href={`/blog/${post.slug}`}
-                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors duration-100"
                       >
                         View →
                       </Link>
                       <button
                         onClick={() => requestRemove(post.id, post.title)}
                         disabled={removingId === post.id}
-                        className="text-sm text-red-600 dark:text-red-400 hover:underline font-medium disabled:opacity-50 cursor-pointer"
+                        className="text-sm text-danger hover:underline font-bold disabled:opacity-50 cursor-pointer"
                       >
                         {removingId === post.id ? "Removing..." : "Remove Bookmark"}
                       </button>
@@ -219,36 +219,34 @@ export default function BookmarksClient() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm"
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed inset-0 z-[200] bg-foreground/50"
               onClick={() => setConfirmModal({ open: false, postId: "", title: "" })}
             />
 
             <div className="fixed inset-0 z-[201] flex items-center justify-center px-4 pointer-events-none">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="relative w-full max-w-sm pointer-events-auto"
               >
-                <div className="relative overflow-hidden rounded-2xl bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6">
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
-
+                <div className="relative bg-card border-2 border-border-heavy rounded-none shadow-brutal-lg p-6">
                   <button
                     onClick={() => setConfirmModal({ open: false, postId: "", title: "" })}
                     aria-label="Close"
-                    className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="absolute top-3 right-3 p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
                   >
                     <X className="h-4 w-4" />
                   </button>
 
                   <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-500/10">
-                      <AlertTriangle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-none border-2 border-border-heavy bg-accent-2">
+                      <AlertTriangle className="h-6 w-6 text-on-accent-2" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
+                      <p className="font-extrabold text-foreground">
                         Remove this bookmark?
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -259,13 +257,13 @@ export default function BookmarksClient() {
                     <div className="flex items-center gap-3 w-full mt-3">
                       <button
                         onClick={() => setConfirmModal({ open: false, postId: "", title: "" })}
-                        className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-white/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        className="flex-1 px-4 py-2.5 rounded-none border-2 border-border-heavy shadow-brutal-sm brutal-press bg-card text-sm font-bold text-foreground cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={confirmRemove}
-                        className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors cursor-pointer"
+                        className="flex-1 px-4 py-2.5 rounded-none border-2 border-border-heavy shadow-brutal-sm brutal-press bg-danger text-on-danger text-sm font-bold cursor-pointer"
                       >
                         Remove
                       </button>
@@ -286,36 +284,34 @@ export default function BookmarksClient() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm"
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed inset-0 z-[200] bg-foreground/50"
               onClick={() => setRemovedModal({ open: false, title: "" })}
             />
 
             <div className="fixed inset-0 z-[201] flex items-center justify-center px-4 pointer-events-none">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="relative w-full max-w-sm pointer-events-auto"
               >
-                <div className="relative overflow-hidden rounded-2xl bg-white/95 dark:bg-[#0c233f]/95 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6">
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
-
+                <div className="relative bg-card border-2 border-border-heavy rounded-none shadow-brutal-lg p-6">
                   <button
                     onClick={() => setRemovedModal({ open: false, title: "" })}
                     aria-label="Close"
-                    className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/50 dark:hover:bg-white/10 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
+                    className="absolute top-3 right-3 p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
                   >
                     <X className="h-4 w-4" />
                   </button>
 
                   <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-500/10">
-                      <CheckCircle2 className="h-7 w-7 text-green-600 dark:text-green-400" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-none border-2 border-border-heavy bg-card">
+                      <CheckCircle2 className="h-6 w-6 text-foreground" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
+                      <p className="font-extrabold text-foreground">
                         Bookmark removed
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">

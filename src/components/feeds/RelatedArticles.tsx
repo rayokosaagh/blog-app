@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { getExcerpt, formatRelativeTime, getReadingTime } from "@/lib/postUtils";
+import Underline from "@/components/ui/Underline";
 
 interface RelatedArticleAuthor {
   name: string | null;
@@ -52,11 +53,6 @@ function FeaturedCard({ post }: { post: RelatedArticlePost }) {
     visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
   };
 
-  // Entrance (opacity/y) lives on this outer motion.div. The hover press
-  // itself is plain CSS (.brutal-press-lg) on the inner <article> — kept
-  // separate so framer's inline transform from the reveal animation never
-  // fights the CSS hover transform (inline styles always win specificity,
-  // which would otherwise silently break the press interaction).
   return (
     <motion.div variants={variants}>
       <article className="group rounded-none border-2 border-border-heavy bg-card overflow-hidden shadow-brutal-lg brutal-press-lg">
@@ -83,7 +79,7 @@ function FeaturedCard({ post }: { post: RelatedArticlePost }) {
         <div className="p-6 md:p-8">
           <Link href={href} className="block">
             <h3 className="text-2xl md:text-[28px] font-extrabold text-foreground leading-snug mb-3 transition-colors duration-100 group-hover:text-accent">
-              {post.title}
+              <Underline>{post.title}</Underline>
             </h3>
           </Link>
 
@@ -151,7 +147,7 @@ function ListItem({ post }: { post: RelatedArticlePost }) {
             </p>
           )}
           <h4 className="text-[15px] font-extrabold text-foreground leading-snug line-clamp-2 transition-colors duration-100 group-hover:text-accent">
-            {post.title}
+            <Underline>{post.title}</Underline>
           </h4>
           <p className="text-xs text-muted-foreground mt-1.5 truncate">
             {post.author.name} · {formatRelativeTime(post.createdAt)}

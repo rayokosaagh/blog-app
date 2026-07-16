@@ -86,10 +86,10 @@ export default async function HomePage() {
 
                 {/* Right - Latest (desktop only) */}
                 <div className="hidden lg:block lg:w-72 flex-shrink-0">
-                  <div className="h-full rounded-none border-2 border-border-heavy bg-card px-5 py-4 shadow-brutal">
-                    <LatestNews />
-                  </div>
-                </div>
+  <div className="h-full rounded-none border-2 border-border-heavy bg-card px-5 py-4 shadow-brutal">
+    <LatestNews />
+  </div>
+</div>
               </div>
 
               {/* Mobile-only: Trending/Latest tabs, right below carousel */}

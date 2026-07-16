@@ -9,7 +9,7 @@ export default async function BookmarksPage() {
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="min-h-screen flex flex-col bg-background transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
       <div className="flex-1 mx-auto w-full max-w-5xl px-6 py-10">

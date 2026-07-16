@@ -157,7 +157,13 @@ div[data-youtube-video] iframe {
   box-shadow: 0 0 0 0 var(--shadow-color);
 }
 /* Variant for elements already using shadow-brutal-lg, so hover/active
-   steps down proportionally instead of jumping straight to flat. */
+   steps down proportionally instead of jumping straight to flat.
+   FIX: this rule was missing its own transition declaration, so
+   brutal-press-lg elements (hero/lead cards) had no transition property
+   applied at all and snapped instantly instead of pressing smoothly. */
+.brutal-press-lg {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
 .brutal-press-lg:hover {
   transform: translate(3px, 3px);
   box-shadow: var(--shadow-md);

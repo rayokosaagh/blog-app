@@ -85,18 +85,22 @@ export default function MobileNewsTabs({ trendingPosts = [], latestPosts = [] }:
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="lg:hidden bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none dark:border border-border p-4"
+      className="lg:hidden bg-card border-2 border-border-heavy shadow-brutal p-4"
     >
-      {/* Icon + text tab switcher with animated underline */}
-      <div className="flex items-center gap-6 mb-4">
+      {/* Tab switcher: two hard-bordered chips instead of an underline indicator */}
+      <div className="flex items-center gap-2 mb-4">
         {(["trending", "latest"] as Tab[]).map((t) => {
           const active = tab === t;
           return (
             <motion.button
               key={t}
               onClick={() => selectTab(t)}
-              whileTap={{ scale: 0.94 }}
-              className="relative flex items-center gap-1.5 pb-2 text-[15px] font-semibold"
+              whileTap={{ scale: 0.96 }}
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 border-2 border-border-heavy text-xs font-extrabold uppercase tracking-wide transition-all duration-150 ease-out ${
+                active
+                  ? "bg-accent text-on-accent shadow-brutal-sm"
+                  : "bg-transparent text-muted-foreground shadow-none"
+              }`}
             >
               <motion.span
                 animate={
@@ -107,21 +111,15 @@ export default function MobileNewsTabs({ trendingPosts = [], latestPosts = [] }:
                     : { rotate: 0, scale: 1 }
                 }
                 transition={{ duration: 1.5, repeat: active ? Infinity : 0, repeatDelay: 1.4 }}
-                className={active ? "text-[var(--accent)]" : "text-muted-foreground"}
+                className="flex items-center"
               >
-                {t === "trending" ? <Flame className="w-4 h-4" /> : <Clock3 className="w-4 h-4" />}
+                {t === "trending" ? (
+                  <Flame className="w-3.5 h-3.5" fill={active ? "currentColor" : "none"} />
+                ) : (
+                  <Clock3 className="w-3.5 h-3.5" />
+                )}
               </motion.span>
-              <span className={active ? "text-foreground" : "text-muted-foreground"}>
-                {t === "trending" ? "Trending" : "Latest"}
-              </span>
-              {active && (
-                <motion.div
-                  layoutId="mobile-tab-underline"
-                  className="absolute -bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  style={{ backgroundColor: "var(--accent)" }}
-                  transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                />
-              )}
+              <span>{t === "trending" ? "Trending" : "Latest"}</span>
             </motion.button>
           );
         })}
@@ -145,54 +143,52 @@ export default function MobileNewsTabs({ trendingPosts = [], latestPosts = [] }:
               <motion.div key={post.id} variants={rowItemVariants} layout>
                 <Link href={`/blog/${post.slug}`} className="group block">
                   <motion.div
-                    whileTap={{ scale: 0.97 }}
-                    whileHover={{ x: 2 }}
+                    whileTap={{ scale: 0.98 }}
                     transition={{ type: "spring", stiffness: 420, damping: 22 }}
-                    className={`flex items-center gap-3 py-3 ${
-                      !isLast ? "border-b border-border" : ""
+                    className={`flex items-center gap-3 py-3 -mx-2 px-2 transition-colors duration-100 ease-linear group-hover:bg-accent-tint ${
+                      !isLast ? "border-b-[1.5px] border-border" : ""
                     }`}
                   >
-                    {/* Rank badge for trending, keeps things visually distinct from Latest */}
-                    {tab === "trending" && (
-                      <span
-                        className="shrink-0 w-5 text-center text-xs font-bold"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        {i + 1}
-                      </span>
-                    )}
+                    {/* Rank badge: now shown on both tabs, yellow to match the
+                        accent-2 chip used for the "Trending Now" flame icon
+                        in globals.css / TrendingNewsList */}
+                    <span
+                      className="flex items-center justify-center w-6 h-6 shrink-0 border-2 border-border-heavy bg-accent-2 text-on-accent-2 text-xs font-extrabold shadow-brutal-sm transition-all duration-150 ease-out group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none"
+                      aria-hidden
+                    >
+                      {i + 1}
+                    </span>
 
                     {/* Text block */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug transition-colors group-hover:text-[var(--accent)]">
+                      <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug transition-colors group-hover:text-accent">
                         {post.title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                        <Clock3 className="w-3 h-3" />
-                        {timeAgo(post.createdAt)}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="h-[2px] w-3 bg-border-heavy shrink-0" />
+                        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                          <Clock3 className="w-3 h-3" />
+                          {timeAgo(post.createdAt)}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Thumbnail */}
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 24 }}
-                      className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-foreground/5"
-                    >
+                    {/* Thumbnail: hard-bordered block, presses with the row on hover */}
+                    <div className="shrink-0 w-14 h-14 overflow-hidden bg-border border-2 border-border-heavy shadow-brutal-sm transition-all duration-150 ease-out group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none">
                       {post.featuredImage ? (
                         <img
                           src={post.featuredImage}
                           alt={post.title}
                           width={56}
                           height={56}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          className="w-full h-full object-cover grayscale contrast-[1.05] transition-all duration-200 ease-out group-hover:grayscale-0"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/40 dark:to-indigo-800/30 flex items-center justify-center">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-accent-tint">
                           <span className="text-base">📝</span>
                         </div>
                       )}
-                    </motion.div>
+                    </div>
                   </motion.div>
                 </Link>
               </motion.div>

@@ -9,37 +9,45 @@ export default async function TrendingNews() {
     Date.now() - TRENDING_WINDOW_DAYS * 24 * 60 * 60 * 1000
   );
 
-  let posts = await prisma.post.findMany({
+  const selectFields = {
+    id: true,
+    slug: true,
+    title: true,
+    featuredImage: true,
+    views: true,
+    createdAt: true,
+  };
+
+  const recentPosts = await prisma.post.findMany({
     where: { published: true, createdAt: { gte: since } },
     orderBy: { views: "desc" },
     take: ITEMS_TO_SHOW,
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      featuredImage: true,
-      views: true,
-      createdAt: true,
-    },
+    select: selectFields,
   });
 
-  // Fallback: if no posts were published in the last 7 days, show the
-  // all-time most-viewed published posts instead.
-  if (posts.length === 0) {
-    posts = await prisma.post.findMany({
-      where: { published: true },
+  let posts = recentPosts;
+
+  if (posts.length < ITEMS_TO_SHOW) {
+    const excludeIds = posts.map((p) => p.id);
+    const fillerPosts = await prisma.post.findMany({
+      where: {
+        published: true,
+        id: { notIn: excludeIds },
+      },
       orderBy: { views: "desc" },
       take: ITEMS_TO_SHOW,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        featuredImage: true,
-        views: true,
-        createdAt: true,
-      },
+      select: selectFields,
     });
+    posts = [...posts, ...fillerPosts];
   }
+
+  // Rank purely by views across the combined pool — recency only
+  // decided which posts were eligible to be pulled in, not their
+  // final order. Without this, a post inside the 7-day window would
+  // always outrank a higher-viewed post outside it.
+  posts = posts
+    .sort((a, b) => b.views - a.views)
+    .slice(0, ITEMS_TO_SHOW);
 
   if (posts.length === 0) return null;
 

@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import TagIcon from "./TagIcon";
 import { sortTagsByOrder } from "@/lib/sortTags";
+// remove the local `function Underline(...)` block entirely, add:
+import Underline from "@/components/ui/Underline";
 
 interface PostItem {
   id: string;
@@ -95,22 +97,7 @@ function PostThumb({ post }: { post: PostItem }) {
 // hard-edged highlight block behind the text, like a highlighter
 // stroke, rather than a soft drawn-on underline. No easing on the
 // reveal itself — brutalism moves in steps, not fades.
-function Underline({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="
-        box-decoration-clone
-        bg-[length:0%_100%] group-hover:bg-[length:100%_100%]
-        bg-no-repeat bg-left
-        transition-[background-size] duration-100 ease-out
-        group-hover:text-on-accent-2
-      "
-      style={{ backgroundImage: "linear-gradient(var(--accent-2), var(--accent-2))" }}
-    >
-      {children}
-    </span>
-  );
-}
+
 
 export default function AnimatedPostsGrid({
   posts,

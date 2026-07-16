@@ -7,6 +7,7 @@ import { Bookmark } from "lucide-react";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import { formatRelativeTime } from "@/lib/postUtils";
 import TagIcon from "@/components/blog/TagIcon";
+import Underline from "@/components/ui/Underline";
 
 export interface FeedTag {
   id: string;
@@ -126,31 +127,34 @@ function Tile({
       <div className={`absolute top-0 left-0 right-0 h-[4px] z-10 ${accentBg}`} />
 
       <Link href={href} className="absolute inset-0 block bg-muted">
-        {post.featuredImage ? (
-          <img
-            src={post.featuredImage}
-            alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-          />
-        ) : (
-          <div className="w-full h-full bg-accent-tint transition-transform duration-700 ease-out group-hover:scale-[1.05]" />
-        )}
+  <div className="relative w-full h-full overflow-hidden">
+    {post.featuredImage ? (
+      <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+    ) : (
+      <div className="w-full h-full bg-accent-tint" />
+    )}
+  </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+  {/* Deliberate exception to the no-gradient rule (guide §1/§6): needed for
+      text legibility over arbitrary photo content. Approved deviation —
+      keep in sync if other image-tile components need the same treatment. */}
+  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
 
-        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5">
-          <h3
-            className={`font-bold text-white leading-tight tracking-tight transition-transform duration-300 group-hover:-translate-y-0.5 ${
-              mobileHero ? "text-base line-clamp-3 mb-1.5" : "text-xs line-clamp-2 mb-1"
-            } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
-          >
-            {post.title}
-          </h3>
-          <p className={`text-white/90 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
-            {post.author.name} · {formatRelativeTime(post.createdAt)}
-          </p>
-        </div>
-      </Link>
+  <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5">
+    <h3
+      className={`group leading-tight tracking-tight ${
+        mobileHero ? "text-base line-clamp-3 mb-1.5" : "text-xs line-clamp-2 mb-1"
+      } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
+    >
+      <span className="font-bold text-white">
+        <Underline>{post.title}</Underline>
+      </span>
+    </h3>
+    <p className={`text-white/90 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
+      {post.author.name} · {formatRelativeTime(post.createdAt)}
+    </p>
+  </div>
+</Link>
 
       <div className="absolute top-2.5 left-2.5 right-2.5 md:top-4 md:left-4 md:right-4 flex items-start justify-between gap-2 z-10 pointer-events-none">
         {primaryTag ? (
