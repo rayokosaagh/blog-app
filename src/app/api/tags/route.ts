@@ -34,10 +34,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, icon } = await req.json();
+    const { name, icon, colorMode: rawColorMode } = await req.json();
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+
+    const colorMode =
+      rawColorMode === "KEEP_ORIGINAL" || rawColorMode === "FORCE_MONO"
+        ? rawColorMode
+        : "AUTO";
 
     const slug = slugify(name);
 
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
     const tag = await prisma.tag.upsert({
       where: { slug },
       update: {},
-      create: { name: name.trim(), slug, icon: safeIcon },
+      create: { name: name.trim(), slug, icon: safeIcon, colorMode },
     });
 
     return NextResponse.json(tag, { status: 201 });

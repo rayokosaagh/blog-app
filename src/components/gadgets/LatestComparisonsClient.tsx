@@ -96,7 +96,12 @@ function ComparisonCard({
         <div className="flex items-center justify-center gap-3">
           <ProductPortrait product={item.productA} />
 
-          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-background text-[10px] font-bold tracking-wide text-muted-foreground transition-colors duration-100 group-hover:border-accent group-hover:bg-accent group-hover:text-on-accent">
+          {/* VS badge gets its own identity via --accent-2 (permanently on,
+              not just on hover) so it reads as a distinct fixture rather
+              than competing with the primary accent used on the category
+              pill and hover sweep. Scales up slightly on hover for feedback
+              instead of a color swap, since the color is already "on". */}
+          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-accent-2 text-[10px] font-bold tracking-wide text-on-accent-2 shadow-brutal-sm transition-transform duration-150 ease-out group-hover:scale-110">
             VS
           </span>
 
@@ -150,7 +155,9 @@ function ComparisonRow({
               <span className="text-[8px] text-muted-foreground">No image</span>
             )}
           </div>
-          <span className="relative z-10 -mx-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-none border-2 border-card bg-background text-[9px] font-bold tracking-wide text-muted-foreground transition-colors duration-100 group-hover:border-card group-hover:bg-accent group-hover:text-on-accent">
+          {/* Same accent-2 treatment as the card VS badge, kept permanently
+              on so the mobile row list carries the same visual language. */}
+          <span className="relative z-10 -mx-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-none border-2 border-card bg-accent-2 text-[9px] font-bold tracking-wide text-on-accent-2 transition-transform duration-150 ease-out group-hover:scale-110">
             VS
           </span>
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
@@ -191,14 +198,12 @@ export default function LatestComparisonsClient({
   comparisons: ComparisonItem[];
 }) {
   const shouldReduceMotion = useReducedMotion();
-
-  // Avoid SSR/client mismatch: pin false until mounted, then read real value
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const reduceMotion = mounted ? !!shouldReduceMotion : false;
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="w-full">
       <div className="mb-6 flex items-center gap-3 pb-4 border-b-2 border-border-heavy">
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-accent shadow-brutal-sm">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-on-accent">

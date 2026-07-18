@@ -11,6 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
+import TagPicker from "@/components/blog/TagPicker";
 
 interface GadgetProductFormProps {
   mode: "create" | "edit";
@@ -24,6 +25,7 @@ interface GadgetProductFormProps {
     published: boolean;
     categorySlug: string;
     specs: Record<string, any>;
+    tagIds?: string[];   // ← add this
   };
 }
 
@@ -62,7 +64,7 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-
+const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
   const def = getCategoryDef(category);
 
   function updateSpec(key: string, value: any) {
@@ -121,15 +123,16 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
     setError("");
 
     const payload = {
-      slug,
-      name,
-      brand,
-      image: image || null,
-      priceFrom: priceFrom || null,
-      category,
-      specs,
-      published,
-    };
+  slug,
+  name,
+  brand,
+  image: image || null,
+  priceFrom: priceFrom || null,
+  category,
+  specs,
+  published,
+  tagIds,   // ← add this
+};
 
     try {
       const res = await fetch(
@@ -334,6 +337,10 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
             </button>
           </div>
         </FormCard>
+
+        <FormCard title="Tags">
+  <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
+</FormCard>
 
         {/* Dynamic spec groups */}
         {def?.groups.map((group) => (

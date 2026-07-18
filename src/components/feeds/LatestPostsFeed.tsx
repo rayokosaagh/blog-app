@@ -90,13 +90,20 @@ function Tile({
   const accentBg = ACCENT_CYCLE[index % 2];
   const accentText = ACCENT_TEXT_CYCLE[index % 2];
 
+  // Entrance-only variants. Deliberately no whileHover/press logic here —
+  // per guide §3, an element can't carry both a Framer scroll-entrance
+  // transform and a CSS .brutal-press hover without the entrance's leftover
+  // inline transform out-ranking the :hover transform. So the entrance
+  // lives on this outer element, and border/shadow/press live on the plain
+  // inner element below (see RelatedArticles.tsx's FeaturedCard for the
+  // same split).
   const variants: Variants = {
     hidden: { opacity: 0, scale: shouldReduceMotion ? 1 : 0.94, y: shouldReduceMotion ? 0 : 16 },
     visible: {
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: { duration: 0.5, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.3, ease: "easeOut" },
     },
   };
 
@@ -118,96 +125,101 @@ function Tile({
   return (
     <motion.div
       variants={variants}
-      whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className={`relative rounded-md overflow-hidden group border-[1.5px] border-border-heavy ${mobileSpan} ${mobileAspect} md:aspect-auto ${span}`}
+      className={`${mobileSpan} ${mobileAspect} md:aspect-auto ${span}`}
     >
-      {/* Colored top accent bar — the mock's "5px colored strip" cue,
-          carried over from the flat 3-card grid onto the image tiles. */}
-      <div className={`absolute top-0 left-0 right-0 h-[4px] z-10 ${accentBg}`} />
+      <div
+        className={`relative w-full h-full rounded-none overflow-hidden group border-2 border-border-heavy ${
+          big ? "shadow-brutal-lg brutal-press-lg" : "shadow-brutal brutal-press"
+        }`}
+      >
+        {/* Colored top accent bar — the mock's "5px colored strip" cue,
+            carried over from the flat 3-card grid onto the image tiles. */}
+        <div className={`absolute top-0 left-0 right-0 h-[4px] z-10 ${accentBg}`} />
 
-      <Link href={href} className="absolute inset-0 block bg-muted">
-  <div className="relative w-full h-full overflow-hidden">
-    {post.featuredImage ? (
-      <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
-    ) : (
-      <div className="w-full h-full bg-accent-tint" />
-    )}
-  </div>
+        <Link href={href} className="absolute inset-0 block bg-muted">
+          <div className="relative w-full h-full overflow-hidden">
+            {post.featuredImage ? (
+              <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-accent-tint" />
+            )}
+          </div>
 
-  {/* Deliberate exception to the no-gradient rule (guide §1/§6): needed for
-      text legibility over arbitrary photo content. Approved deviation —
-      keep in sync if other image-tile components need the same treatment. */}
-  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+          {/* Reverted to a gradient scrim per explicit request — note this
+              re-introduces the pattern the guide's checklist names directly
+              ("overlay scrims... no gradient replacement, ever"). Kept as a
+              deliberate, acknowledged deviation from spec. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
 
-  <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5">
-    <h3
-      className={`group leading-tight tracking-tight ${
-        mobileHero ? "text-base line-clamp-3 mb-1.5" : "text-xs line-clamp-2 mb-1"
-      } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
-    >
-      <span className="font-bold text-white">
-        <Underline>{post.title}</Underline>
-      </span>
-    </h3>
-    <p className={`text-white/90 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
-      {post.author.name} · {formatRelativeTime(post.createdAt)}
-    </p>
-  </div>
-</Link>
-
-      <div className="absolute top-2.5 left-2.5 right-2.5 md:top-4 md:left-4 md:right-4 flex items-start justify-between gap-2 z-10 pointer-events-none">
-        {primaryTag ? (
-          <Link
-            href={`/blog?tag=${primaryTag.slug}`}
-            className={`pointer-events-auto inline-flex items-center gap-1 border-[1.5px] border-border-heavy font-bold uppercase tracking-wider rounded-md ${accentBg} ${accentText} ${
-              mobileHero ? "text-[10px] px-2.5 py-0.5" : "text-[9px] px-2 py-0.5"
-            } ${big ? "md:text-[11px] md:px-3 md:py-1" : "md:text-[10px] md:px-2.5 md:py-0.5"}`}
-          >
-            <TagIcon
-              icon={primaryTag.icon}
-              className="inline-flex w-2.5 h-2.5 md:w-3 md:h-3 [&>svg]:w-full [&>svg]:h-full"
-            />
-            <span>{primaryTag.name}</span>
-          </Link>
-        ) : (
-          <span />
-        )}
-
-        {showBookmark && (
-          <button
-            onClick={toggleSave}
-            aria-label={saved ? "Remove from saved" : "Save for later"}
-            aria-pressed={saved}
-            className="pointer-events-auto relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-md bg-black/55 border-[1.5px] border-white/30"
-          >
-            <AnimatePresence>
-              {burst > 0 && saved && (
-                <motion.span
-                  key={burst}
-                  initial={{ scale: 0.4, opacity: 0.55 }}
-                  animate={{ scale: 1.9, opacity: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-md bg-white"
-                />
-              )}
-            </AnimatePresence>
-            <motion.span
-              animate={saved && !shouldReduceMotion ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-              transition={{ duration: 0.32, ease: "easeOut" }}
-              className="relative flex items-center justify-center"
+          <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5">
+            <h3
+              className={`group leading-tight tracking-tight ${
+                mobileHero ? "text-base line-clamp-3 mb-1.5" : "text-xs line-clamp-2 mb-1"
+              } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
             >
-              <Bookmark
-                className={`w-[12px] h-[12px] md:w-[15px] md:h-[15px] transition-colors duration-200 ${
-                  saved ? "text-white" : "text-white/80"
-                }`}
-                fill={saved ? "currentColor" : "none"}
-                strokeWidth={2}
+              <span className="font-bold text-on-photo">
+                <Underline>{post.title}</Underline>
+              </span>
+            </h3>
+            <p className={`text-on-photo/80 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
+              {post.author.name} · {formatRelativeTime(post.createdAt)}
+            </p>
+          </div>
+        </Link>
+
+        <div className="absolute top-2.5 left-2.5 right-2.5 md:top-4 md:left-4 md:right-4 flex items-start justify-between gap-2 z-10 pointer-events-none">
+          {primaryTag ? (
+            <Link
+              href={`/blog?tag=${primaryTag.slug}`}
+              className={`pointer-events-auto inline-flex items-center gap-1 border-2 border-border-heavy font-extrabold uppercase tracking-wide rounded-none shadow-brutal-sm brutal-press ${accentBg} ${accentText} ${
+                mobileHero ? "text-[10px] px-2.5 py-0.5" : "text-[9px] px-2 py-0.5"
+              } ${big ? "md:text-[11px] md:px-3 md:py-1" : "md:text-[10px] md:px-2.5 md:py-0.5"}`}
+            >
+              <TagIcon
+                icon={primaryTag.icon}
+                className="inline-flex w-2.5 h-2.5 md:w-3 md:h-3 [&>svg]:w-full [&>svg]:h-full"
               />
-            </motion.span>
-          </button>
-        )}
+              <span>{primaryTag.name}</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+
+          {showBookmark && (
+            <button
+              onClick={toggleSave}
+              aria-label={saved ? "Remove from saved" : "Save for later"}
+              aria-pressed={saved}
+              className="pointer-events-auto relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-none border-2 border-on-photo bg-photo-overlay/70 shadow-brutal-sm brutal-press"
+            >
+              <AnimatePresence>
+                {burst > 0 && saved && (
+                  <motion.span
+                    key={burst}
+                    initial={{ scale: 0.4, opacity: 0.55 }}
+                    animate={{ scale: 1.9, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="absolute inset-0 rounded-none bg-on-photo"
+                  />
+                )}
+              </AnimatePresence>
+              <motion.span
+                animate={saved && !shouldReduceMotion ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                transition={{ duration: 0.32, ease: "easeOut" }}
+                className="relative flex items-center justify-center"
+              >
+                <Bookmark
+                  className={`w-[12px] h-[12px] md:w-[15px] md:h-[15px] transition-colors duration-200 ${
+                    saved ? "text-on-photo" : "text-on-photo/80"
+                  }`}
+                  fill={saved ? "currentColor" : "none"}
+                  strokeWidth={2}
+                />
+              </motion.span>
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -229,7 +241,7 @@ export default function LatestPostsFeed({
 
   const containerVariants: Variants = {
     hidden: {},
-    visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.06 } },
+    visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.04 } },
   };
 
   return (
@@ -239,22 +251,22 @@ export default function LatestPostsFeed({
           initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.8 }}
-          transition={{ duration: 0.5 }}
-          className="flex items-end justify-between gap-4 mb-6 pb-4 border-b-[1.5px] border-border-heavy"
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="flex items-end justify-between gap-4 mb-6 pb-4 border-b-4 border-border-heavy"
         >
           <div>
             {eyebrow && (
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent mb-1.5">{eyebrow}</p>
+              <p className="text-xs font-extrabold uppercase tracking-wide text-accent mb-1.5">{eyebrow}</p>
             )}
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{heading}</h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">{heading}</h2>
           </div>
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="group/all hidden sm:inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-muted-foreground hover:text-accent transition-colors shrink-0 pb-1"
+              className="group/all hidden sm:inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-muted-foreground brutal-invert shrink-0 pb-1 px-1.5"
             >
               View all
-              <ArrowIcon className="w-4 h-4 transition-transform duration-300 group-hover/all:translate-x-1" />
+              <ArrowIcon className="w-4 h-4 transition-transform duration-100 group-hover/all:translate-x-1" />
             </Link>
           )}
         </motion.div>

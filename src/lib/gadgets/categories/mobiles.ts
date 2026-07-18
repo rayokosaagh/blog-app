@@ -120,7 +120,7 @@ export const mobiles: GadgetCategoryDef = {
     {
       title: "Battery",
       fields: [
-        { key: "batteryMah", label: "Type", type: "text"},
+        { key: "batteryMah", label: "Capacity", type: "text"},
         { key: "charging", label: "Charging", type: "text" },
         { key: "wirelessCharging", label: "Wireless Charging", type: "text" },
       ],

@@ -17,6 +17,9 @@ import LatestPostsFeed from "@/components/feeds/LatestPostsFeed";
 import LatestComparisons from "@/components/gadgets/LatestComparisons";
 import NewsletterForm from "@/components/newsletter/NewsletterForm";
 import SectionDivider from "@/components/ui/SectionDivider";
+import { CATEGORY_LIST } from "@/lib/gadgets/categories";
+import ProductsByCategoryTabs from "@/components/gadgets/ProductsByCategoryTabs";
+import FeaturedSwapCard from "@/components/gadgets/FeaturedSwapCard";
 
 // Safety-net revalidation: even if revalidatePath("/") from the view
 // route is ever missed (e.g. multi-instance deploys, edge caching),
@@ -45,21 +48,53 @@ const HERO_CATEGORIES = [
 export default async function HomePage() {
   const session = await auth();
 
-  const [recentPosts, banners] = await Promise.all([
-    prisma.post.findMany({
-      where: { published: true },
-      // 7 posts: the bento feed below is hand-tessellated for exactly 7 tiles
-      // (1 hero + 4 small + 2 wide). Changing this number will break the layout
-      // unless LatestPostsFeed's BENTO_LAYOUT is updated to match.
-      take: 7,
-      orderBy: { createdAt: "desc" },
-      include: { author: true, tags: true },
-    }),
-    prisma.banner.findMany({
-      where: { active: true },
-      orderBy: { order: "asc" },
-    }),
-  ]);
+const [recentPosts, banners, productsByCategoryArrays, topTags] = await Promise.all([
+  prisma.post.findMany({
+    where: { published: true },
+    take: 7,
+    orderBy: { createdAt: "desc" },
+    include: { author: true, tags: true },
+  }),
+  prisma.banner.findMany({
+    where: { active: true },
+    orderBy: { order: "asc" },
+  }),
+  Promise.all(
+    CATEGORY_LIST.map((c) =>
+      prisma.product.findMany({
+        where: { published: true, category: { slug: c.slug } },
+        orderBy: { createdAt: "desc" },
+        take: 7,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          brand: true,
+          image: true,
+          priceFrom: true,
+          currency: true,
+        },
+      })
+    )
+  ),
+  prisma.tag.findMany({
+  where: { products: { some: { published: true } } },
+  select: {
+    id: true,
+    name: true,
+    slug: true,
+    icon: true,
+    colorMode: true,
+    _count: { select: { products: true } },
+  },
+  orderBy: { products: { _count: "desc" } },
+  take: 10,
+}),
+]);
+
+const productsByCategory = Object.fromEntries(
+  CATEGORY_LIST.map((c, i) => [c.slug, productsByCategoryArrays[i]])
+);
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,23 +131,6 @@ export default async function HomePage() {
               <div className="mt-6">
                 <MobileNewsHighlights />
               </div>
-
-              {/* Category chip row */}
-              <div className="flex flex-wrap gap-3 py-5 mt-6 border-t-2 border-border">
-                {HERO_CATEGORIES.map((cat, i) => (
-                  <Link
-                    key={cat.href}
-                    href={cat.href}
-                    className={`tag-pill brutal-press ${
-                      i % 2 === 0
-                        ? "bg-accent text-on-accent"
-                        : "bg-accent-2 text-on-accent-2"
-                    }`}
-                  >
-                    {cat.label}
-                  </Link>
-                ))}
-              </div>
             </div>
           </section>
         )}
@@ -120,19 +138,9 @@ export default async function HomePage() {
         {/*
           Main Content - Posts centered / Poll + Social right
 
-          KEY FIX: this row is now a CSS Grid instead of a flexbox.
-          Grid's default `align-items: stretch` reliably forces every
-          column (both sidebars + the center "Latest Posts" column) to
-          share the EXACT same height — the height of the tallest
-          column (the posts feed). Each sidebar's sticky wrapper below
-          (`h-full`) inherits that stretched height, so `position: sticky`
-          is contained by its own column and naturally releases the
-          instant the Latest Posts column ends. Nothing below this grid
-          (Latest Comparisons, Footer, etc.) can be overlapped anymore,
-          because the sticky element's containing block stops exactly
-          at the bottom of this grid row.
         */}
         {banners.length > 0 && <SectionDivider />}
+
 
         <section className="max-w-[1600px] mx-auto px-6 w-full">
           <div
@@ -220,6 +228,35 @@ export default async function HomePage() {
           same baseline as each comparison card's "Compare now" row.
         */}
         <SectionDivider />
+<section className="max-w-[1600px] mx-auto px-6 w-full">
+  <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
+    <div className="min-w-0">
+      <FadeIn>
+        <div className="mb-8 text-center lg:text-left pb-4 border-b-4 border-border-heavy">
+          <div className="inline-flex items-center gap-2 mb-3 justify-center lg:justify-start w-full lg:w-auto bg-accent text-on-accent border-2 border-border-heavy px-3 py-1 w-fit">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-extrabold tracking-[0.14em] uppercase">
+              Explore by category/brand
+            </span>
+          </div>
+          <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-2 tracking-tight">
+            Explore Gadgets
+          </h3>
+          <p className="text-muted-foreground">
+            Browse the latest phones, laptops, earbuds and smartwatches
+          </p>
+        </div>
+      </FadeIn>
+
+      <ProductsByCategoryTabs
+        categories={CATEGORY_LIST}
+        productsByCategory={productsByCategory}
+        tags={topTags}
+      />
+    </div>
+    <div className="hidden lg:block" />
+  </div>
+</section>
 
         <section className="max-w-[1600px] mx-auto px-6 w-full">
           <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12 lg:items-stretch">

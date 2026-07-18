@@ -23,6 +23,14 @@
   --on-danger: #ffffff;
   --font-sans: "Space Grotesk", Arial, Helvetica, sans-serif;
 
+  /* Fixed, theme-independent tokens for content sitting on top of arbitrary
+     photos (image tiles, hero overlays). border-heavy flips black/white per
+     theme, which is wrong here — a photo caption plate needs to look the
+     same regardless of site theme, so these are declared once and never
+     overridden in .dark. */
+  --photo-overlay: #000000;
+  --on-photo: #ffffff;
+
   /* Neo-brutalist shadow system — always keyed to --border-heavy so it
      flips correctly in dark mode without redefining per-theme. */
   --shadow-color: var(--border-heavy);
@@ -72,6 +80,8 @@
   --color-on-danger: var(--on-danger);
   --color-accent-bookmark: var(--accent-bookmark);
   --color-on-accent-bookmark: var(--on-accent-bookmark);
+  --color-photo-overlay: var(--photo-overlay);
+  --color-on-photo: var(--on-photo);
   --font-sans: var(--font-sans);
 }
 
@@ -163,10 +173,7 @@ div[data-youtube-video] iframe {
   box-shadow: 0 0 0 0 var(--shadow-color);
 }
 /* Variant for elements already using shadow-brutal-lg, so hover/active
-   steps down proportionally instead of jumping straight to flat.
-   FIX: this rule was missing its own transition declaration, so
-   brutal-press-lg elements (hero/lead cards) had no transition property
-   applied at all and snapped instantly instead of pressing smoothly. */
+   steps down proportionally instead of jumping straight to flat. */
 .brutal-press-lg {
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
@@ -189,3 +196,10 @@ div[data-youtube-video] iframe {
   color: var(--background);
 }
 .brutal-snap { transition: transform 100ms linear, box-shadow 100ms linear; }
+
+.dark .tag-icon-svg svg [fill]:not([fill="none"]) {
+  fill: currentColor !important;
+}
+.dark .tag-icon-svg svg [stroke]:not([stroke="none"]) {
+  stroke: currentColor !important;
+}

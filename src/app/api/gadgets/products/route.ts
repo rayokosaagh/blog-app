@@ -14,18 +14,17 @@ export async function GET(req: NextRequest) {
     return Response.json({ products });
   }
 
-  const products = await prisma.product.findMany({
-    where: { category: { slug: category }, published: true },
-    orderBy: { name: "asc" },
-    select: { id: true, slug: true, name: true, brand: true, image: true },
-  });
+ const products = await prisma.product.findMany({
+  include: { category: true, tags: true },   // ← add tags
+  orderBy: { createdAt: "desc" },
+});
 
   return Response.json({ products, categoryDef: getCategoryDef(category) });
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { slug, name, brand, image, priceFrom, category, specs, published } = body;
+  const { slug, name, brand, image, priceFrom, category, specs, published, tagIds } = body;
 
   if (!slug || !name || !brand || !category) {
     return Response.json({ error: "slug, name, brand, category are required" }, { status: 400 });
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
     create: { slug: category, name: categoryDef.name, icon: categoryDef.icon },
   });
 
-  try {
+   try {
     const product = await prisma.product.create({
       data: {
         slug,
@@ -55,7 +54,11 @@ export async function POST(req: NextRequest) {
         published: published ?? true,
         categoryId: categoryRow.id,
         specs: specs ?? {},
+        ...(Array.isArray(tagIds) && tagIds.length > 0 && {
+          tags: { connect: tagIds.map((id: string) => ({ id })) },
+        }),
       },
+      include: { tags: true },
     });
     return Response.json({ product }, { status: 201 });
   } catch (e: any) {

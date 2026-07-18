@@ -9,7 +9,7 @@ export async function GET(
 
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true },
+    include: { category: true , tags: true},
   });
   if (!product) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json({ product });
@@ -21,7 +21,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await req.json();
-  const { name, brand, image, priceFrom, specs, published } = body;
+  const { name, brand, image, priceFrom, specs, published, tagIds } = body;
 
   try {
     const product = await prisma.product.update({
@@ -33,7 +33,11 @@ export async function PATCH(
         ...(priceFrom !== undefined && { priceFrom: priceFrom ? Number(priceFrom) : null }),
         ...(specs !== undefined && { specs }),
         ...(published !== undefined && { published }),
+        ...(Array.isArray(tagIds) && {
+          tags: { set: tagIds.map((tid: string) => ({ id: tid })) },
+        }),
       },
+      include: { tags: true },
     });
 
     return Response.json({ product });

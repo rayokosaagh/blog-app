@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Pencil } from "lucide-react";
 import TagIcon from "./TagIcon";
 
 export interface Tag {
@@ -9,6 +10,7 @@ export interface Tag {
   name: string;
   slug: string;
   icon: string;
+  colorMode: "AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO";
 }
 
 interface TagPickerProps {
@@ -26,6 +28,20 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
   const [newIcon, setNewIcon] = useState("");
   const [creating, setCreating] = useState(false);
   const [addError, setAddError] = useState("");
+  const [newColorMode, setNewColorMode] = useState<"AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO">("AUTO");
+  const [editColorMode, setEditColorMode] = useState<"AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO">("AUTO");
+
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [tagToEdit, setTagToEdit] = useState<Tag | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  // Edit success modal
+  const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
+  const [editedTagName, setEditedTagName] = useState("");
 
   // Delete modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -70,6 +86,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
   function openAddModal() {
     setNewName("");
     setNewIcon("");
+    setNewColorMode("AUTO");
     setAddError("");
     setShowAddModal(true);
   }
@@ -84,7 +101,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
       const res = await fetch("/api/tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, icon: newIcon }),
+        body: JSON.stringify({ name: newName, icon: newIcon, colorMode: newColorMode }),
       });
       const tag = await res.json();
 
@@ -104,6 +121,46 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
       setAddError("Failed to create tag");
     } finally {
       setCreating(false);
+    }
+  }
+
+  function openEditModal(tag: Tag) {
+    setTagToEdit(tag);
+    setEditName(tag.name);
+    setEditIcon(tag.icon);
+    setEditColorMode(tag.colorMode ?? "AUTO");
+    setEditError("");
+    setShowEditModal(true);
+  }
+
+  async function handleEditTag(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!tagToEdit || !editName.trim()) return;
+
+    setEditing(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/tags/${tagToEdit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName, icon: editIcon, colorMode: editColorMode }),
+      });
+      const updated = await res.json();
+
+      if (!res.ok) {
+        setEditError(updated.error || "Failed to update tag");
+        return;
+      }
+
+      setTags((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      setShowEditModal(false);
+      setTagToEdit(null);
+      setEditedTagName(updated.name);
+      setShowEditSuccessModal(true);
+    } catch (err) {
+      setEditError("Failed to update tag");
+    } finally {
+      setEditing(false);
     }
   }
 
@@ -180,9 +237,21 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
                       layout
                       className="inline-flex w-4 h-4 [&>svg]:w-full [&>svg]:h-full"
                     >
-                      <TagIcon icon={tag.icon} className="w-4 h-4 [&>svg]:w-full [&>svg]:h-full" />
+                      <TagIcon icon={tag.icon} className="w-4 h-4 [&>svg]:w-full [&>svg]:h-full" colorMode={tag.colorMode} />
                     </motion.span>
                     <span>{tag.name}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(tag)}
+                    title={`Edit "${tag.name}" tag`}
+                    className={`flex items-center justify-center w-5 h-5 rounded-full transition-colors ${
+                      selected
+                        ? "hover:bg-white/20 text-white/80 hover:text-white"
+                        : "hover:bg-blue-50 text-gray-400 hover:text-blue-600"
+                    }`}
+                  >
+                    <Pencil className="w-3 h-3" />
                   </button>
                   <button
                     type="button"
@@ -206,7 +275,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
         </div>
       )}
       <p className="text-xs text-gray-400 mt-1">
-        Click a tag to select it, or the ✕ to delete it everywhere.
+        Click a tag to select it, the pencil to edit it, or ✕ to delete it everywhere.
       </p>
 
       {/* Delete Modal */}
@@ -273,7 +342,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
                   <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center flex-shrink-0">
-                      <TagIcon icon={newIcon || "🏷️"} className="inline-flex w-8 h-8 [&>svg]:w-full [&>svg]:h-full" />
+                      <TagIcon icon={newIcon || "🏷️"} className="inline-flex w-8 h-8 [&>svg]:w-full [&>svg]:h-full" colorMode={newColorMode} />
                     </div>
                     <textarea
                       value={newIcon}
@@ -299,6 +368,20 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
                     required
                   />
                 </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Icon color handling
+                  </label>
+                  <select
+                    value={newColorMode}
+                    onChange={(e) => setNewColorMode(e.target.value as typeof newColorMode)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="AUTO">Auto (recommended)</option>
+                    <option value="KEEP_ORIGINAL">Keep original colors always</option>
+                    <option value="FORCE_MONO">Force single color (theme text color)</option>
+                  </select>
+                </div>
 
                 <div className="flex gap-4 pt-4">
                   <button
@@ -319,6 +402,121 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && tagToEdit && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Edit Tag</h2>
+
+              {editError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl mb-6">
+                  {editError}
+                </div>
+              )}
+
+              <div
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !(e.target instanceof HTMLTextAreaElement)) {
+                    e.preventDefault();
+                    handleEditTag();
+                  }
+                }}
+                className="space-y-5"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <TagIcon icon={editIcon || "🏷️"} className="inline-flex w-8 h-8 [&>svg]:w-full [&>svg]:h-full" colorMode={editColorMode} />
+                    </div>
+                    <textarea
+                      value={editIcon}
+                      onChange={(e) => setEditIcon(e.target.value)}
+                      placeholder="🏷️ or <svg>...</svg>"
+                      rows={3}
+                      className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Paste an emoji (🚀) or raw SVG markup (&lt;svg&gt;...&lt;/svg&gt;) as the icon.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Tag name"
+                    className="w-full border border-gray-300 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    required
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Icon color handling
+                  </label>
+                  <select
+                    value={editColorMode}
+                    onChange={(e) => setEditColorMode(e.target.value as typeof editColorMode)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="AUTO">Auto (recommended)</option>
+                    <option value="KEEP_ORIGINAL">Keep original colors always</option>
+                    <option value="FORCE_MONO">Force single color (theme text color)</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleEditTag()}
+                    disabled={editing || !editName.trim()}
+                    className="flex-1 bg-blue-600 text-white py-3.5 rounded-2xl font-medium active:scale-[0.985] transition-all disabled:opacity-70"
+                  >
+                    {editing ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowEditModal(false); setTagToEdit(null); }}
+                    disabled={editing}
+                    className="flex-1 py-3.5 rounded-2xl font-medium text-gray-600 hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Success Modal */}
+      {showEditSuccessModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
+            <div className="p-10">
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">✅</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">Tag Updated</h2>
+              <p className="text-gray-600 text-center mt-3">
+                <strong>"{editedTagName}"</strong> was updated successfully.
+              </p>
+            </div>
+            <div className="border-t">
+              <button
+                onClick={() => setShowEditSuccessModal(false)}
+                className="w-full py-5 text-gray-700 font-semibold hover:bg-gray-100 active:scale-95 transition-all rounded-b-3xl"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ export default async function EditGadgetPage({
 
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true },
+    include: { category: true, tags: true }, // ← added tags
   });
 
   if (!product) return notFound();
@@ -60,6 +60,7 @@ export default async function EditGadgetPage({
           published: product.published,
           categorySlug: product.category.slug,
           specs: (product.specs as Record<string, any>) ?? {},
+          tagIds: product.tags.map((t) => t.id), // ← added
         }}
       />
     </div>

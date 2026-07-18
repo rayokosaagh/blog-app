@@ -74,7 +74,10 @@ export default async function BlogPage({
     tagSlugs.length > 0
       ? prisma.tag.findMany({ where: { slug: { in: tagSlugs } } })
       : Promise.resolve([]),
-    prisma.tag.findMany({ orderBy: { name: "asc" } }),
+    prisma.tag.findMany({
+  where: { posts: { some: {} } },
+  orderBy: { name: "asc" },
+}),
     prisma.user.findMany({
       where: { posts: { some: { published: true } } },
       select: { id: true, name: true },

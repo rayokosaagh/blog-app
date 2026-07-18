@@ -22,6 +22,7 @@ model User {
   ratings   Rating[]
   sessions  Session[]
   bookmarks Bookmark[]
+  productOwnerships ProductOwnership[]
 }
 
 model Post {
@@ -57,15 +58,18 @@ model Bookmark {
   @@unique([userId, postId])
   @@index([userId])
   @@index([postId])
+  
 }
 
 model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  icon      String   @default("🏷️")
-  createdAt DateTime @default(now())
-  posts     Post[]   @relation("PostTags")
+  id        String       @id @default(cuid())
+  name      String       @unique
+  slug      String       @unique
+  icon      String       @default("🏷️")
+  colorMode TagColorMode @default(AUTO)
+  createdAt DateTime     @default(now())
+  posts     Post[]       @relation("PostTags")
+  products  Product[]    @relation("ProductTags")
 }
 
 model Session {
@@ -200,6 +204,18 @@ enum Role {
   READER
 }
 
+enum OwnershipStatus {
+  WANT // "I want it"
+  HAVE // "I have it"
+  HAD  // "I had it"
+}
+
+enum TagColorMode {
+  AUTO           // today's heuristic: per-theme correction for near-background colors
+  KEEP_ORIGINAL  // never touch colors, in either theme
+  FORCE_MONO     // always render as solid currentColor, in both themes
+}
+
 // ─── Gadget Comparison Feature ───────────────────────────────
 
 model GadgetCategory {
@@ -224,6 +240,7 @@ model Product {
   priceFrom  Float?                    // starting price, shown under image on compare page
   currency   String         @default("NPR")
   published  Boolean        @default(true)
+  tags Tag[] @relation("ProductTags")
 
   categoryId String
   category   GadgetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -237,6 +254,7 @@ model Product {
   updatedAt  DateTime       @updatedAt
   comparisonsAsA Comparison[] @relation("ComparisonProductA")
   comparisonsAsB Comparison[] @relation("ComparisonProductB")
+  productOwnerships ProductOwnership[] 
 
   @@index([categoryId])
   @@index([slug])
@@ -269,4 +287,20 @@ model NewsletterSubscriber {
   createdAt   DateTime  @default(now())
 
   @@index([email])
+}
+
+model ProductOwnership {
+  id        String          @id @default(cuid())
+  userId    String
+  productId String
+  status    OwnershipStatus
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId]) // one status per user per product — new pick overwrites old
+  @@index([userId])
+  @@index([productId])
+  @@map("product_ownerships")
 }
