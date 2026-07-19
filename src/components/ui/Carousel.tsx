@@ -55,10 +55,10 @@ export default function Carousel({ banners }: CarouselProps) {
 
   return (
     <div
-      // Editorial frame: thick 1.5px border instead of a soft shadow,
-      // sharp-ish 6px corners instead of rounded-2xl. Fixed heights on
-      // mobile/tablet, fills its flex/grid row on desktop (lg+).
-      className="relative w-full overflow-hidden rounded-md border-[1.5px] border-border-heavy h-48 sm:h-64 md:h-80 lg:h-full"
+      // Clean edge-to-edge image block — the wrapping "Featured Story" card
+      // (in the homepage) supplies the border, shadow and header, so the
+      // three top-story columns read as one family. Fills its container.
+      className="relative h-full w-full overflow-hidden"
     >
       {/* Slides */}
       <AnimatePresence initial={false} custom={direction} mode="wait">

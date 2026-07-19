@@ -147,7 +147,7 @@ export default function ProductsByCategoryTabs({
             {hasMore && (
               <div className="flex justify-center mt-4">
                 <Link
-                  href={`/compare?category=${active}`}
+                  href={`/products?category=${active}`}
                   className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-background text-xs font-extrabold uppercase tracking-wide text-foreground shadow-brutal-sm brutal-press"
                 >
                   View more products

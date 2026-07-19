@@ -21,6 +21,9 @@ export async function PATCH(
 
     const updateData: any = {};
     if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description || null;
+    if (body.badge !== undefined) updateData.badge = body.badge || null;
+    if (body.cta !== undefined) updateData.cta = body.cta || null;
     if (body.image !== undefined) updateData.image = body.image;
     if (body.link !== undefined) updateData.link = body.link;
     if (body.active !== undefined) updateData.active = body.active;

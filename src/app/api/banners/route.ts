@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { title, image, link, order } = await req.json();
+    const { title, description, badge, cta, image, link, order } = await req.json();
 
     if (!title || !image || !link) {
       return NextResponse.json(
@@ -35,6 +35,9 @@ export async function POST(req: Request) {
     const banner = await prisma.banner.create({
       data: {
         title,
+        description: description || null,
+        badge: badge || null,
+        cta: cta || null,
         image,
         link,
         active: true,

@@ -8,11 +8,11 @@ export const laptops: GadgetCategoryDef = {
   {
     title: "Launch & Classification",
     fields: [
-      { key: "brand", label: "Manufacturer / Brand", type: "dropdown", options: ["Acer", "Asus", "Lenovo", "HP", "Dell", "Apple", "MSI"] },
+      { key: "brand", label: "Manufacturer / Brand", type: "select", options: ["Acer", "Asus", "Lenovo", "HP", "Dell", "Apple", "MSI"] },
       { key: "series", label: "Series Lineup", type: "text" },
-      { key: "laptopType", label: "Laptop Class", type: "dropdown", options: ["Gaming", "Ultrabook", "Creator", "Workstation", "Budget/Office"] },
+      { key: "laptopType", label: "Laptop Class", type: "select", options: ["Gaming", "Ultrabook", "Creator", "Workstation", "Budget/Office"] },
       { key: "announcedDate", label: "Announcement Date", type: "text" },
-      { key: "marketStatus", label: "Market Availability", type: "dropdown", options: ["In stock", "Out of Stock", "Pre-order", "Discontinued"] },
+      { key: "marketStatus", label: "Market Availability", type: "select", options: ["In stock", "Out of Stock", "Pre-order", "Discontinued"] },
     ],
   },
   {
@@ -39,7 +39,7 @@ export const laptops: GadgetCategoryDef = {
     title: "Graphics (GPU) & AI Processing",
     fields: [
       { key: "gpuModel", label: "GPU Model Name", type: "text" },
-      { key: "graphicsType", label: "Graphics Setup", type: "dropdown", options: ["Dedicated", "Integrated", "Switchable (MUX/Optimus)"] },
+      { key: "graphicsType", label: "Graphics Setup", type: "select", options: ["Dedicated", "Integrated", "Switchable (MUX/Optimus)"] },
       { key: "vram", label: "Video Memory (VRAM)", type: "text" },
       { key: "tgp", label: "Total Graphics Power (TGP)", type: "text" },
       { key: "gpuBoostClock", label: "GPU Boost Clock Speed", type: "text" },
@@ -53,7 +53,7 @@ export const laptops: GadgetCategoryDef = {
       { key: "installedRam", label: "Installed RAM Capacity", type: "text" },
       { key: "solderedMemory", label: "Memory Soldered On-Board", type: "boolean" },
       { key: "ramSpeed", label: "Memory Speed / Interface", type: "text" },
-      { key: "ramChannel", label: "Memory Channel Setup", type: "dropdown", options: ["Dual channel", "Single channel", "Quad channel"] },
+      { key: "ramChannel", label: "Memory Channel Setup", type: "select", options: ["Dual channel", "Single channel", "Quad channel"] },
       { key: "maxRamCapacity", label: "Maximum Memory Ceiling", type: "text" },
       { key: "hasHdd", label: "Mechanical Drive Support (HDD)", type: "boolean" },
       { key: "primarySsd", label: "Default SSD Configuration", type: "text" },
@@ -64,9 +64,9 @@ export const laptops: GadgetCategoryDef = {
     title: "Display Specifications",
     fields: [
       { key: "screenSize", label: "Screen Diagonal Size", type: "text" },
-      { key: "panelType", label: "Display Panel Type", type: "dropdown", options: ["Mini LED", "OLED", "IPS / LCD", "TN", "VA"] },
+      { key: "panelType", label: "Display Panel Type", type: "select", options: ["Mini LED", "OLED", "IPS / LCD", "TN", "VA"] },
       { key: "touchscreen", label: "Touch Screen Capability", type: "boolean" },
-      { key: "screenFinish", label: "Display Panel Finish", type: "dropdown", options: ["Anti-glare", "Glossy", "Matte"] },
+      { key: "screenFinish", label: "Display Panel Finish", type: "select", options: ["Anti-glare", "Glossy", "Matte"] },
       { key: "resolution", label: "Native Resolution / Aspect Ratio", type: "text" },
       { key: "refreshRate", label: "Panel Refresh Rate", type: "text" },
       { key: "responseTime", label: "Grey-to-Grey Response Time", type: "text" },
@@ -110,7 +110,7 @@ export const laptops: GadgetCategoryDef = {
     fields: [
       { key: "batteryCapacity", label: "Internal Battery Capacity", type: "text" },
       { key: "powerAdapter", label: "AC Charger Brick Wattage", type: "text" },
-      { key: "operatingSystem", label: "Primary Operating System", type: "dropdown", options: ["Windows 11 Home", "Windows 11 Pro", "macOS", "Linux / Ubuntu", "No OS"] },
+      { key: "operatingSystem", label: "Primary Operating System", type: "select", options: ["Windows 11 Home", "Windows 11 Pro", "macOS", "Linux / Ubuntu", "No OS"] },
       { key: "bundledSoftware", label: "Preloaded Bloatware / Utility Apps", type: "multiline" },
     ],
   },

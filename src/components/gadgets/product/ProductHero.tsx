@@ -19,6 +19,7 @@ import {
   Images,
 } from "lucide-react";
 import TagIcon from "@/components/blog/TagIcon";
+import ProductGallery from "./ProductGallery";
 
 // Icons must be resolved *inside* this client component — a Server Component
 // (page.tsx) cannot pass a component reference (a function) as a prop, only
@@ -72,6 +73,7 @@ interface ProductHeroProps {
     name: string;
     brand: string;
     image: string | null;
+    images?: string[];
     priceFrom: number | null;
     currency: string;
     tags: { id: string; name: string; slug: string; icon: string }[];
@@ -109,12 +111,21 @@ export default function ProductHero({
       : [];
   const allStats = [...priceStat, ...stats];
 
+  // Main image + any extra gallery images, primary first, de-duplicated.
+  const galleryImages = Array.from(
+    new Set(
+      [product.image, ...(product.images ?? [])].filter(
+        (u): u is string => typeof u === "string" && u.trim() !== ""
+      )
+    )
+  );
+
   return (
     <div className="border-2 border-border-heavy bg-card shadow-brutal-lg rounded-none">
       {/* Title bar */}
       <div className="flex items-center justify-between gap-4 border-b-4 border-border-heavy bg-foreground px-6 py-4 sm:px-8">
         <div className="min-w-0">
-          <span className="tag-pill inline-flex bg-accent-2 text-on-accent-2 mb-2">
+          <span className="tag-pill inline-flex bg-accent-3 text-on-accent-3 mb-2">
             {categoryName}
           </span>
           <h1 className="text-xl sm:text-2xl font-black text-background tracking-tight truncate">
@@ -136,19 +147,8 @@ export default function ProductHero({
 
       <div className="p-6 sm:p-8">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Product photo */}
-          <div className="flex h-52 w-52 sm:h-60 sm:w-60 shrink-0 items-center justify-center rounded-none bg-white border-2 border-border-heavy p-4 mx-auto lg:mx-0">
-            {product.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={product.image}
-                alt={product.name}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <span className="text-xs text-muted-foreground">No image</span>
-            )}
-          </div>
+          {/* Product gallery — main image + arrows + thumbnail rail */}
+          <ProductGallery images={galleryImages} alt={product.name} />
 
           {/* Meta bullets + brand */}
           <div className="flex-1 min-w-0">

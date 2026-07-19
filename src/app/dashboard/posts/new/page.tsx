@@ -242,15 +242,7 @@ export default function NewPostPage() {
             )}
           </div>
 
-          {/* Content */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
-              Content
-            </label>
-            <Editor content={content} onChange={setContent} />
-          </div>
-
-          {/* Tags */}
+          {/* Tags — kept right under the featured image */}
           <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
           {/* Published toggle */}
@@ -267,21 +259,29 @@ export default function NewPostPage() {
             </label>
           </div>
 
-          {/* Buttons */}
-          <div className="flex items-center gap-4 pt-2">
+          {/* Content */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Content
+            </label>
+            <Editor content={content} onChange={setContent} />
+          </div>
+
+          {/* Sticky action bar — only Save / Cancel stay pinned. */}
+          <div className="sticky bottom-0 z-20 -mx-6 sm:-mx-8 -mb-6 sm:-mb-8 mt-2 flex items-center justify-end gap-3 rounded-b-2xl border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm px-6 sm:px-8 py-4">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-3 py-2.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={loading || uploading}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
             >
               {loading ? "Creating..." : published ? "Publish post" : "Save draft"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors"
-            >
-              Cancel
             </button>
           </div>
         </form>

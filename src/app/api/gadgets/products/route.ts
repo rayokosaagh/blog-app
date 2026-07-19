@@ -1,4 +1,5 @@
 // src/app/api/gadgets/products/route.ts
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCategoryDef } from "@/lib/gadgets/categories";
 import { NextRequest } from "next/server";
@@ -15,7 +16,8 @@ export async function GET(req: NextRequest) {
   }
 
  const products = await prisma.product.findMany({
-  include: { category: true, tags: true },   // ← add tags
+  where: { category: { slug: category }, published: true },
+  include: { category: true, tags: true },
   orderBy: { createdAt: "desc" },
 });
 
@@ -23,8 +25,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
-  const { slug, name, brand, image, priceFrom, category, specs, published, tagIds } = body;
+  const { slug, name, brand, image, images, priceFrom, category, specs, published, tagIds } = body;
+
+  const gallery = Array.isArray(images)
+    ? images.filter((u): u is string => typeof u === "string" && u.trim() !== "")
+    : [];
 
   if (!slug || !name || !brand || !category) {
     return Response.json({ error: "slug, name, brand, category are required" }, { status: 400 });
@@ -50,6 +61,7 @@ export async function POST(req: NextRequest) {
         name,
         brand,
         image: image || null,
+        images: gallery,
         priceFrom: priceFrom ? Number(priceFrom) : null,
         published: published ?? true,
         categoryId: categoryRow.id,

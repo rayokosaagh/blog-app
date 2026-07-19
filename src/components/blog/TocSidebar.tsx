@@ -33,46 +33,59 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0 });
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // Scroll handling
+  // Scroll-driven active-section tracking.
+  //
+  // We deliberately do NOT use IntersectionObserver here: the page is wrapped
+  // in a framer-motion <PageTransition> (AnimatePresence mode="popLayout"),
+  // which reparents the page subtree on client-side navigation. That detaches
+  // the exact nodes an observer had bound to, so the spy silently dies until a
+  // full reload. Re-measuring the live DOM on each scroll re-resolves the
+  // headings every time, so it survives the transition.
   useEffect(() => {
-    const handleScroll = () => {
+    let ticking = false;
+
+    const compute = () => {
       setShowBreadcrumb(window.scrollY > 380);
-      if (toc.length > 0) {
-        const isAtBottom = window.innerHeight + Math.round(window.scrollY) >= document.documentElement.scrollHeight - 50;
-        if (isAtBottom && toc.length > 0) {
-          setActiveId(toc[toc.length - 1].id);
-        }
+      if (toc.length === 0) return;
+
+      const atBottom =
+        window.innerHeight + Math.round(window.scrollY) >=
+        document.documentElement.scrollHeight - 50;
+      if (atBottom) {
+        setActiveId(toc[toc.length - 1].id);
+        return;
       }
+
+      // Active = the last heading whose top has scrolled above the trigger line.
+      const TRIGGER = 100;
+      let current = toc[0].id;
+      for (const { id } of toc) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top - TRIGGER <= 0) current = id;
+        else break;
+      }
+      setActiveId(current);
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [toc]);
 
-  // Intersection Observer
-  useEffect(() => {
-    if (toc.length === 0) return;
-    const headingEls = toc
-      .map(({ id }) => document.getElementById(id))
-      .filter(Boolean) as HTMLElement[];
-    if (headingEls.length === 0) return;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        compute();
+        ticking = false;
+      });
+    };
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length > 0) {
-          setActiveId(visible[0].target.id);
-        }
-      },
-      { rootMargin: "-85px 0px -60% 0px", threshold: 0.3 }
-    );
-
-    headingEls.forEach((el) => observerRef.current!.observe(el));
-    return () => observerRef.current?.disconnect();
+    compute();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [toc]);
 
   // Update indicator position

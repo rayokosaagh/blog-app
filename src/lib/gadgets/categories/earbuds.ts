@@ -8,7 +8,7 @@ export const earbuds: GadgetCategoryDef = {
    {
   title: "General Information",
   fields: [
-    { key: "brand", label: "Brand / Manufacturer", type: "dropdown" },
+    { key: "brand", label: "Brand / Manufacturer", type: "select" },
     { key: "series", label: "Series Lineup", type: "text" },         
     { key: "modelName", label: "Model Name", type: "text" },           
   ],

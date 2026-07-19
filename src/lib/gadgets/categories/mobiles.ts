@@ -9,10 +9,10 @@ export const mobiles: GadgetCategoryDef = {
    {
   title: "General Information",
   fields: [
-    { key: "brand", label: "Brand / Manufacturer", type: "dropdown" },
+    { key: "brand", label: "Brand / Manufacturer", type: "select" },
     { key: "series", label: "Series Lineup", type: "text" },         
     { key: "modelName", label: "Model Name", type: "text" },          
-    { key: "formFactor", label: "Device Type", type: "dropdown" },     
+    { key: "formFactor", label: "Device Type", type: "select" },     
   ],
 },
     {

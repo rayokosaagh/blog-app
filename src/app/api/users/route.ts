@@ -13,6 +13,7 @@ export async function GET() {
 
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
+      omit: { password: true },
       include: { _count: { select: { posts: true } } },
     });
     return NextResponse.json(users);
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.create({
       data: { name, email, password: hashedPassword, role },
+      omit: { password: true },
     });
 
     return NextResponse.json(user, { status: 201 });

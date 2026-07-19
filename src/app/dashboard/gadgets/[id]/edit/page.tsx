@@ -56,6 +56,7 @@ export default async function EditGadgetPage({
           name: product.name,
           brand: product.brand,
           image: product.image,
+          images: product.images,
           priceFrom: product.priceFrom,
           published: product.published,
           categorySlug: product.category.slug,

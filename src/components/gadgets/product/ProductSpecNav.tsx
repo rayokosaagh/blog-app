@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { List } from "lucide-react";
 import { SpecGroup } from "@/lib/gadgets/types";
 import { slugifyTitle } from "@/lib/gadgets/formatSpecValue";
@@ -15,51 +15,60 @@ export default function ProductSpecNav({ groups, specs }: ProductSpecNavProps) {
     g.fields.some((f) => specs[f.key] !== null && specs[f.key] !== undefined && specs[f.key] !== "")
   );
 
-  const [activeId, setActiveId] = useState<string>(
-    visibleGroups[0] ? slugifyTitle(visibleGroups[0].title) : ""
-  );
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sectionIds = visibleGroups.map((g) => slugifyTitle(g.title));
 
+  const [activeId, setActiveId] = useState<string>(sectionIds[0] ?? "");
+
+  const sectionKey = sectionIds.join("|");
+
+  // Scroll-driven active-section tracking that re-measures the live DOM every
+  // frame. We avoid IntersectionObserver on purpose: the page is wrapped in a
+  // framer-motion <PageTransition> (AnimatePresence mode="popLayout") that
+  // reparents the page subtree on client-side navigation, detaching the nodes
+  // an observer bound to — so the spy dies until a full reload. Re-querying on
+  // each scroll re-resolves the sections every time and survives that.
   useEffect(() => {
-    const sections = visibleGroups
-      .map((g) => document.getElementById(slugifyTitle(g.title)))
-      .filter((el): el is HTMLElement => el !== null);
+    const ids = sectionKey ? sectionKey.split("|") : [];
+    if (ids.length === 0) return;
 
-    if (sections.length === 0) return;
+    let ticking = false;
+    const compute = () => {
+      const atBottom =
+        window.innerHeight + Math.round(window.scrollY) >=
+        document.documentElement.scrollHeight - 50;
+      if (atBottom) {
+        setActiveId(ids[ids.length - 1]);
+        return;
+      }
+      // Active = the last section whose top has scrolled above the trigger line.
+      const TRIGGER = 120;
+      let current = ids[0];
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top - TRIGGER <= 0) current = id;
+        else break;
+      }
+      setActiveId(current);
+    };
 
-    // Track how visible each section currently is, instead of trusting
-    // whichever entry happens to come first in a given callback batch —
-    // IntersectionObserver only reports entries whose state *changed*, so
-    // picking "the first intersecting one" from that batch can pick a
-    // section that isn't actually the one on screen once you're scrolling
-    // fast through several tall sections in a row.
-    const ratios = new Map<string, number>();
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        compute();
+        ticking = false;
+      });
+    };
 
-    observerRef.current?.disconnect();
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          ratios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
-        });
-
-        let bestId: string | null = null;
-        let bestRatio = 0;
-        for (const section of sections) {
-          const ratio = ratios.get(section.id) ?? 0;
-          if (ratio > bestRatio) {
-            bestRatio = ratio;
-            bestId = section.id;
-          }
-        }
-        if (bestId) setActiveId(bestId);
-      },
-      { rootMargin: "-100px 0px -60% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
-    );
-
-    sections.forEach((el) => observerRef.current?.observe(el));
-    return () => observerRef.current?.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    compute();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [sectionKey]);
 
   if (visibleGroups.length === 0) return null;
 

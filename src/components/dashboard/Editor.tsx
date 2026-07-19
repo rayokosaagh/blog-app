@@ -18,6 +18,31 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  Heading3,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  List,
+  ListOrdered,
+  Table as TableIcon,
+  Quote,
+  Code,
+  Link as LinkIcon,
+  Unlink,
+  Image as ImageIcon,
+  Images,
+  PlayCircle as YoutubeIcon,
+  Undo2,
+  Redo2,
+  Loader2,
+} from "lucide-react";
 
 interface EditorProps {
   content: string;
@@ -26,11 +51,13 @@ interface EditorProps {
 
 export default function Editor({ content, onChange }: EditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const youtubeInputRef = useRef<HTMLInputElement>(null);
 
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [youtubeError, setYoutubeError] = useState("");
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -177,6 +204,45 @@ export default function Editor({ content, onChange }: EditorProps) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  // Upload multiple images and insert a [gallery] shortcode block. The block is
+  // rendered as a real carousel on the published post by parseGalleryBlock +
+  // <GalleryMount />. Inserted as plain text so URLs aren't auto-linked.
+  async function handleGalleryInsert(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    setGalleryUploading(true);
+    const urls: string[] = [];
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          alert(data?.error || "Upload failed");
+          break;
+        }
+        urls.push(data.url);
+      }
+      if (urls.length > 0) {
+        editor
+          ?.chain()
+          .focus()
+          .insertContent({
+            type: "paragraph",
+            content: [{ type: "text", text: `[gallery]${urls.join(" | ")}[/gallery]` }],
+          })
+          .run();
+      }
+    } catch {
+      alert("Gallery upload failed");
+    } finally {
+      setGalleryUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
+    }
+  }
+
   // YouTube embed modal
   function openYoutubeModal() {
     setYoutubeUrl("");
@@ -228,219 +294,152 @@ export default function Editor({ content, onChange }: EditorProps) {
     active,
     title,
     children,
+    disabled,
   }: {
     onClick: () => void;
     active?: boolean;
     title: string;
     children: React.ReactNode;
+    disabled?: boolean;
   }) => (
     <button
       type="button"
       onClick={onClick}
       title={title}
-      className={`p-2 rounded hover:bg-gray-200 transition-colors text-sm font-medium ${
-        active ? "bg-gray-200 text-blue-600" : "text-gray-700"
+      aria-label={title}
+      aria-pressed={active}
+      disabled={disabled}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        active
+          ? "bg-blue-600 text-white shadow-sm"
+          : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
       }`}
     >
       {children}
     </button>
   );
 
+  const Divider = () => <span className="mx-1 h-6 w-px shrink-0 bg-gray-200" aria-hidden="true" />;
+  const iconClass = "h-[18px] w-[18px]";
+
   return (
     <>
-      <div className="border border-gray-300 rounded-lg">
-        {/* Toolbar — pinned while scrolling through long content */}
-        <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-300 bg-gray-50/95 backdrop-blur-sm sticky top-0 z-20 rounded-t-lg">
+      <div className="border border-gray-200 rounded-xl shadow-sm">
+        {/* Toolbar — pinned to the top of the viewport while scrolling through
+            long content. NOTE: no `overflow-hidden` on this wrapper — an
+            overflow ancestor silently breaks `position: sticky`. */}
+        <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-gray-200 bg-gray-50/95 backdrop-blur-sm sticky top-0 z-30 rounded-t-xl">
           {/* Text formatting */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            active={editor.isActive("bold")}
-            title="Bold"
-          >
-            <b>B</b>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">
+            <Bold className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Italic">
+            <Italic className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Underline">
+            <UnderlineIcon className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} title="Strikethrough">
+            <Strikethrough className={iconClass} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            active={editor.isActive("italic")}
-            title="Italic"
-          >
-            <i>I</i>
-          </ToolbarButton>
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            active={editor.isActive("underline")}
-            title="Underline"
-          >
-            <u>U</u>
-          </ToolbarButton>
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            active={editor.isActive("strike")}
-            title="Strikethrough"
-          >
-            <s>S</s>
-          </ToolbarButton>
-
-          <div className="w-px h-6 bg-gray-300 mx-1" />
+          <Divider />
 
           {/* Headings */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            active={editor.isActive("heading", { level: 1 })}
-            title="Heading 1"
-          >
-            H1
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Heading 1">
+            <Heading1 className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Heading 2">
+            <Heading2 className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Heading 3">
+            <Heading3 className={iconClass} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            active={editor.isActive("heading", { level: 2 })}
-            title="Heading 2"
-          >
-            H2
-          </ToolbarButton>
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            active={editor.isActive("heading", { level: 3 })}
-            title="Heading 3"
-          >
-            H3
-          </ToolbarButton>
-
-          <div className="w-px h-6 bg-gray-300 mx-1" />
+          <Divider />
 
           {/* Alignment */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            active={editor.isActive({ textAlign: "left" })}
-            title="Align Left"
-          >
-            ◀
+          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Align left">
+            <AlignLeft className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Align center">
+            <AlignCenter className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Align right">
+            <AlignRight className={iconClass} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            active={editor.isActive({ textAlign: "center" })}
-            title="Align Center"
-          >
-            ▬
-          </ToolbarButton>
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            active={editor.isActive({ textAlign: "right" })}
-            title="Align Right"
-          >
-            ▶
-          </ToolbarButton>
-
-          <div className="w-px h-6 bg-gray-300 mx-1" />
+          <Divider />
 
           {/* Lists */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            active={editor.isActive("bulletList")}
-            title="Bullet List"
-          >
-            • List
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Bullet list">
+            <List className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Numbered list">
+            <ListOrdered className={iconClass} />
           </ToolbarButton>
 
+          <Divider />
+
+          {/* Blocks */}
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Quote">
+            <Quote className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")} title="Code block">
+            <Code className={iconClass} />
+          </ToolbarButton>
           <ToolbarButton
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            active={editor.isActive("orderedList")}
-            title="Numbered List"
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            title="Insert table"
           >
-            1. List
+            <TableIcon className={iconClass} />
           </ToolbarButton>
 
-          <div className="w-px h-6 bg-gray-300 mx-1" />
-
-          {/* Table */}
-          <ToolbarButton
-            onClick={() =>
-              editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-            }
-            title="Insert Table"
-          >
-            ▦ Table
-          </ToolbarButton>
-
-          <div className="w-px h-6 bg-gray-300 mx-1" />
-
-          {/* Blockquote & Code */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            active={editor.isActive("blockquote")}
-            title="Blockquote"
-          >
-            ❝
-          </ToolbarButton>
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            active={editor.isActive("codeBlock")}
-            title="Code Block"
-          >
-            {"</>"}
-          </ToolbarButton>
-
-          <div className="w-px h-6 bg-gray-300 mx-1" />
+          <Divider />
 
           {/* Link */}
-          <ToolbarButton
-            onClick={addLink}
-            active={editor.isActive("link")}
-            title="Add Link"
-          >
-            🔗
+          <ToolbarButton onClick={addLink} active={editor.isActive("link")} title="Add link">
+            <LinkIcon className={iconClass} />
           </ToolbarButton>
-
           {editor.isActive("link") && (
-            <ToolbarButton onClick={removeLink} title="Remove Link">
-              🔗✕
+            <ToolbarButton onClick={removeLink} title="Remove link">
+              <Unlink className={iconClass} />
             </ToolbarButton>
           )}
 
-          {/* Image Upload */}
+          {/* Media */}
+          <ToolbarButton onClick={() => fileInputRef.current?.click()} title="Upload image">
+            <ImageIcon className={iconClass} />
+          </ToolbarButton>
           <ToolbarButton
-            onClick={() => fileInputRef.current?.click()}
-            title="Upload Image"
+            onClick={() => galleryInputRef.current?.click()}
+            title="Insert image gallery"
+            disabled={galleryUploading}
           >
-            🖼️
+            {galleryUploading ? <Loader2 className={`${iconClass} animate-spin`} /> : <Images className={iconClass} />}
+          </ToolbarButton>
+          <ToolbarButton onClick={openYoutubeModal} title="Embed YouTube video">
+            <YoutubeIcon className={iconClass} />
           </ToolbarButton>
 
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           <input
-            ref={fileInputRef}
+            ref={galleryInputRef}
             type="file"
             accept="image/*"
-            onChange={handleImageUpload}
+            multiple
+            onChange={handleGalleryInsert}
             className="hidden"
           />
 
-          {/* YouTube Embed */}
-          <ToolbarButton onClick={openYoutubeModal} title="Embed YouTube Video">
-            ▶️ YT
+          <Divider />
+
+          {/* History */}
+          <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo" disabled={!editor.can().undo()}>
+            <Undo2 className={iconClass} />
           </ToolbarButton>
-
-          <div className="w-px h-6 bg-gray-300 mx-1" />
-
-          {/* Undo/Redo */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().undo().run()}
-            title="Undo"
-          >
-            ↩
-          </ToolbarButton>
-
-          <ToolbarButton
-            onClick={() => editor.chain().focus().redo().run()}
-            title="Redo"
-          >
-            ↪
+          <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo" disabled={!editor.can().redo()}>
+            <Redo2 className={iconClass} />
           </ToolbarButton>
         </div>
 

@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
@@ -5,6 +6,11 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
   const body = await req.json();
   const { active } = body;
@@ -31,6 +37,11 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {

@@ -5,8 +5,8 @@ import { notifySubscribersOfNewPost } from "@/lib/notifySubscribers";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { postId } = await req.json();
@@ -19,11 +19,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
-  // Adjust field names below to match your actual Post model
-  // (e.g. post.excerpt vs post.summary vs post.description, post.slug)
+  // The Post model has no excerpt column, so derive one from the HTML content:
+  // strip tags, collapse whitespace, and cap the length for the email preview.
+  const plain = post.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const excerpt = plain.length > 200 ? `${plain.slice(0, 200).trimEnd()}…` : plain;
+
   const count = await notifySubscribersOfNewPost({
     title: post.title,
-    excerpt: post.excerpt ?? "",
+    excerpt,
     slug: post.slug,
     featuredImage: post.featuredImage,
   });

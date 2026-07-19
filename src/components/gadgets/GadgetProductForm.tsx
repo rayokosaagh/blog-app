@@ -9,6 +9,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
 import TagPicker from "@/components/blog/TagPicker";
@@ -21,6 +23,7 @@ interface GadgetProductFormProps {
     name: string;
     brand: string;
     image?: string | null;
+    images?: string[] | null;
     priceFrom?: number | null;
     published: boolean;
     categorySlug: string;
@@ -57,6 +60,8 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
   const [name, setName] = useState(initial?.name ?? "");
   const [brand, setBrand] = useState(initial?.brand ?? "");
   const [image, setImage] = useState(initial?.image ?? "");
+  const [images, setImages] = useState<string[]>(initial?.images ?? []);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const [priceFrom, setPriceFrom] = useState(initial?.priceFrom?.toString() ?? "");
   const [published, setPublished] = useState(initial?.published ?? true);
   const [specs, setSpecs] = useState<Record<string, any>>(initial?.specs ?? {});
@@ -104,6 +109,53 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
     }
   }
 
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    setGalleryUploading(true);
+    setError("");
+    const uploaded: string[] = [];
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          // non-JSON error body
+        }
+        if (!res.ok) {
+          setError(data?.error ?? "Image upload failed");
+          break;
+        }
+        uploaded.push(data.url);
+      }
+      if (uploaded.length) setImages((prev) => [...prev, ...uploaded]);
+    } catch {
+      setError("Image upload failed. Please try again.");
+    } finally {
+      setGalleryUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  function removeGalleryImage(idx: number) {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function moveGalleryImage(idx: number, dir: -1 | 1) {
+    setImages((prev) => {
+      const j = idx + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  }
+
   function handleNameChange(value: string) {
     setName(value);
     if (mode === "create") {
@@ -127,6 +179,7 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
   name,
   brand,
   image: image || null,
+  images,
   priceFrom: priceFrom || null,
   category,
   specs,
@@ -338,6 +391,79 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
           </div>
         </FormCard>
 
+        {/* Gallery */}
+        <FormCard title="Gallery">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 -mt-1">
+            Extra photos shown in the carousel on the product page, alongside the main image.
+          </p>
+
+          {images.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {images.map((url, i) => (
+                <div
+                  key={`${url}-${i}`}
+                  className="relative group aspect-square rounded-xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-700"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeGalleryImage(i)}
+                    aria-label="Remove image"
+                    className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-rose-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="absolute bottom-1.5 left-1.5 right-1.5 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => moveGalleryImage(i, -1)}
+                      disabled={i === 0}
+                      aria-label="Move earlier"
+                      className="bg-black/60 hover:bg-black text-white rounded w-6 h-6 flex items-center justify-center disabled:opacity-30"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveGalleryImage(i, 1)}
+                      disabled={i === images.length - 1}
+                      aria-label="Move later"
+                      className="bg-black/60 hover:bg-black text-white rounded w-6 h-6 flex items-center justify-center disabled:opacity-30"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+            <div className="text-center">
+              {galleryUploading ? (
+                <Loader2 className="h-6 w-6 text-blue-500 mx-auto mb-2 animate-spin" />
+              ) : (
+                <ImagePlus className="h-6 w-6 text-zinc-400 mx-auto mb-2" />
+              )}
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                {galleryUploading ? "Uploading…" : "Click to add gallery images"}
+              </p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                You can select multiple files
+              </p>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleGalleryUpload}
+              className="hidden"
+              disabled={galleryUploading}
+            />
+          </label>
+        </FormCard>
+
         <FormCard title="Tags">
   <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 </FormCard>
@@ -406,7 +532,7 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
           <div className="max-w-3xl flex items-center gap-3">
             <button
               type="submit"
-              disabled={saving || uploading}
+              disabled={saving || uploading || galleryUploading}
               className="inline-flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}

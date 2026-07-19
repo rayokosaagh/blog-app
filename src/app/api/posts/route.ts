@@ -40,7 +40,10 @@ export async function GET(req: Request) {
           : {}),
       },
       orderBy: { createdAt: "desc" },
-      include: { author: true, tags: true },
+      include: {
+        author: { select: { id: true, name: true, image: true } },
+        tags: true,
+      },
     });
 
     return NextResponse.json(posts);
@@ -57,8 +60,8 @@ export async function POST(req: Request) {
   try {
     const session = await auth();
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();

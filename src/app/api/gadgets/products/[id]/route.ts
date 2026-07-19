@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
@@ -19,9 +20,14 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
   const body = await req.json();
-  const { name, brand, image, priceFrom, specs, published, tagIds } = body;
+  const { name, brand, image, images, priceFrom, specs, published, tagIds } = body;
 
   try {
     const product = await prisma.product.update({
@@ -30,6 +36,11 @@ export async function PATCH(
         ...(name !== undefined && { name }),
         ...(brand !== undefined && { brand }),
         ...(image !== undefined && { image }),
+        ...(images !== undefined && {
+          images: Array.isArray(images)
+            ? images.filter((u: unknown): u is string => typeof u === "string" && u.trim() !== "")
+            : [],
+        }),
         ...(priceFrom !== undefined && { priceFrom: priceFrom ? Number(priceFrom) : null }),
         ...(specs !== undefined && { specs }),
         ...(published !== undefined && { published }),
@@ -54,6 +65,11 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {

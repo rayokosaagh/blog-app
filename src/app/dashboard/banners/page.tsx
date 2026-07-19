@@ -22,6 +22,9 @@ import { Toggle, StatusPill, DeleteModal, SuccessToast, inputClass, labelClass }
 interface Banner {
   id: string;
   title: string;
+  description: string | null;
+  badge: string | null;
+  cta: string | null;
   image: string;
   link: string;
   active: boolean;
@@ -48,7 +51,7 @@ export default function BannersPage() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [form, setForm] = useState({ title: "", image: "", link: "", active: true, order: 0 });
+  const [form, setForm] = useState({ title: "", description: "", badge: "", cta: "", image: "", link: "", active: true, order: 0 });
 
   useEffect(() => {
     loadBanners();
@@ -91,14 +94,14 @@ export default function BannersPage() {
 
   function openAdd() {
     setEditingBanner(null);
-    setForm({ title: "", image: "", link: "", active: true, order: banners.length });
+    setForm({ title: "", description: "", badge: "", cta: "", image: "", link: "", active: true, order: banners.length });
     setError("");
     setView("add");
   }
 
   function openEdit(banner: Banner) {
     setEditingBanner(banner);
-    setForm({ title: banner.title, image: banner.image, link: banner.link, active: banner.active, order: banner.order });
+    setForm({ title: banner.title, description: banner.description ?? "", badge: banner.badge ?? "", cta: banner.cta ?? "", image: banner.image, link: banner.link, active: banner.active, order: banner.order });
     setError("");
     setView("edit");
   }
@@ -249,6 +252,49 @@ export default function BannersPage() {
                   className={inputClass}
                   required
                 />
+              </div>
+
+              <div>
+                <label className={labelClass}>Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className={`${inputClass} min-h-[88px] resize-y`}
+                  rows={3}
+                  placeholder="Short blurb shown beside the hero image on the homepage."
+                />
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                  Appears in the title card next to the banner. Keep it to a sentence or two.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className={labelClass}>Tag label</label>
+                  <input
+                    type="text"
+                    value={form.badge}
+                    onChange={(e) => setForm({ ...form, badge: e.target.value })}
+                    className={inputClass}
+                    placeholder="Top Story"
+                  />
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                    Small tag above the headline. Defaults to “Top Story”.
+                  </p>
+                </div>
+                <div>
+                  <label className={labelClass}>Button label</label>
+                  <input
+                    type="text"
+                    value={form.cta}
+                    onChange={(e) => setForm({ ...form, cta: e.target.value })}
+                    className={inputClass}
+                    placeholder="Read more"
+                  />
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                    Call-to-action button text. Defaults to “Read more”.
+                  </p>
+                </div>
               </div>
 
               <div>

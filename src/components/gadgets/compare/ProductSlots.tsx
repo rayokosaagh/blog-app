@@ -1,6 +1,6 @@
 // src/components/gadgets/compare/ProductSlots.tsx
 "use client";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlusIcon } from "./icons";
 import ProductSearchBox, { ProductSearchBoxHandle } from "./ProductSearchBox";
@@ -41,6 +41,29 @@ export default function ProductSlots({
 }) {
   const searchBoxRefs = useRef<Array<ProductSearchBoxHandle | null>>([]);
 
+  // How many slot cards are currently visible. Starts at the minimum needed
+  // to compare (2) and grows one card at a time via the "Add" button, up to
+  // maxSlots. Extra slots (e.g. the 3rd) stay hidden until the user asks for
+  // them. Deep links that pre-fill more slots reveal those automatically.
+  const filledCount = slots.filter(Boolean).length;
+  const [revealed, setRevealed] = useState(() =>
+    Math.min(maxSlots, Math.max(2, filledCount))
+  );
+
+  const prevMaxRef = useRef(maxSlots);
+  useEffect(() => {
+    if (prevMaxRef.current !== maxSlots) {
+      // Category changed (slot capacity differs) — re-hide the extra slots.
+      prevMaxRef.current = maxSlots;
+      setRevealed(Math.min(maxSlots, Math.max(2, filledCount)));
+    } else {
+      // Same category — only ever grow, to reveal newly-filled slots.
+      setRevealed((r) => Math.min(maxSlots, Math.max(r, filledCount)));
+    }
+  }, [maxSlots, filledCount]);
+
+  const visibleSlots = Math.min(revealed, maxSlots);
+
   return (
     <motion.div
       variants={slotContainerVariants}
@@ -48,7 +71,7 @@ export default function ProductSlots({
       animate="show"
       className="relative z-10 flex items-stretch gap-2 sm:gap-4 mb-6"
     >
-      {Array.from({ length: maxSlots }).map((_, i) => {
+      {Array.from({ length: visibleSlots }).map((_, i) => {
         const current = slots[i];
         return (
           <React.Fragment key={i}>
@@ -135,7 +158,7 @@ export default function ProductSlots({
               </div>
             </motion.div>
 
-            {i < maxSlots - 1 && (
+            {i < visibleSlots - 1 && (
               <AnimatePresence>
                 {slots[i] && slots[i + 1] && (
                   <motion.div
@@ -146,7 +169,7 @@ export default function ProductSlots({
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     className="flex items-center justify-center shrink-0"
                   >
-                    <span className="flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 rounded-none border-2 border-border-heavy bg-accent-2 text-on-accent-2 text-[10px] sm:text-xs font-extrabold tracking-wide">
+                    <span className="flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 rounded-none border-2 border-border-heavy bg-blue-600 text-white text-[10px] sm:text-xs font-extrabold tracking-wide">
                       VS
                     </span>
                   </motion.div>
@@ -156,6 +179,22 @@ export default function ProductSlots({
           </React.Fragment>
         );
       })}
+
+      {/* Reveal the next hidden slot (e.g. the 3rd card) on demand. */}
+      {visibleSlots < maxSlots && (
+        <motion.button
+          type="button"
+          layout
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={() => setRevealed((r) => Math.min(maxSlots, r + 1))}
+          aria-label="Add another product to compare"
+          className="shrink-0 self-stretch flex flex-col items-center justify-center gap-1 px-3 sm:px-4 rounded-none border-2 border-dashed border-border-heavy bg-card text-muted-foreground hover:bg-accent-2 hover:text-on-accent-2 hover:border-solid transition-colors duration-100 brutal-press"
+        >
+          <PlusIcon className="h-5 w-5" />
+          <span className="text-[10px] sm:text-xs font-bold whitespace-nowrap">Add</span>
+        </motion.button>
+      )}
     </motion.div>
   );
 }

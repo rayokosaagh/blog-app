@@ -81,14 +81,17 @@ model Session {
 }
 
 model Banner {
-  id        String   @id @default(cuid())
-  title     String
-  image     String
-  link      String
-  active    Boolean  @default(true)
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  badge       String?  // small tag shown above the headline (e.g. "Top Story")
+  cta         String?  // call-to-action button label (e.g. "Read more")
+  image       String
+  link        String
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Ad {
@@ -236,7 +239,8 @@ model Product {
   slug       String         @unique   // "iphone-17-pro-max" — used in compare URLs (?p1=slug)
   name       String                    // "iPhone 17 Pro Max"
   brand      String                    // "Apple"
-  image      String?                   // product photo URL
+  image      String?                   // primary product photo URL (thumbnail / hero)
+  images     String[]      @default([]) // gallery photos (carousel on the product page)
   priceFrom  Float?                    // starting price, shown under image on compare page
   currency   String         @default("NPR")
   published  Boolean        @default(true)

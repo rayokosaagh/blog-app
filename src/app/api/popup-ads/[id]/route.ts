@@ -38,8 +38,10 @@ export async function PATCH(
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    // const session = await auth();   // Uncomment later
-    // if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await auth();
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const body = await req.json();
 
@@ -80,8 +82,10 @@ export async function DELETE(
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    // const session = await auth();
-    // if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await auth();
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     await prisma.popupAd.delete({ where: { id } });
 

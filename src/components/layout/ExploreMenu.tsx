@@ -21,6 +21,12 @@ type TagItem = {
   icon: string;
 };
 
+type ProductCategory = {
+  slug: string;
+  name: string;
+  icon: string;
+};
+
 const MIN_QUERY_LENGTH = 2;
 
 interface ExploreMenuProps {
@@ -35,6 +41,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
   const [isSearching, setIsSearching] = useState(false);
 
   const [tags, setTags] = useState<TagItem[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [tagsLoaded, setTagsLoaded] = useState(false);
   const [tagsLoading, setTagsLoading] = useState(false);
 
@@ -59,13 +66,22 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
   useEffect(() => {
     if (!isOpen || tagsLoaded || tagsLoading) return;
     setTagsLoading(true);
-    fetch("/api/tags")
-      .then((res) => res.json())
-      .then((data) => {
-        setTags(Array.isArray(data) ? data : []);
+    // Blog tags and product categories come from different sources — load
+    // both together so the two Explore sections populate at once.
+    Promise.all([
+      fetch("/api/tags").then((res) => res.json()).catch(() => []),
+      fetch("/api/gadgets/categories")
+        .then((res) => res.json())
+        .catch(() => ({ categories: [] })),
+    ])
+      .then(([tagData, catData]) => {
+        setTags(Array.isArray(tagData) ? tagData : []);
+        setProductCategories(
+          Array.isArray(catData?.categories) ? catData.categories : []
+        );
         setTagsLoaded(true);
       })
-      .catch((err) => console.error("Failed to load categories:", err))
+      .catch((err) => console.error("Failed to load Explore data:", err))
       .finally(() => setTagsLoading(false));
   }, [isOpen, tagsLoaded, tagsLoading]);
 
@@ -199,8 +215,9 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
+              {/* ── Blogs: browse posts by tag ── */}
               <p className="px-0.5 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                Browse by category
+                Blogs · Browse by tag
               </p>
               {tagsLoading ? (
                 <div className="grid grid-cols-2 gap-2">
@@ -209,7 +226,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                   ))}
                 </div>
               ) : tags.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
                   {tags.map((tag, i) => (
                     <motion.div
                       key={tag.id}
@@ -235,23 +252,76 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                 </div>
               ) : (
                 <p className="py-4 text-center text-sm text-muted-foreground">
-                  No categories yet
+                  No tags yet
                 </p>
               )}
+
+              {/* ── Products: browse gadgets by category ── */}
+              <div className="mt-4 border-t-2 border-border pt-4">
+                <p className="px-0.5 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Products · Browse by category
+                </p>
+                {tagsLoading ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="h-10 bg-accent-tint animate-pulse border-[1.5px] border-border" />
+                    ))}
+                  </div>
+                ) : productCategories.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {productCategories.map((cat, i) => (
+                      <motion.div
+                        key={cat.slug}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.025, duration: 0.2 }}
+                      >
+                        <Link
+                          href={`/compare?category=${cat.slug}`}
+                          onClick={close}
+                          className="flex items-center gap-2 px-3 py-2.5 bg-background hover:bg-accent-tint border-[1.5px] border-border-heavy transition-colors group"
+                        >
+                          <i
+                            className={`${cat.icon} text-base w-4 flex-shrink-0 text-center text-muted-foreground group-hover:text-accent`}
+                            aria-hidden="true"
+                          />
+                          <span className="text-sm text-foreground group-hover:text-accent font-medium truncate">
+                            {cat.name}
+                          </span>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No product categories yet
+                  </p>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Footer */}
-      <Link
-        href="/blog"
-        onClick={close}
-        className="mt-3 flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold uppercase tracking-wide text-accent hover:bg-accent-tint transition-colors border-[1.5px] border-border-heavy"
-      >
-        View all posts
-        <ArrowRight className="h-3.5 w-3.5" />
-      </Link>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Link
+          href="/blog"
+          onClick={close}
+          className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold uppercase tracking-wide text-accent hover:bg-accent-tint transition-colors border-[1.5px] border-border-heavy"
+        >
+          All posts
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+        <Link
+          href="/compare"
+          onClick={close}
+          className="flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold uppercase tracking-wide text-accent hover:bg-accent-tint transition-colors border-[1.5px] border-border-heavy"
+        >
+          Compare
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
     </>
   );
 

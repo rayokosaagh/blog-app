@@ -1,4 +1,5 @@
 // src/app/api/gadgets/compare/route.ts
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
@@ -81,6 +82,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { productAId, productBId } = await req.json();
 
   if (!productAId || !productBId) {

@@ -1,8 +1,14 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 
 // Body: { order: string[] } — comparison ids in their new display order
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { order } = await req.json();
 
   if (!Array.isArray(order) || order.some((id) => typeof id !== "string")) {

@@ -30,6 +30,8 @@ import KeyHighlightsMount from "@/components/feeds/KeyHighlightsMount";
 import { parseDropCapLedeBlock } from "@/components/blog/DropCapLede";
 import TableProcessor from "@/components/blog/TableProcessor";
 import { parseSpecificationsBlock } from "@/components/feeds/Specifications";
+import { parseGalleryBlock } from "@/components/feeds/Gallery";
+import GalleryMount from "@/components/feeds/GalleryMount";
 import SpecificationsMount from "@/components/feeds/SpecificationsMount";
 
 interface BlogPostPageProps {
@@ -279,6 +281,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   processedContent = parseDropCapLedeBlock(processedContent);
   processedContent = wrapTables(processedContent);
   processedContent = parseSpecificationsBlock(processedContent);
+  processedContent = parseGalleryBlock(processedContent);
   processedContent = stripTrailingEmptyBlocks(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
@@ -339,7 +342,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   <Link
                     key={t.id}
                     href={`/blog?tag=${t.slug}`}
-                    className="inline-flex items-center gap-1.5 bg-accent-2 text-on-accent-2 text-xs font-bold uppercase tracking-widest px-3 py-1 border-[1.5px] border-border-heavy transition-transform duration-150 hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-1.5 bg-accent-3 text-on-accent-3 text-xs font-bold uppercase tracking-widest px-3 py-1 border-[1.5px] border-border-heavy transition-transform duration-150 hover:-translate-y-0.5"
                   >
                     <TagIcon icon={t.icon} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
                     {t.name}
@@ -566,6 +569,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <AlsoReadMount />
             <KeyHighlightsMount />
             <SpecificationsMount />
+            <GalleryMount />
 
             {/* Author Bio */}
             <div className="mt-10 pt-6 border-t-[1.5px] border-border-heavy">

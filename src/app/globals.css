@@ -15,9 +15,11 @@
   --footer-bg: #f2f2f2;
   --accent: #2563eb;
   --accent-2: #ffe500;
+  --accent-3: #db2777;
   --accent-tint: #eaf1fd;
   --on-accent: #ffffff;
   --on-accent-2: #000000;
+  --on-accent-3: #ffffff;
   --muted: #f2f2f2;
   --danger: #dc2626;
   --on-danger: #ffffff;
@@ -43,22 +45,31 @@
 }
 
 .dark {
-  --background: #000000;
+  /* Neon on charcoal (from reference) — near-black base, lime primary accent,
+     cyan secondary, magenta bookmark accent, dark text on the bright fills.
+     White brutalist borders + hard shadows let the neons pop. */
+  --background: #0f0f0f;
   --foreground: #ffffff;
-  --muted-foreground: #b3b3b3;
-  --card: #0d0d0d;
-  --border: #3d3d3d;
-  --border-heavy: #ffffff;
-  --footer-bg: #000000;
-  --accent: #7d39eb;
-  --accent-2: #c6ff33;
-  --accent-tint: #1f1433;
-  --on-accent: #ffffff;
+  --muted-foreground: #a3a3a3;
+  --card: #16181d;
+  --border: #2e2e2e;
+  --border-heavy: #3f3f3f;
+  --footer-bg: #393939;
+  /* Decoupled from the border: black outlines, but the hard offset shadows are
+     magenta — the pink affects only the shadow "block", not the border.
+     (--shadow-* reference --shadow-color, resolved per-element.) */
+  --shadow-color: #bbbbbb;
+  --accent: #c6ff33;
+  --accent-2: #22d3ee;
+  --accent-3: #ff2ec4;
+  --accent-tint: #1b2610;
+  --on-accent: #000000;
   --on-accent-2: #000000;
-  --muted: #0d0d0d;
+  --on-accent-3: #000000;
+  --muted: #16181d;
   --danger: #ff6b6b;
   --on-danger: #000000;
-  --accent-bookmark: #c6ff33;
+  --accent-bookmark: #ff2ec4;
   --on-accent-bookmark: #000000;
 }
 
@@ -72,9 +83,11 @@
   --color-footer: var(--footer-bg);
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
   --color-accent-tint: var(--accent-tint);
   --color-on-accent: var(--on-accent);
   --color-on-accent-2: var(--on-accent-2);
+  --color-on-accent-3: var(--on-accent-3);
   --color-muted: var(--muted);
   --color-danger: var(--danger);
   --color-on-danger: var(--on-danger);

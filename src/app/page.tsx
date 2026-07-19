@@ -7,12 +7,10 @@ import Footer from "@/components/layout/Footer";
 import PopupAd from "@/components/ads/PopupAd";
 import BackToTop from "@/components/ui/BackToTop";
 import { FadeIn } from "@/components/ui/AnimatedSection";
-import Carousel from "@/components/ui/Carousel";
+import HeroSpotlight from "@/components/ui/HeroSpotlight";
 import Poll from "@/components/polls/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
-import TrendingNews from "@/components/feeds/TrendingNews";
-import LatestNews from "@/components/feeds/LatestNews";
-import MobileNewsHighlights from "@/components/feeds/MobileNewsHighlights";
+import TopStoryTiles from "@/components/feeds/TopStoryTiles";
 import LatestPostsFeed from "@/components/feeds/LatestPostsFeed";
 import LatestComparisons from "@/components/gadgets/LatestComparisons";
 import NewsletterForm from "@/components/newsletter/NewsletterForm";
@@ -102,35 +100,32 @@ const productsByCategory = Object.fromEntries(
       <PopupAd />
 
       <main className={`flex flex-col ${SECTION_GAP} ${SECTION_TOP_PADDING} ${SECTION_BOTTOM_PADDING}`}>
-        {/* Banner Carousel + flanking Trending / Latest — original 3-column layout */}
+        {/*
+          CNET-style hero: a large featured carousel image joined to a
+          title/description card that changes in lockstep with the banner,
+          followed by a row of four secondary story tiles (2 trending + 2 new).
+        */}
         {banners.length > 0 && (
           <section className="max-w-[1600px] mx-auto px-6 w-full">
             <div className="pt-6 border-t-4 border-border-heavy">
-              <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-                {/* Left - Trending (desktop only) */}
-                <div className="hidden lg:block lg:w-72 flex-shrink-0">
-                  <div className="h-full rounded-none border-2 border-border-heavy bg-card px-5 py-4 shadow-brutal">
-                    <TrendingNews />
-                  </div>
-                </div>
+              <FadeIn>
+                <HeroSpotlight banners={banners} />
+              </FadeIn>
 
-                {/* Center - Carousel */}
-                <div className="w-full flex-1 min-w-0 rounded-none border-2 border-border-heavy shadow-brutal overflow-hidden">
-                  <Carousel banners={banners} />
-                </div>
-
-                {/* Right - Latest (desktop only) */}
-                <div className="hidden lg:block lg:w-72 flex-shrink-0">
-  <div className="h-full rounded-none border-2 border-border-heavy bg-card px-5 py-4 shadow-brutal">
-    <LatestNews />
-  </div>
-</div>
+              {/* Secondary stories */}
+              <div className="mt-10 mb-4 flex items-center justify-between gap-4 border-b-2 border-border-heavy pb-2">
+                <h3 className="text-sm font-extrabold uppercase tracking-wide text-foreground">
+                  More top stories
+                </h3>
+                <Link
+                  href="/blog"
+                  className="group inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-muted-foreground transition-colors hover:text-accent"
+                >
+                  All stories
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
               </div>
-
-              {/* Mobile-only: Trending/Latest tabs, right below carousel */}
-              <div className="mt-6">
-                <MobileNewsHighlights />
-              </div>
+              <TopStoryTiles />
             </div>
           </section>
         )}

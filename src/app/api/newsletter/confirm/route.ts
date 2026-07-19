@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
       });
       console.log("welcome email result:", emailResult);
     } catch (emailErr) {
-      // Don't let a failed welcome email block confirmation
       console.error("welcome email failed (non-fatal):", emailErr);
     }
   } else {

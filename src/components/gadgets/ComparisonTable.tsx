@@ -75,7 +75,7 @@ export default function ComparisonTable({
       {/* Jump nav */}
       <nav className="flex gap-2 overflow-x-auto scrollbar-hide border-y-2 border-border-heavy py-2 mb-4">
         {groups.map((g) => (
-          
+          <a
             key={g.title}
             href={`#${g.title.toLowerCase()}`}
             className="tag-pill brutal-press whitespace-nowrap shrink-0 bg-card text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100"

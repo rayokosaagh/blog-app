@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 interface TocItem {
@@ -17,7 +17,6 @@ export default function MobileNav({ toc }: MobileNavProps) {
   const [progress, setProgress] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("");
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Portals must only run client-side, after mount, since document.body
   // isn't available during SSR.
@@ -42,29 +41,49 @@ export default function MobileNav({ toc }: MobileNavProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Track Active Section
+  // Track Active Section — scroll-driven, re-measuring the live DOM each frame
+  // so it survives the framer-motion <PageTransition> (AnimatePresence
+  // mode="popLayout") reparenting the page on client-side navigation, which
+  // silently kills an IntersectionObserver until a full reload.
   useEffect(() => {
     if (toc.length === 0) return;
-    const headingEls = toc.map(({ id }) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-    if (headingEls.length === 0) return;
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    let ticking = false;
+    const compute = () => {
+      const atBottom =
+        window.innerHeight + Math.round(window.scrollY) >=
+        document.documentElement.scrollHeight - 50;
+      if (atBottom) {
+        setActiveId(toc[toc.length - 1].id);
+        return;
+      }
+      const TRIGGER = 90;
+      let current = toc[0].id;
+      for (const { id } of toc) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top - TRIGGER <= 0) current = id;
+        else break;
+      }
+      setActiveId(current);
+    };
 
-        const isAtBottom = window.innerHeight + Math.round(window.scrollY) >= document.documentElement.scrollHeight - 50;
-        if (visible.length > 0 && !isAtBottom) {
-          setActiveId(visible[0].target.id);
-        } else if (isAtBottom) {
-          setActiveId(toc[toc.length - 1].id);
-        }
-      },
-      { rootMargin: "-80px 0px -70% 0px", threshold: 0 }
-    );
-    headingEls.forEach((el) => observerRef.current!.observe(el));
-    return () => observerRef.current?.disconnect();
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        compute();
+        ticking = false;
+      });
+    };
+
+    compute();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [toc]);
 
   // Lock scroll while the side panel is open

@@ -30,8 +30,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (session?.user?.role !== "ADMIN" && session?.user?.role !== "EDITOR") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { name, icon, colorMode: rawColorMode } = await req.json();

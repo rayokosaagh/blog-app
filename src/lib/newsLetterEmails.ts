@@ -150,7 +150,7 @@ export function newPostNotificationEmail(params: {
       <tr>
         <td style="border-bottom:3px solid ${BRAND.border};">
           <a href="${params.url}" style="display:block;">
-            <img src="${resolvedImage}" alt="${params.title}" width="600"
+            <img src="https://neptechie.com/wp-content/uploads/2026/06/Xiaomi-17T-Pro-Price-in-Nepal-Specifications-Availability-.jpg?resize=1068%2C601&ssl=1" alt="${params.title}" width="600"
               style="width:100%;max-width:600px;height:280px;object-fit:cover;display:block;" />
           </a>
         </td>

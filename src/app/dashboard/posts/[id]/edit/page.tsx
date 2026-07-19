@@ -251,15 +251,7 @@ export default function EditPostPage({
             )}
           </div>
 
-          {/* Content */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
-              Content
-            </label>
-            <Editor content={content} onChange={setContent} />
-          </div>
-
-          {/* Tags */}
+          {/* Tags — kept right under the featured image */}
           <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
           {/* Published toggle */}
@@ -277,21 +269,30 @@ export default function EditPostPage({
             <NotifySubscribersButton postId={postId} />
           </div>
 
-          {/* Buttons */}
-          <div className="flex items-center gap-4 pt-2">
-            <button
-              type="submit"
-              disabled={loading || uploading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Save changes"}
-            </button>
+          {/* Content */}
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Content
+            </label>
+            <Editor content={content} onChange={setContent} />
+          </div>
+
+          {/* Floating sticky actions — just the buttons, no full-width card.
+              The wrapper is click-through so only the buttons capture clicks. */}
+          <div className="pointer-events-none sticky bottom-4 z-20 mt-2 flex justify-end gap-2">
             <button
               type="button"
               onClick={() => router.back()}
-              className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors"
+              className="pointer-events-auto rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/90 backdrop-blur px-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 shadow-md transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || uploading}
+              className="pointer-events-auto rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? "Saving..." : "Save changes"}
             </button>
           </div>
         </form>
