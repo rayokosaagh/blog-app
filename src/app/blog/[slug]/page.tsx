@@ -5,6 +5,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import TocSidebar from "@/components/blog/TocSidebar";
 import SocialSidebar from "@/components/layout/SocialSidebar";
+import SpotlightAdRail from "@/components/ads/SpotlightAdRail";
+import { getSpotlightAdsHeader, getSpotlightAdsTitle } from "@/lib/settings";
 import type { Metadata } from "next";
 import MobileNav from "@/components/layout/MobileNav";
 import BackToTop from "@/components/ui/BackToTop";
@@ -239,6 +241,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   let ads: any[] = [];
   let banners: any[] = [];
+  let spotlightAds: any[] = [];
 
   try {
     ads = await (prisma as any).ad.findMany({
@@ -249,10 +252,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       where: { active: true },
       orderBy: { order: "asc" },
     });
+    spotlightAds = await (prisma as any).spotlightAd.findMany({
+      where: { active: true },
+      orderBy: { position: "asc" },
+      select: { id: true, title: true, mediaUrl: true, mediaType: true, link: true },
+    });
   } catch {
     ads = [];
     banners = [];
+    spotlightAds = [];
   }
+
+  const [spotlightHeader, spotlightTitle] = await Promise.all([
+    getSpotlightAdsHeader(),
+    getSpotlightAdsTitle(),
+  ]);
   const tagIds = post.tags.map((t) => t.id);
 
   const relatedByTags = tagIds.length > 0
@@ -621,9 +635,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
         </FadeIn>
 
-        {/* Social Sidebar */}
+        {/* Social Sidebar + spotlight ad below it */}
         <FadeIn delay={0.2} className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
           <SocialSidebar />
+          {spotlightAds.length > 0 && (
+            <div className="mt-8 h-[420px]">
+              <SpotlightAdRail
+                ads={spotlightAds}
+                header={spotlightHeader}
+                title={spotlightTitle}
+              />
+            </div>
+          )}
         </FadeIn>
       </main>
 

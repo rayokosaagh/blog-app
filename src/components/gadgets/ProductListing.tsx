@@ -15,6 +15,7 @@ import {
   buildProductOrderBy,
   hasProductFilters,
   computeSpecFacets,
+  productMatchesSpecFilters,
 } from "@/lib/gadgets/productFilters";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
@@ -45,7 +46,7 @@ export default async function ProductListing({
   const tagScope = tag ? { tags: { some: { slug: tag.slug } } } : {};
   const catScope = category ? { category: { slug: category } } : {};
 
-  const [products, brandRows, facetRows] = await Promise.all([
+  const [productsRaw, brandRows, facetRows] = await Promise.all([
     prisma.product.findMany({
       where: buildProductWhere(sp, tagScope),
       include: { category: true },
@@ -62,6 +63,10 @@ export default async function ProductListing({
       select: { specs: true },
     }),
   ]);
+
+  // Spec facet filters (RAM etc.) are token-aware, so apply them here rather
+  // than in the DB query — this is what makes an "8/12" product match "8".
+  const products = productsRaw.filter((p) => productMatchesSpecFilters(p.specs, sp));
 
   const brands = brandRows.map((b) => b.brand);
   const categories = CATEGORY_LIST.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }));

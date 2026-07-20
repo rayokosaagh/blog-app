@@ -42,6 +42,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
 
   const [tags, setTags] = useState<TagItem[]>([]);
   const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [productTags, setProductTags] = useState<TagItem[]>([]);
   const [tagsLoaded, setTagsLoaded] = useState(false);
   const [tagsLoading, setTagsLoading] = useState(false);
 
@@ -73,12 +74,14 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
       fetch("/api/gadgets/categories")
         .then((res) => res.json())
         .catch(() => ({ categories: [] })),
+      fetch("/api/tags?hasProducts=1").then((res) => res.json()).catch(() => []),
     ])
-      .then(([tagData, catData]) => {
+      .then(([tagData, catData, productTagData]) => {
         setTags(Array.isArray(tagData) ? tagData : []);
         setProductCategories(
           Array.isArray(catData?.categories) ? catData.categories : []
         );
+        setProductTags(Array.isArray(productTagData) ? productTagData : []);
         setTagsLoaded(true);
       })
       .catch((err) => console.error("Failed to load Explore data:", err))
@@ -277,7 +280,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                         transition={{ delay: i * 0.025, duration: 0.2 }}
                       >
                         <Link
-                          href={`/compare?category=${cat.slug}`}
+                          href={`/products?category=${cat.slug}`}
                           onClick={close}
                           className="flex items-center gap-2 px-3 py-2.5 bg-background hover:bg-accent-tint border-[1.5px] border-border-heavy transition-colors group"
                         >
@@ -295,6 +298,49 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                 ) : (
                   <p className="py-4 text-center text-sm text-muted-foreground">
                     No product categories yet
+                  </p>
+                )}
+              </div>
+
+              {/* ── Products: browse gadgets by tag ── */}
+              <div className="mt-4 border-t-2 border-border pt-4">
+                <p className="px-0.5 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Products · Browse by tag
+                </p>
+                {tagsLoading ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="h-10 bg-accent-tint animate-pulse border-[1.5px] border-border" />
+                    ))}
+                  </div>
+                ) : productTags.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {productTags.map((tag, i) => (
+                      <motion.div
+                        key={tag.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.025, duration: 0.2 }}
+                      >
+                        <Link
+                          href={`/tag/${tag.slug}`}
+                          onClick={close}
+                          className="flex items-center gap-2 px-3 py-2.5 bg-background hover:bg-accent-tint border-[1.5px] border-border-heavy transition-colors group"
+                        >
+                          <TagIcon
+                            icon={tag.icon}
+                            className="inline-flex w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full text-muted-foreground group-hover:text-accent"
+                          />
+                          <span className="text-sm text-foreground group-hover:text-accent font-medium truncate">
+                            {tag.name}
+                          </span>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No product tags yet
                   </p>
                 )}
               </div>

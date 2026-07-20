@@ -8,6 +8,7 @@ import PopupAd from "@/components/ads/PopupAd";
 import BackToTop from "@/components/ui/BackToTop";
 import { FadeIn } from "@/components/ui/AnimatedSection";
 import HeroSpotlight from "@/components/ui/HeroSpotlight";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import Poll from "@/components/polls/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
 import TopStoryTiles from "@/components/feeds/TopStoryTiles";
@@ -18,6 +19,12 @@ import SectionDivider from "@/components/ui/SectionDivider";
 import { CATEGORY_LIST } from "@/lib/gadgets/categories";
 import ProductsByCategoryTabs from "@/components/gadgets/ProductsByCategoryTabs";
 import FeaturedSwapCard from "@/components/gadgets/FeaturedSwapCard";
+import SpotlightAdRail from "@/components/ads/SpotlightAdRail";
+import {
+  getHomepageAnimatedBackground,
+  getSpotlightAdsHeader,
+  getSpotlightAdsTitle,
+} from "@/lib/settings";
 
 // Safety-net revalidation: even if revalidatePath("/") from the view
 // route is ever missed (e.g. multi-instance deploys, edge caching),
@@ -45,8 +52,13 @@ const HERO_CATEGORIES = [
 
 export default async function HomePage() {
   const session = await auth();
+  const [animatedBackground, spotlightHeader, spotlightTitle] = await Promise.all([
+    getHomepageAnimatedBackground(),
+    getSpotlightAdsHeader(),
+    getSpotlightAdsTitle(),
+  ]);
 
-const [recentPosts, banners, productsByCategoryArrays, topTags] = await Promise.all([
+const [recentPosts, banners, productsByCategoryArrays, topTags, spotlightAds] = await Promise.all([
   prisma.post.findMany({
     where: { published: true },
     take: 7,
@@ -88,6 +100,11 @@ const [recentPosts, banners, productsByCategoryArrays, topTags] = await Promise.
   orderBy: { products: { _count: "desc" } },
   take: 10,
 }),
+  (prisma as any).spotlightAd.findMany({
+    where: { active: true },
+    orderBy: { position: "asc" },
+    select: { id: true, title: true, mediaUrl: true, mediaType: true, link: true },
+  }),
 ]);
 
 const productsByCategory = Object.fromEntries(
@@ -95,7 +112,12 @@ const productsByCategory = Object.fromEntries(
 );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen">
+      {/* Login-style animated backdrop, behind all content (subtle).
+          Toggled from the dashboard → UI settings. */}
+      {animatedBackground && (
+        <AnimatedBackground className="fixed inset-0 -z-10 opacity-40" />
+      )}
       <Navbar />
       <PopupAd />
 
@@ -188,8 +210,8 @@ const productsByCategory = Object.fromEntries(
                       href="/blog"
                       className="
                         group inline-flex items-center gap-2 px-5 py-2.5
-                        rounded-none border-2 border-border-heavy bg-background
-                        text-xs font-extrabold uppercase tracking-wide text-foreground
+                        rounded-none border-2 border-border-heavy bg-accent-3
+                        text-xs font-extrabold uppercase tracking-wide text-on-accent-3
                         shadow-brutal-sm brutal-press
                       "
                     >
@@ -201,12 +223,14 @@ const productsByCategory = Object.fromEntries(
               )}
             </div>
 
-            {/* Right Sidebar - Poll (+ Social Sidebar right below it, mobile only) */}
+            {/* Right Sidebar - Poll (+ Social Sidebar beside it in a single row, mobile only) */}
             <div className="h-full pt-4 lg:pt-0">
               <div className="lg:sticky lg:top-24 lg:self-start">
-                <Poll />
-                <div className="lg:hidden mt-8">
-                  <SocialSidebar />
+                <div className="grid grid-cols-2 gap-4 items-start lg:block">
+                  <Poll />
+                  <div className="lg:hidden">
+                    <SocialSidebar />
+                  </div>
                 </div>
               </div>
             </div>
@@ -224,7 +248,7 @@ const productsByCategory = Object.fromEntries(
         */}
         <SectionDivider />
 <section className="max-w-[1600px] mx-auto px-6 w-full">
-  <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
+  <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12 lg:items-stretch">
     <div className="min-w-0">
       <FadeIn>
         <div className="mb-8 text-center lg:text-left pb-4 border-b-4 border-border-heavy">
@@ -248,8 +272,30 @@ const productsByCategory = Object.fromEntries(
         productsByCategory={productsByCategory}
         tags={topTags}
       />
+
+      {/* Spotlight ad — mobile/tablet only (desktop shows it in the right rail) */}
+      {spotlightAds.length > 0 && (
+        <div className="lg:hidden mt-8 h-[360px]">
+          <SpotlightAdRail
+            ads={spotlightAds}
+            header={spotlightHeader}
+            title={spotlightTitle}
+          />
+        </div>
+      )}
     </div>
-    <div className="hidden lg:block" />
+
+    {/* Right rail — auto-rotating sponsored ad, fills the vacant space and
+        matches the category component's height. Desktop only. */}
+    <div className="hidden lg:flex">
+      {spotlightAds.length > 0 && (
+        <SpotlightAdRail
+          ads={spotlightAds}
+          header={spotlightHeader}
+          title={spotlightTitle}
+        />
+      )}
+    </div>
   </div>
 </section>
 

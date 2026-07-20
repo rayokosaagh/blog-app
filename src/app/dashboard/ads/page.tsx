@@ -18,7 +18,9 @@ import {
   ExternalLink,
   Pencil,
   ArrowLeft,
+  MonitorPlay,
 } from "lucide-react";
+import { mediaTypeFromUrl } from "@/lib/mediaType";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,7 +180,7 @@ function SuccessToast({ message, onClose }: { message: string; onClose: () => vo
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdsPage() {
-  const [activeTab, setActiveTab] = useState<"inline" | "popup">("inline");
+  const [activeTab, setActiveTab] = useState<"inline" | "popup" | "spotlight">("inline");
 
   return (
     <div className="space-y-6">
@@ -227,9 +229,22 @@ export default function AdsPage() {
           <AppWindow className="h-4 w-4" />
           Popup ads
         </button>
+        <button
+          onClick={() => setActiveTab("spotlight")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            activeTab === "spotlight"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+          }`}
+        >
+          <MonitorPlay className="h-4 w-4" />
+          Spotlight ads
+        </button>
       </div>
 
-      {activeTab === "inline" ? <InlineAdsTab /> : <PopupAdsTab />}
+      {activeTab === "inline" && <InlineAdsTab />}
+      {activeTab === "popup" && <PopupAdsTab />}
+      {activeTab === "spotlight" && <SpotlightAdsTab />}
     </div>
   );
 }
@@ -1287,6 +1302,533 @@ function PopupAdsTab() {
         {adToDelete && (
           <DeleteModal
             title="Delete popup ad?"
+            itemName={adToDelete.title}
+            deleting={deleting}
+            onCancel={() => setAdToDelete(null)}
+            onConfirm={confirmDelete}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && <SuccessToast message={toast} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Spotlight Ads Tab ─────────────────────────────────────────────────────────
+
+interface SpotlightAd {
+  id: string;
+  title: string;
+  mediaUrl: string;
+  mediaType: string;
+  link: string;
+  active: boolean;
+  position: number;
+}
+
+function SpotlightAdsTab() {
+  const [ads, setAds] = useState<SpotlightAd[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<View>("list");
+  const [editingAd, setEditingAd] = useState<SpotlightAd | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+  const [adToDelete, setAdToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [form, setForm] = useState({ title: "", mediaUrl: "", link: "", active: true, position: 0 });
+
+  const [header, setHeader] = useState("");
+  const [cardTitle, setCardTitle] = useState("");
+  const [headerSaving, setHeaderSaving] = useState(false);
+
+  useEffect(() => {
+    loadAds();
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings/ui")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.spotlightAdsHeader != null) setHeader(d.spotlightAdsHeader);
+        if (d?.spotlightAdsTitle != null) setCardTitle(d.spotlightAdsTitle);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function saveHeaderSettings() {
+    setHeaderSaving(true);
+    try {
+      const res = await fetch("/api/settings/ui", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spotlightAdsHeader: header, spotlightAdsTitle: cardTitle }),
+      });
+      if (res.ok) {
+        setToast("Card header updated.");
+        setTimeout(() => setToast(null), 2500);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setHeaderSaving(false);
+    }
+  }
+
+  async function loadAds() {
+    try {
+      const res = await fetch("/api/spotlight-ads");
+      const data = await res.json();
+      setAds(Array.isArray(data) ? data : []);
+    } catch {
+      setAds([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredAds = useMemo(
+    () =>
+      ads.filter(
+        (ad) =>
+          ad.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ad.link.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [ads, searchTerm]
+  );
+
+  function openAdd() {
+    setEditingAd(null);
+    setForm({ title: "", mediaUrl: "", link: "", active: true, position: ads.length });
+    setError("");
+    setView("add");
+  }
+
+  function openEdit(ad: SpotlightAd) {
+    setEditingAd(ad);
+    setForm({ title: ad.title, mediaUrl: ad.mediaUrl, link: ad.link, active: ad.active, position: ad.position });
+    setError("");
+    setView("edit");
+  }
+
+  function goBack() {
+    setView("list");
+    setEditingAd(null);
+    setError("");
+  }
+
+  async function handleMediaUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Upload failed");
+        return;
+      }
+      setForm((prev) => ({ ...prev, mediaUrl: data.url }));
+    } catch {
+      setError("Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const url = editingAd ? `/api/spotlight-ads/${editingAd.id}` : "/api/spotlight-ads";
+      const method = editingAd ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Something went wrong");
+        return;
+      }
+      const action = editingAd ? "updated" : "added";
+      await loadAds();
+      setView("list");
+      setToast(`"${form.title}" was ${action}.`);
+      setTimeout(() => setToast(null), 2500);
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!adToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/spotlight-ads/${adToDelete.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setError("Failed to delete ad");
+        setAdToDelete(null);
+        return;
+      }
+      const title = adToDelete.title;
+      setAdToDelete(null);
+      await loadAds();
+      setToast(`"${title}" was deleted.`);
+      setTimeout(() => setToast(null), 2500);
+    } catch {
+      setError("Failed to delete ad");
+      setAdToDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function toggleActive(ad: SpotlightAd) {
+    setAds((prev) => prev.map((a) => (a.id === ad.id ? { ...a, active: !a.active } : a)));
+    try {
+      await fetch(`/api/spotlight-ads/${ad.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...ad, active: !ad.active }),
+      });
+    } catch {
+      setAds((prev) => prev.map((a) => (a.id === ad.id ? { ...a, active: ad.active } : a)));
+    }
+  }
+
+  const formIsVideo = !!form.mediaUrl && mediaTypeFromUrl(form.mediaUrl) === "video";
+
+  // Add / Edit form
+  if (view === "add" || view === "edit") {
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <button
+          onClick={goBack}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Spotlight ads
+        </button>
+
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+            <h2
+              className="text-sm font-bold text-zinc-900 dark:text-zinc-50"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {view === "edit" ? "Edit spotlight ad" : "New spotlight ad"}
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Rotates beside the gadgets section on the homepage. Supports image, GIF or video.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-5">
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="flex items-start gap-2.5 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm px-4 py-3 rounded-xl"
+                >
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className={labelClass}>Title</label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  placeholder="Summer gadget sale"
+                  className={inputClass}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Target link</label>
+                <input
+                  type="url"
+                  value={form.link}
+                  onChange={(e) => setForm({ ...form, link: e.target.value })}
+                  placeholder="https://example.com"
+                  className={inputClass}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Position</label>
+                <input
+                  type="number"
+                  value={form.position}
+                  onChange={(e) => setForm({ ...form, position: parseInt(e.target.value) || 0 })}
+                  className={inputClass}
+                  min={0}
+                />
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                  Lower numbers rotate first.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Media (image, GIF or video)</label>
+                {form.mediaUrl ? (
+                  <div className="relative w-full h-40 rounded-xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-700 bg-zinc-100 dark:bg-zinc-800">
+                    {formIsVideo ? (
+                      <video src={form.mediaUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={form.mediaUrl} alt="Preview" className="w-full h-full object-cover" />
+                    )}
+                    <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full backdrop-blur-md">
+                      {formIsVideo ? "Video" : "Image"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, mediaUrl: "" })}
+                      className="absolute top-2.5 right-2.5 bg-black/60 hover:bg-rose-600 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+                    {uploading ? (
+                      <Loader2 className="h-5 w-5 text-blue-500 animate-spin mb-1.5" />
+                    ) : (
+                      <ImagePlus className="h-5 w-5 text-zinc-400 mb-1.5" />
+                    )}
+                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                      {uploading ? "Uploading…" : "Click to upload media"}
+                    </p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                      Image/GIF up to 5MB · MP4/WebM up to 20MB
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/*,video/mp4,video/webm,video/ogg"
+                      onChange={handleMediaUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Active</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                    Shown in the homepage rotation when on.
+                  </p>
+                </div>
+                <Toggle checked={form.active} onChange={() => setForm({ ...form, active: !form.active })} />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving || uploading || !form.mediaUrl}
+                  className="inline-flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
+                >
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {saving ? "Saving…" : view === "edit" ? "Save changes" : "Add spotlight ad"}
+                </button>
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="px-5 py-2.5 rounded-xl text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // List view
+  return (
+    <div className="space-y-6">
+      {/* Card header settings — eyebrow label + title */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Eyebrow label</label>
+            <input
+              type="text"
+              value={header}
+              onChange={(e) => setHeader(e.target.value)}
+              placeholder="Handpicked for you"
+              maxLength={40}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Title</label>
+            <input
+              type="text"
+              value={cardTitle}
+              onChange={(e) => setCardTitle(e.target.value)}
+              placeholder="Deals worth a look"
+              maxLength={50}
+              className={inputClass}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            Shown at the top of the spotlight card on the homepage. Leave a field empty to hide it.
+          </p>
+          <button
+            onClick={saveHeaderSettings}
+            disabled={headerSaving}
+            className="inline-flex items-center justify-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 shrink-0"
+          >
+            {headerSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {headerSaving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          {filteredAds.length} of {ads.length} {ads.length === 1 ? "ad" : "ads"} · rotate beside the
+          gadgets section on the homepage
+        </p>
+        <button
+          onClick={openAdd}
+          className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors self-start sm:self-auto"
+        >
+          <Plus className="h-4 w-4" />
+          Add spotlight ad
+        </button>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+        <input
+          type="text"
+          placeholder="Search by title or link..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+        />
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <p className="text-sm text-zinc-500 dark:text-zinc-500">Loading spotlight ads…</p>
+        </div>
+      ) : filteredAds.length === 0 ? (
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-16 text-center">
+          <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+            <MonitorPlay className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No spotlight ads found</p>
+          <button
+            onClick={openAdd}
+            className="text-blue-500 hover:text-blue-600 text-sm font-semibold mt-2"
+          >
+            Add your first spotlight ad
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <AnimatePresence mode="popLayout">
+            {filteredAds.map((ad, i) => (
+              <motion.div
+                key={ad.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.03 }}
+                className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden"
+              >
+                <div className="relative h-36 bg-zinc-100 dark:bg-zinc-800">
+                  {ad.mediaType === "video" ? (
+                    <video src={ad.mediaUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={ad.mediaUrl} alt={ad.title} className="w-full h-full object-cover" />
+                  )}
+                  <div className="absolute top-3 left-3">
+                    <StatusPill active={ad.active} />
+                  </div>
+                  <div className="absolute top-3 right-3 bg-black/60 text-white text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full backdrop-blur-md">
+                    {ad.mediaType === "video" ? "Video" : "Image"} · #{ad.position}
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50 truncate">
+                    {ad.title}
+                  </h3>
+                  <p className="flex items-center gap-1 text-xs text-blue-500 dark:text-blue-400 mt-1 truncate">
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                    {ad.link}
+                  </p>
+
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-2.5">
+                      <Toggle checked={ad.active} onChange={() => toggleActive(ad)} />
+                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        {ad.active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openEdit(ad)}
+                        className="text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                        aria-label="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setAdToDelete({ id: ad.id, title: ad.title })}
+                        className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {adToDelete && (
+          <DeleteModal
+            title="Delete spotlight ad?"
             itemName={adToDelete.title}
             deleting={deleting}
             onCancel={() => setAdToDelete(null)}

@@ -15,6 +15,7 @@ import {
   BarChart3,
   Share2,
   Users,
+  Palette,
 } from "lucide-react";
 
 interface NavItem {
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Banners", href: "/dashboard/banners", icon: ImageIcon, adminOnly: true },
   { label: "Socials", href: "/dashboard/socials", icon: Share2, adminOnly: true },
   { label: "Users", href: "/dashboard/users", icon: Users, adminOnly: true },
+  { label: "UI", href: "/dashboard/ui", icon: Palette, adminOnly: true },
 ];
 
 export default function SidebarNav({ isAdmin }: { isAdmin: boolean }) {

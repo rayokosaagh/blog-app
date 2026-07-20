@@ -5,6 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Repeat } from "lucide-react";
 import Underline from "../ui/Underline";
 
+// One snappy, no-bounce slide reused for the title, the content panel and the
+// toggle icon so the whole swap moves as a single consistent step — fits the
+// hard-edged neo-brutalist system (quick, linear-ish, no spring).
+const SWAP_T = { duration: 0.16, ease: "easeOut" as const };
+
 interface SwapDeckProps {
   front: ReactNode;
   back: ReactNode;
@@ -37,10 +42,10 @@ export default function SwapDeck({
         <AnimatePresence mode="wait">
           <motion.h3
             key={title}
-            initial={{ opacity: 0, x: -8 }}
+            initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 8 }}
-            transition={{ duration: 0.15, ease: "linear" }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={SWAP_T}
             className="group inline-block text-base sm:text-lg font-extrabold uppercase tracking-wide text-foreground"
           >
             <Underline>{title}</Underline>
@@ -51,13 +56,13 @@ export default function SwapDeck({
           type="button"
           onClick={onToggle}
           aria-label={`Switch to ${showFront ? backLabel ?? "other" : frontLabel ?? "other"} view`}
-          className="flex items-center justify-center w-9 h-9 rounded-none bg-accent text-on-accent border-2 border-border-heavy shadow-brutal-sm brutal-press shrink-0"
+          className="flex items-center justify-center w-9 h-9 rounded-none bg-accent-2 text-on-accent-2 border-2 border-border-heavy shadow-brutal-sm brutal-press shrink-0"
         >
           <motion.span
             key={active}
             initial={{ rotate: 0 }}
             animate={{ rotate: 180 }}
-            transition={{ duration: 0.09, ease: "linear" }}
+            transition={SWAP_T}
             className="flex"
           >
             <Repeat className="w-4 h-4" />
@@ -77,10 +82,10 @@ export default function SwapDeck({
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={active}
-          initial={{ x: showFront ? -16 : 16 }}
-          animate={{ x: 0 }}
-          exit={{ x: showFront ? 16 : -16 }}
-          transition={{ duration: 0.12, ease: "linear" }}
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -12 }}
+          transition={SWAP_T}
         >
           {activeContent}
         </motion.div>

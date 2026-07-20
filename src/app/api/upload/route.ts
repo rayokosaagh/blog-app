@@ -17,15 +17,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (!validTypes.includes(file.type)) {
+    // Validate file type — images/gifs plus video for spotlight ads.
+    const imageTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const videoTypes = ["video/mp4", "video/webm", "video/ogg"];
+    const isVideo = videoTypes.includes(file.type);
+    if (!imageTypes.includes(file.type) && !isVideo) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+    // Validate file size (images max 5MB, videos max 20MB).
+    const maxSize = isVideo ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: `File too large (max ${isVideo ? 20 : 5}MB)` },
+        { status: 400 }
+      );
     }
 
     const bytes = await file.arrayBuffer();

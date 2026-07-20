@@ -216,3 +216,16 @@ div[data-youtube-video] iframe {
 .dark .tag-icon-svg svg [stroke]:not([stroke="none"]) {
   stroke: currentColor !important;
 }
+
+/* Login backdrop — a single keyframe drives every flying shape. Start/end
+   transforms come from per-shape CSS variables, and a negative animation-delay
+   makes each shape appear already mid-flight on load (no empty gap after a
+   refresh, and no slow ramp-in at the start). */
+@keyframes shape-travel {
+  from {
+    transform: translate(var(--sx0), var(--sy0)) rotate(var(--sr0));
+  }
+  to {
+    transform: translate(var(--sx1), var(--sy1)) rotate(var(--sr1));
+  }
+}

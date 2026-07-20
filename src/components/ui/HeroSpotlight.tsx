@@ -141,7 +141,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
           href={b.link}
           target="_blank"
           rel="noopener noreferrer"
-          className="group mt-6 inline-flex w-fit items-center gap-2 rounded-none border-2 border-border-heavy bg-accent px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-on-accent shadow-brutal-sm brutal-press transition-colors duration-300 group-hover/card:bg-black group-hover/card:text-white"
+          className="group mt-6 inline-flex w-fit items-center gap-2 rounded-none border-2 border-border-heavy bg-accent-2 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-on-accent-2 shadow-brutal-sm brutal-press transition-colors duration-300 group-hover/card:bg-black group-hover/card:text-white"
         >
           {b.cta?.trim() || "Read more"}
           <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -162,7 +162,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
                   style={{ width: i === current ? "24px" : "10px" }}
                   className={`h-2.5 rounded-[2px] border-2 border-border-heavy transition-all ${
                     i === current
-                      ? "bg-accent group-hover/card:bg-black"
+                      ? "bg-accent-2 group-hover/card:bg-black"
                       : "bg-background group-hover/card:bg-black/20"
                   }`}
                 />

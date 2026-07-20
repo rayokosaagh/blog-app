@@ -13,20 +13,39 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const posts = await prisma.post.findMany({
-      where: {
-        title: { contains: query, mode: 'insensitive' },
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        featuredImage: true,
-      },
-      take,
-    });
+    const [posts, products] = await Promise.all([
+      prisma.post.findMany({
+        where: {
+          title: { contains: query, mode: 'insensitive' },
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          featuredImage: true,
+        },
+        take,
+      }),
+      prisma.product.findMany({
+        where: {
+          published: true,
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { brand: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          brand: true,
+          image: true,
+        },
+        take,
+      }),
+    ]);
 
-    return NextResponse.json({ results: posts });
+    return NextResponse.json({ results: posts, products });
   } catch (error) {
     console.error('Search API error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

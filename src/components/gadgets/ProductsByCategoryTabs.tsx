@@ -54,7 +54,7 @@ export default function ProductsByCategoryTabs({
   return (
     <motion.div
       layout
-      className="mb-8 bg-card border-2 border-border-heavy shadow-brutal rounded-none p-5"
+      className="bg-card border-2 border-border-heavy shadow-brutal rounded-none p-5"
     >
       <SwapDeck
         active={view}
@@ -148,7 +148,7 @@ export default function ProductsByCategoryTabs({
               <div className="flex justify-center mt-4">
                 <Link
                   href={`/products?category=${active}`}
-                  className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-background text-xs font-extrabold uppercase tracking-wide text-foreground shadow-brutal-sm brutal-press"
+                  className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-accent-3 text-xs font-extrabold uppercase tracking-wide text-on-accent-3 shadow-brutal-sm brutal-press"
                 >
                   View more products
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />

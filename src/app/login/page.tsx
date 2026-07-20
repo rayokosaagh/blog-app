@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
 
 function GoogleIcon() {
   return (
@@ -57,16 +58,6 @@ function EyeIcon({ off }: { off: boolean }) {
   );
 }
 
-function Spinner({ dark }: { dark?: boolean }) {
-  return (
-    <motion.span
-      className={`h-4 w-4 border-2 ${dark ? "border-foreground/25 border-t-foreground" : "border-on-accent/30 border-t-on-accent"}`}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 0.6, repeat: Infinity, ease: "linear" }}
-    />
-  );
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const prefersReducedMotion = useReducedMotion();
@@ -108,19 +99,8 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 overflow-hidden">
-      {/* flat geometric backdrop — hard edges, no blur, no gradient */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          opacity: 0.5,
-        }}
-      />
-      <div aria-hidden className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 bg-accent-2 border-4 border-border-heavy rotate-12" />
-      <div aria-hidden className="pointer-events-none absolute -right-20 bottom-10 h-40 w-40 bg-accent border-4 border-border-heavy -rotate-6" />
+      {/* Shared neo-brutalist animated backdrop (grid + flying shapes) */}
+      <AnimatedBackground className="absolute inset-0 z-0" />
 
       <motion.div
         initial={prefersReducedMotion ? undefined : { opacity: 0, y: 16 }}
