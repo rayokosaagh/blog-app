@@ -13,7 +13,7 @@ export const FILTERABLE_SPECS = [
   // Laptops (their spec keys differ from phones)
   { key: "laptopType", label: "Type" },
   { key: "processorModel", label: "Processor" },
-  { key: "graphicsType", label: "Graphics" },
+  { key: "gpuModel", label: "Graphics" },
   { key: "installedRam", label: "RAM" },
   { key: "primarySsd", label: "Storage" },
   { key: "panelType", label: "Panel" },
@@ -24,6 +24,12 @@ export const FILTERABLE_SPECS = [
   { key: "storage", label: "Storage" },
   { key: "displayType", label: "Display" },
   { key: "os", label: "OS" },
+  // Earbuds
+  { key: "driver", label: "Driver" },
+  { key: "codecs", label: "Codecs" },
+  { key: "noiseCancellation", label: "Noise Cancellation" },
+  { key: "ipRating", label: "IP Rating" },
+  { key: "fit", label: "Fit" },
   // Shared across categories
   { key: "screenSize", label: "Screen" },
   { key: "refreshRate", label: "Refresh" },

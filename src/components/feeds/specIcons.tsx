@@ -46,6 +46,19 @@ import {
   Nfc,
   Gauge,
   List,
+  Speaker,
+  AudioLines,
+  AudioWaveform,
+  Mic,
+  Ear,
+  EarOff,
+  Play,
+  PhoneCall,
+  Link2,
+  Watch,
+  CircleDot,
+  Shield,
+  Clock,
 } from "lucide-react";
 
 export interface SpecAccent {
@@ -142,6 +155,30 @@ const RULES: { keywords: string[]; icon: IconComponent; accent: SpecAccent }[] =
 
   { keywords: ["keyboard", "trackpad"], icon: Keyboard, accent: { bar: "bg-yellow-500", icon: "text-yellow-600 dark:text-yellow-400" } },
 
+  // --- Earbuds / audio hardware ---------------------------------------
+  // Placed before the generic "size"/"type"/"audio" rules so specific
+  // earbud fields (Driver, Fit, Ear Tip Sizes…) win over them.
+  { keywords: ["driver"], icon: Speaker, accent: { bar: "bg-orange-500", icon: "text-orange-600 dark:text-orange-400" } },
+  { keywords: ["codec"], icon: AudioLines, accent: { bar: "bg-amber-500", icon: "text-amber-600 dark:text-amber-400" } },
+  { keywords: ["frequency response", "frequency"], icon: AudioWaveform, accent: { bar: "bg-orange-500", icon: "text-orange-600 dark:text-orange-400" } },
+  { keywords: ["microphone", "mic"], icon: Mic, accent: { bar: "bg-rose-500", icon: "text-rose-600 dark:text-rose-400" } },
+  { keywords: ["noise cancellation", "noise cancel", "anc"], icon: EarOff, accent: { bar: "bg-purple-500", icon: "text-purple-600 dark:text-purple-400" } },
+  { keywords: ["fitness", "tracking", "health"], icon: Activity, accent: { bar: "bg-green-500", icon: "text-green-600 dark:text-green-400" } },
+  { keywords: ["ear tip", "fit"], icon: Ear, accent: { bar: "bg-fuchsia-500", icon: "text-fuchsia-600 dark:text-fuchsia-400" } },
+  { keywords: ["ip rating", "ingress", "dust"], icon: Droplets, accent: { bar: "bg-cyan-500", icon: "text-cyan-600 dark:text-cyan-400" } },
+  { keywords: ["playback", "music play"], icon: Play, accent: { bar: "bg-orange-500", icon: "text-orange-600 dark:text-orange-400" } },
+  { keywords: ["talk time", "call time"], icon: PhoneCall, accent: { bar: "bg-emerald-500", icon: "text-emerald-600 dark:text-emerald-400" } },
+  { keywords: ["pairing", "multi-pair"], icon: Link2, accent: { bar: "bg-blue-500", icon: "text-blue-600 dark:text-blue-400" } },
+  { keywords: ["companion app", "companion"], icon: Smartphone, accent: { bar: "bg-sky-500", icon: "text-sky-600 dark:text-sky-400" } },
+
+  // --- Smartwatch / wearable body -------------------------------------
+  { keywords: ["strap", "band"], icon: Watch, accent: { bar: "bg-slate-500", icon: "text-slate-600 dark:text-slate-400" } },
+  { keywords: ["case"], icon: CircleDot, accent: { bar: "bg-slate-500", icon: "text-slate-600 dark:text-slate-400" } },
+  { keywords: ["durability", "durable"], icon: Shield, accent: { bar: "bg-gray-500", icon: "text-gray-600 dark:text-gray-400" } },
+  { keywords: ["usage time", "runtime", "standby"], icon: Clock, accent: { bar: "bg-orange-500", icon: "text-orange-600 dark:text-orange-400" } },
+  { keywords: ["wlan"], icon: Wifi, accent: { bar: "bg-emerald-500", icon: "text-emerald-600 dark:text-emerald-400" } },
+  { keywords: ["compatib", "compab"], icon: Smartphone, accent: { bar: "bg-sky-500", icon: "text-sky-600 dark:text-sky-400" } },
+
   { keywords: ["security", "fingerprint"], icon: Fingerprint, accent: { bar: "bg-red-500", icon: "text-red-600 dark:text-red-400" } },
   { keywords: ["face unlock", "face recognition", "face id"], icon: ScanFace, accent: { bar: "bg-rose-500", icon: "text-rose-600 dark:text-rose-400" } },
 
@@ -166,7 +203,7 @@ const RULES: { keywords: string[]; icon: IconComponent; accent: SpecAccent }[] =
   { keywords: ["price"], icon: Tag, accent: { bar: "bg-green-500", icon: "text-green-600 dark:text-green-400" } },
   { keywords: ["audio", "speaker", "sound"], icon: Volume2, accent: { bar: "bg-orange-500", icon: "text-orange-600 dark:text-orange-400" } },
   { keywords: ["water", "resistance", "ip6", "ip5"], icon: Droplets, accent: { bar: "bg-cyan-500", icon: "text-cyan-600 dark:text-cyan-400" } },
-  { keywords: ["signal", "sim"], icon: Signal, accent: { bar: "bg-lime-500", icon: "text-lime-600 dark:text-lime-400" } },
+  { keywords: ["signal", "sim", "esim", "e-sim"], icon: Signal, accent: { bar: "bg-lime-500", icon: "text-lime-600 dark:text-lime-400" } },
 
   { keywords: ["features"], icon: Sparkles, accent: { bar: "bg-amber-500", icon: "text-amber-600 dark:text-amber-400" } },
   { keywords: ["type"], icon: Tag, accent: { bar: "bg-gray-500", icon: "text-gray-600 dark:text-gray-400" } },

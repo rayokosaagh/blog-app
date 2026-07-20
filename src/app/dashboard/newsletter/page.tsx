@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Mail, Search, ChevronDown, CheckCircle2, Trash, X } from "lucide-react";
+import { Mail, Search, ChevronDown, CheckCircle2, X } from "lucide-react";
+import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 
 type Status = "CONFIRMED" | "PENDING";
 
@@ -289,49 +290,31 @@ export default function NewsletterPage() {
       </div>
 
       {/* Delete Modal */}
-      {showDeleteModal && subscriberToDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-            <div className="p-10">
-              <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Trash className="h-7 w-7 text-red-600 dark:text-red-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">
-                Remove subscriber?
-              </h2>
-              <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">
-                Are you sure you want to remove{" "}
-                <strong className="text-zinc-700 dark:text-zinc-300">{subscriberToDelete.email}</strong>?
-              </p>
-              {error && (
-                <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl mt-4 text-sm text-center">
-                  {error}
-                </div>
-              )}
-            </div>
-            <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSubscriberToDelete(null);
-                  setError("");
-                }}
-                disabled={deleting}
-                className="flex-1 py-5 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all rounded-bl-3xl disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={deleting}
-                className="flex-1 py-5 bg-red-600 text-white font-semibold hover:bg-red-700 active:scale-95 transition-all rounded-br-3xl disabled:opacity-70"
-              >
-                {deleting ? "Removing..." : "Remove"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={showDeleteModal && !!subscriberToDelete}
+        title="Remove subscriber?"
+        message={
+          error ? (
+            <span className="text-rose-600 dark:text-rose-400">{error}</span>
+          ) : (
+            <>
+              Are you sure you want to remove{" "}
+              <strong className="text-zinc-700 dark:text-zinc-300">
+                {subscriberToDelete?.email}
+              </strong>
+              ?
+            </>
+          )
+        }
+        confirmLabel="Remove"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSubscriberToDelete(null);
+          setError("");
+        }}
+      />
     </div>
   );
 }

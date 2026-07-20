@@ -28,7 +28,6 @@ export const earbuds: GadgetCategoryDef = {
         { key: "ipRating", label: "IP Rating", type: "multiline" },
         { key: "fit", label: "Fit", type: "text" },
         { key: "earTipSizes", label: "Ear Tip Sizes", type: "text" },
-        { key: "colors", label: "Colors", type: "text" },
       ],
     },
     {

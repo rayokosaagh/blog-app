@@ -2,10 +2,16 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getCategoryDef } from "@/lib/gadgets/categories";
+import { parseColors } from "@/lib/gadgets/colors";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/BackToTop";
 import ProductHero from "@/components/gadgets/product/ProductHero";
+import type {
+  HeroIconKey,
+  HeroMetaItem,
+  HeroQuickSpec,
+} from "@/components/gadgets/product/ProductHero";
 import OwnershipWidget from "@/components/gadgets/product/OwnershipWidget";
 import ProductSpecNav from "@/components/gadgets/product/ProductSpecNav";
 import ProductSpecTable from "@/components/gadgets/product/ProductSpecTable";
@@ -67,52 +73,86 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return typeof v === "string" && v.trim() !== "" ? v : null;
   }
 
-  const launchDate = specStr("launchDate");
-  const dimensions = specStr("dimensions");
-  const weightGm = specStr("weightGm");
-  const storage = specStr("storage");
-  const os = specStr("os");
-  const colors = specStr("colors");
-  const screenSize = specStr("screenSize");
-  const resolution = specStr("resolution");
-  const ram = specStr("ram");
-  const chipset = specStr("chipset");
-  const batteryMah = specStr("batteryMah");
-  const charging = specStr("charging");
+  // Small builders that drop empty values, so a category only shows the meta
+  // bullets / quick-specs it actually has.
+  const item = (icon: HeroIconKey, text: string | null): HeroMetaItem | null =>
+    text && text.trim() ? { icon, text } : null;
+  const quick = (icon: HeroIconKey, key: string, label: string): HeroQuickSpec | null => {
+    const v = specStr(key);
+    return v ? { icon, value: v, label } : null;
+  };
+  const dims = (...keys: string[]) =>
+    keys.map((k) => specStr(k)).filter(Boolean).join(", ") || null;
 
-  const meta = [
-    launchDate ? { icon: "calendar" as const, text: `Released ${launchDate}` } : null,
-    dimensions || weightGm
-      ? {
-          icon: "smartphone" as const,
-          text: [dimensions, weightGm].filter(Boolean).join(", "),
-        }
-      : null,
-    storage ? { icon: "hardDrive" as const, text: `${storage} storage` } : null,
-    os ? { icon: "layers" as const, text: os } : null,
-    colors ? { icon: "palette" as const, text: colors } : null,
-  ].filter(
-    (m): m is { icon: "calendar" | "smartphone" | "hardDrive" | "layers" | "palette"; text: string } =>
-      m !== null
-  );
+  // Each category stores its specs under different keys, so the hero's icon
+  // bullets and quick-spec strip are built per category (earbuds/watches don't
+  // have "ram"/"chipset" etc., which is why they previously showed no icons).
+  let metaRaw: (HeroMetaItem | null)[];
+  let quickRaw: (HeroQuickSpec | null)[];
 
-  const quickSpecs = [
-    screenSize
-      ? { icon: "monitor" as const, value: screenSize, label: resolution ?? "Display" }
-      : null,
-    ram ? { icon: "memoryStick" as const, value: ram, label: "RAM" } : null,
-    chipset ? { icon: "cpu" as const, value: chipset, label: "Chipset" } : null,
-    batteryMah
-      ? {
-          icon: "batteryCharging" as const,
-          value: batteryMah,
-          label: charging ?? "Battery",
-        }
-      : null,
-  ].filter(
-    (q): q is { icon: "monitor" | "cpu" | "memoryStick" | "batteryCharging"; value: string; label: string } =>
-      q !== null
-  );
+  switch (product.category.slug) {
+    case "laptops":
+      metaRaw = [
+        item("calendar", specStr("announcedDate") && `Released ${specStr("announcedDate")}`),
+        item("smartphone", dims("dimensions", "weight")),
+        item("hardDrive", specStr("primarySsd") && `${specStr("primarySsd")} SSD`),
+        item("layers", specStr("operatingSystem")),
+      ];
+      quickRaw = [
+        quick("monitor", "screenSize", specStr("resolution") ?? "Display"),
+        quick("memoryStick", "installedRam", "RAM"),
+        quick("cpu", "processorModel", "Processor"),
+        quick("images", "gpuModel", "Graphics"),
+      ];
+      break;
+
+    case "earbuds":
+      metaRaw = [
+        item("calendar", specStr("launchDate") && `Released ${specStr("launchDate")}`),
+        item("smartphone", dims("dimensions", "weightGm")),
+        item("droplet", specStr("ipRating") && `${specStr("ipRating")} rated`),
+        item("ear", specStr("fit") && `${specStr("fit")} fit`),
+      ];
+      quickRaw = [
+        quick("volume", "driver", "Driver"),
+        quick("music", "codecs", "Codecs"),
+        quick("shield", "noiseCancellation", "ANC"),
+        quick("batteryCharging", "musciPlayback", "Playback"),
+      ];
+      break;
+
+    case "smartwatch":
+      metaRaw = [
+        item("calendar", specStr("launchDate") && `Released ${specStr("launchDate")}`),
+        item("smartphone", dims("dimensions", "weight")),
+        item("layers", specStr("os")),
+        item("shield", specStr("durability")),
+      ];
+      quickRaw = [
+        quick("monitor", "screenSize", specStr("resolution") ?? "Display"),
+        quick("cpu", "chipset", "Chipset"),
+        quick("activity", "fitnessTracking", "Fitness"),
+        quick("batteryCharging", "batteryMah", "Battery"),
+      ];
+      break;
+
+    default: // mobiles
+      metaRaw = [
+        item("calendar", specStr("launchDate") && `Released ${specStr("launchDate")}`),
+        item("smartphone", dims("dimensions", "weightGm")),
+        item("hardDrive", specStr("storage") && `${specStr("storage")} storage`),
+        item("layers", specStr("os")),
+      ];
+      quickRaw = [
+        quick("monitor", "screenSize", specStr("resolution") ?? "Display"),
+        quick("memoryStick", "ram", "RAM"),
+        quick("cpu", "chipset", "Chipset"),
+        quick("batteryCharging", "batteryMah", specStr("charging") ?? "Battery"),
+      ];
+  }
+
+  const meta = metaRaw.filter((m): m is HeroMetaItem => m !== null);
+  const quickSpecs = quickRaw.filter((q): q is HeroQuickSpec => q !== null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,6 +162,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <ProductHero
           product={product}
           categoryName={product.category.name}
+          colors={parseColors(product.colors)}
           meta={meta}
           quickSpecs={quickSpecs}
         />

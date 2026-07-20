@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Newspaper } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PopupAd from "@/components/ads/PopupAd";
@@ -134,14 +134,15 @@ const productsByCategory = Object.fromEntries(
                 <HeroSpotlight banners={banners} />
               </FadeIn>
 
-              {/* Secondary stories */}
-              <div className="mt-10 mb-4 flex items-center justify-between gap-4 border-b-2 border-border-heavy pb-2">
-                <h3 className="text-sm font-extrabold uppercase tracking-wide text-foreground">
+              {/* Secondary stories header — pink accent card */}
+              <div className="mt-10 mb-4 flex items-center justify-between gap-4 rounded-none border-2 border-border-heavy bg-accent-3 text-on-accent-3 shadow-brutal-sm px-4 py-2.5">
+                <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide">
+                  <Newspaper className="h-4 w-4" />
                   More top stories
                 </h3>
                 <Link
                   href="/blog"
-                  className="group inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-muted-foreground transition-colors hover:text-accent"
+                  className="group inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide transition-opacity hover:opacity-80"
                 >
                   All stories
                   <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -223,10 +224,10 @@ const productsByCategory = Object.fromEntries(
               )}
             </div>
 
-            {/* Right Sidebar - Poll (+ Social Sidebar beside it in a single row, mobile only) */}
+            {/* Right Sidebar - Poll (+ Social Sidebar stacked below it, mobile only) */}
             <div className="h-full pt-4 lg:pt-0">
               <div className="lg:sticky lg:top-24 lg:self-start">
-                <div className="grid grid-cols-2 gap-4 items-start lg:block">
+                <div className="flex flex-col gap-6 lg:block">
                   <Poll />
                   <div className="lg:hidden">
                     <SocialSidebar />

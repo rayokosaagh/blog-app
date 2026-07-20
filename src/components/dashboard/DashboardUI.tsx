@@ -2,7 +2,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trash2, CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
+import ConfirmDialog from "./ConfirmDialog";
 
 export const inputClass =
   "w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all disabled:opacity-60";
@@ -49,6 +50,11 @@ export function StatusPill({
   );
 }
 
+/**
+ * Back-compat wrapper — existing callers mount this conditionally with the old
+ * props. It now delegates to the shared {@link ConfirmDialog} so every delete
+ * prompt in the dashboard shares one implementation and look.
+ */
 export function DeleteModal({
   title,
   itemName,
@@ -63,56 +69,14 @@ export function DeleteModal({
   onConfirm: () => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={() => !deleting && onCancel()}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 8, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 8, scale: 0.97 }}
-        transition={{ duration: 0.15 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 max-w-sm w-full overflow-hidden"
-      >
-        <div className="h-1 bg-rose-500" />
-        <div className="p-6">
-          <div className="w-11 h-11 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-4">
-            <Trash2 className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-          </div>
-          <h2
-            className="text-base font-bold text-zinc-900 dark:text-zinc-50"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {title}
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-            This will permanently remove{" "}
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">{itemName}</span>. This
-            action can't be undone.
-          </p>
-        </div>
-        <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
-          <button
-            onClick={onCancel}
-            disabled={deleting}
-            className="flex-1 py-3.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-60"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={deleting}
-            className="flex-1 py-3.5 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors disabled:opacity-60"
-          >
-            {deleting ? "Deleting…" : "Delete"}
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+    <ConfirmDialog
+      open
+      title={title}
+      itemName={itemName}
+      loading={deleting}
+      onConfirm={onConfirm}
+      onClose={onCancel}
+    />
   );
 }
 

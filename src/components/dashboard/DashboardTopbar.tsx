@@ -1,9 +1,10 @@
 // components/dashboard/DashboardTopbar.tsx
 "use client";
 
+import Link from "next/link";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import SignOutButton from "@/components/layout/SignOutButton";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Home } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const TITLES: Record<string, string> = {
@@ -49,6 +50,14 @@ export default function DashboardTopbar({
         </h2>
       </div>
       <div className="flex items-center gap-3 shrink-0">
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+        >
+          <Home className="h-4 w-4" />
+          <span className="hidden sm:inline">Home</span>
+        </Link>
+        <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
         <ThemeToggle />
         <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
         <span className="text-sm text-zinc-500 dark:text-zinc-400 hidden sm:inline">

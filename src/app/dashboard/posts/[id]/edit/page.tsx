@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-import { ArrowLeft, FileEdit, ImageIcon, X } from "lucide-react";
+import { FileEdit, ImageIcon, X } from "lucide-react";
 import TagPicker from "@/components/blog/TagPicker";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
+import BackLink from "@/components/dashboard/BackLink";
+import StickyFormActions from "@/components/dashboard/StickyFormActions";
 
 
 
@@ -139,13 +140,7 @@ export default function EditPostPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/dashboard/posts"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Posts
-      </Link>
+      <BackLink href="/dashboard/posts" label="Posts" />
 
       {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
@@ -173,7 +168,7 @@ export default function EditPostPage({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 pb-20">
           {/* Title */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
@@ -277,24 +272,13 @@ export default function EditPostPage({
             <Editor content={content} onChange={setContent} />
           </div>
 
-          {/* Floating sticky actions — just the buttons, no full-width card.
-              The wrapper is click-through so only the buttons capture clicks. */}
-          <div className="pointer-events-none sticky bottom-4 z-20 mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="pointer-events-auto rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/90 backdrop-blur px-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 shadow-md transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || uploading}
-              className="pointer-events-auto rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Save changes"}
-            </button>
-          </div>
+          {/* Sticky action bar */}
+          <StickyFormActions
+            saving={loading}
+            disabled={uploading}
+            submitLabel="Save changes"
+            onCancel={() => router.back()}
+          />
         </form>
       </div>
     </div>

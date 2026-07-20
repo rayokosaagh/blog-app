@@ -2,11 +2,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star, Tag, Share2 } from "lucide-react";
+import { Star, MessageSquareText, Tag, Package, Share2 } from "lucide-react";
 
 interface ContentExtrasPanelProps {
   avgRating: number;
-  totalTags: number;
+  totalRatings: number;
+  blogTags: number;
+  productTags: number;
   activeSocials: number;
 }
 
@@ -20,12 +22,28 @@ const ITEMS = (props: ContentExtrasPanelProps) => [
     bg: "bg-amber-50 dark:bg-amber-500/10",
   },
   {
-    label: "Total tags",
-    value: props.totalTags.toLocaleString(),
+    label: "Total ratings",
+    value: props.totalRatings.toLocaleString(),
+    suffix: "",
+    icon: MessageSquareText,
+    color: "text-rose-500",
+    bg: "bg-rose-50 dark:bg-rose-500/10",
+  },
+  {
+    label: "Blog tags",
+    value: props.blogTags.toLocaleString(),
     suffix: "",
     icon: Tag,
     color: "text-blue-500",
     bg: "bg-blue-50 dark:bg-blue-500/10",
+  },
+  {
+    label: "Product tags",
+    value: props.productTags.toLocaleString(),
+    suffix: "",
+    icon: Package,
+    color: "text-cyan-500",
+    bg: "bg-cyan-50 dark:bg-cyan-500/10",
   },
   {
     label: "Active social links",
@@ -56,7 +74,7 @@ export default function ContentExtrasPanel(props: ContentExtrasPanelProps) {
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100 dark:divide-zinc-800">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100 dark:divide-zinc-800">
         {items.map((item) => {
           const Icon = item.icon;
           return (

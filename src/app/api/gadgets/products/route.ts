@@ -2,6 +2,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCategoryDef } from "@/lib/gadgets/categories";
+import { parseColors } from "@/lib/gadgets/colors";
 import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (!category) {
     // no category filter = return everything, used by the admin list page
     const products = await prisma.product.findMany({
-      include: { category: true },
+      include: { category: true, tags: true },
       orderBy: { createdAt: "desc" },
     });
     return Response.json({ products });
@@ -31,11 +32,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { slug, name, brand, image, images, priceFrom, category, specs, published, tagIds } = body;
+  const { slug, name, brand, image, images, colors, priceFrom, category, specs, published, tagIds } = body;
 
   const gallery = Array.isArray(images)
     ? images.filter((u): u is string => typeof u === "string" && u.trim() !== "")
     : [];
+  const colorVariants = parseColors(colors);
 
   if (!slug || !name || !brand || !category) {
     return Response.json({ error: "slug, name, brand, category are required" }, { status: 400 });
@@ -62,6 +64,7 @@ export async function POST(req: NextRequest) {
         brand,
         image: image || null,
         images: gallery,
+        colors: colorVariants,
         priceFrom: priceFrom ? Number(priceFrom) : null,
         published: published ?? true,
         categoryId: categoryRow.id,

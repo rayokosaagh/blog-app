@@ -241,6 +241,8 @@ model Product {
   brand      String                    // "Apple"
   image      String?                   // primary product photo URL (thumbnail / hero)
   images     String[]      @default([]) // gallery photos (carousel on the product page)
+  colors     Json          @default("[]") // color variants: [{ name, hex, image }] — swatches
+                                        // on the product page; hovering previews the color's photo.
   priceFrom  Float?                    // starting price, shown under image on compare page
   currency   String         @default("NPR")
   published  Boolean        @default(true)

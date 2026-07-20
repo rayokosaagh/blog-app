@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface DeleteButtonProps {
+  /** DELETE is sent here, e.g. `/api/posts/abc123`. */
   endpoint: string;
+  /** Name shown in the confirm prompt (e.g. the post title). */
   itemLabel?: string;
+  /** Noun used in the title, e.g. "Post". */
   itemType?: string;
   onDeleted?: () => void;
 }
@@ -13,18 +17,19 @@ interface DeleteButtonProps {
 export default function DeleteButton({
   endpoint,
   itemLabel,
-  itemType = "Item",
+  itemType = "item",
   onDeleted,
 }: DeleteButtonProps) {
   const router = useRouter();
-  const [showModal, setShowModal] = useState(false);
+  const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleDelete() {
     setDeleting(true);
+    setError("");
     try {
       const res = await fetch(endpoint, { method: "DELETE" });
-
       if (!res.ok) {
         let message = "Failed to delete";
         try {
@@ -33,15 +38,14 @@ export default function DeleteButton({
         } catch {
           message = `${message} (${res.status} ${res.statusText})`;
         }
-        alert(message);
+        setError(message);
         return;
       }
-
-      setShowModal(false);
+      setOpen(false);
       onDeleted?.();
       router.refresh();
-    } catch (error) {
-      alert("Something went wrong");
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setDeleting(false);
     }
@@ -50,53 +54,37 @@ export default function DeleteButton({
   return (
     <>
       <button
-        onClick={() => setShowModal(true)}
-        className="text-sm text-red-600 hover:underline"
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-sm font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors"
       >
         Delete
       </button>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md mx-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🗑️</span>
-            </div>
-
-            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-              Delete {itemType}
-            </h2>
-            <p className="text-gray-500 text-center mb-2">
-              Are you sure you want to delete
-            </p>
-            {itemLabel && (
-              <p className="text-gray-900 font-medium text-center mb-6">
-                "{itemLabel}"
-              </p>
-            )}
-            <p className="text-red-500 text-sm text-center mb-6">
-              This action cannot be undone.
-            </p>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={deleting}
-                className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
-              >
-                {deleting ? "Deleting..." : "Yes, Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={open}
+        title={`Delete ${itemType}`}
+        message={
+          error ? (
+            <span className="text-rose-600 dark:text-rose-400">{error}</span>
+          ) : itemLabel ? (
+            <>
+              This will permanently remove{" "}
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                {itemLabel}
+              </span>
+              . This action can&apos;t be undone.
+            </>
+          ) : undefined
+        }
+        itemName={itemLabel}
+        loading={deleting}
+        onConfirm={handleDelete}
+        onClose={() => {
+          setOpen(false);
+          setError("");
+        }}
+      />
     </>
   );
 }

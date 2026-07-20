@@ -17,9 +17,17 @@ import {
   MessageSquare,
   Repeat2,
   Images,
+  Volume2,
+  Music,
+  ShieldCheck,
+  Droplets,
+  Ear,
+  Activity,
 } from "lucide-react";
 import TagIcon from "@/components/blog/TagIcon";
 import ProductGallery from "./ProductGallery";
+import ProductColors from "./ProductColors";
+import type { ProductColor } from "@/lib/gadgets/colors";
 
 // Icons must be resolved *inside* this client component — a Server Component
 // (page.tsx) cannot pass a component reference (a function) as a prop, only
@@ -40,6 +48,12 @@ const ICONS = {
   messageSquare: MessageSquare,
   repeat: Repeat2,
   images: Images,
+  volume: Volume2,
+  music: Music,
+  shield: ShieldCheck,
+  droplet: Droplets,
+  ear: Ear,
+  activity: Activity,
 } as const satisfies Record<string, LucideIcon>;
 
 export type HeroIconKey = keyof typeof ICONS;
@@ -79,6 +93,8 @@ interface ProductHeroProps {
     tags: { id: string; name: string; slug: string; icon: string }[];
   };
   categoryName: string;
+  /** Color variants — swatches with hover image preview. */
+  colors?: ProductColor[];
   /** Bullet list under the brand — release date, storage, OS, colors, dimensions, etc. */
   meta?: HeroMetaItem[];
   /** Extra highlight blocks (e.g. views/fans once you track them). Price is added automatically. */
@@ -93,6 +109,7 @@ interface ProductHeroProps {
 export default function ProductHero({
   product,
   categoryName,
+  colors = [],
   meta = [],
   stats = [],
   quickSpecs = [],
@@ -188,6 +205,8 @@ export default function ProductHero({
                 ))}
               </div>
             )}
+
+            <ProductColors colors={colors} />
           </div>
 
           {/* Stat blocks — price (always, if set) + any passed-in stats (views/fans, etc.) */}

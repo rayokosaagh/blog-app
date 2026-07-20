@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LayoutGrid, X } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import BackToTop from "@/components/ui/BackToTop";
 import PageHeader from "@/components/layout/PageHeader";
 import TagIcon from "@/components/blog/TagIcon";
 import ProductGrid from "@/components/gadgets/ProductGrid";
@@ -137,7 +138,7 @@ export default async function ProductListing({
         </div>
 
         <div className="flex flex-col items-start gap-8 lg:flex-row">
-          <aside className="w-full shrink-0 lg:w-72">
+          <aside className="sticky top-20 z-20 w-full shrink-0 self-start lg:top-24 lg:w-72">
             <ProductFilterSidebar
               key={JSON.stringify(sp)}
               basePath={basePath}
@@ -160,6 +161,7 @@ export default async function ProductListing({
         </div>
       </main>
 
+      <BackToTop />
       <Footer />
     </div>
   );

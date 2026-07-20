@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { parseColors } from "@/lib/gadgets/colors";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -27,7 +28,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { name, brand, image, images, priceFrom, specs, published, tagIds } = body;
+  const { name, brand, image, images, colors, priceFrom, specs, published, tagIds } = body;
 
   try {
     const product = await prisma.product.update({
@@ -41,6 +42,7 @@ export async function PATCH(
             ? images.filter((u: unknown): u is string => typeof u === "string" && u.trim() !== "")
             : [],
         }),
+        ...(colors !== undefined && { colors: parseColors(colors) }),
         ...(priceFrom !== undefined && { priceFrom: priceFrom ? Number(priceFrom) : null }),
         ...(specs !== undefined && { specs }),
         ...(published !== undefined && { published }),
@@ -57,7 +59,15 @@ export async function PATCH(
       return Response.json({ error: "Product not found" }, { status: 404 });
     }
     console.error("PATCH /api/gadgets/products/[id] failed:", e);
-    return Response.json({ error: "Failed to update product" }, { status: 500 });
+    return Response.json(
+      {
+        error: "Failed to update product",
+        // Surface the underlying reason in dev only (e.g. a stale Prisma client
+        // rejecting an unknown `colors` argument after a schema change).
+        ...(process.env.NODE_ENV !== "production" && { detail: e?.message }),
+      },
+      { status: 500 }
+    );
   }
 }
 

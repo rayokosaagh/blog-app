@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Calendar, BarChart3, X, ArrowLeft } from "lucide-react";
+import { Plus, Edit2, Trash2, Calendar, BarChart3, X } from "lucide-react";
+import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
+import BackLink from "@/components/dashboard/BackLink";
 
 interface PollOption {
   id: string;
@@ -32,6 +34,8 @@ export default function PollsPage() {
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [endsAt, setEndsAt] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [pollToDelete, setPollToDelete] = useState<Poll | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchPolls = async () => {
     setLoading(true);
@@ -112,17 +116,19 @@ export default function PollsPage() {
     setView("edit");
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this poll?")) return;
-
+  const confirmDelete = async () => {
+    if (!pollToDelete) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/polls/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/polls/${pollToDelete.id}`, { method: "DELETE" });
       if (res.ok) {
+        setPollToDelete(null);
         await fetchPolls();
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to delete poll");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -224,7 +230,7 @@ export default function PollsPage() {
                       <Edit2 size={17} />
                     </button>
                     <button
-                      onClick={() => handleDelete(poll.id)}
+                      onClick={() => setPollToDelete(poll)}
                       className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl transition-colors"
                       aria-label="Delete poll"
                     >
@@ -243,14 +249,9 @@ export default function PollsPage() {
         >
           <div className="h-1 bg-blue-500" />
           <div className="p-6 sm:p-8">
-            <button
-              type="button"
-              onClick={handleBackToList}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors mb-4"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Polls
-            </button>
+            <div className="mb-4">
+              <BackLink onClick={handleBackToList} label="Polls" />
+            </div>
 
             <h2
               className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-6"
@@ -358,6 +359,15 @@ export default function PollsPage() {
           </div>
         </form>
       )}
+
+      <ConfirmDialog
+        open={!!pollToDelete}
+        title="Delete poll"
+        itemName={pollToDelete?.question}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onClose={() => setPollToDelete(null)}
+      />
     </div>
   );
 }

@@ -29,7 +29,6 @@ export const smartwatch: GadgetCategoryDef = {
         { key: "dimensions", label: "Dimensions", type: "text" },
         { key: "weight", label: "Weight", type: "text" },
         { key: "durability", label: "Durability", type: "multiline" },
-        { key: "colors", label: "Colors", type: "text" },
       ],
     },
     {

@@ -28,7 +28,6 @@ export const mobiles: GadgetCategoryDef = {
         { key: "dimensions", label: "Dimension", type: "text" },
         { key: "weightGm", label: "Weight", type: "number", unit: "gm", higherIsBetter: false },
         { key: "build", label: "Build Materials", type: "multiline" },
-        { key: "colors", label: "Colors", type: "text" },
       ],
     },
     {

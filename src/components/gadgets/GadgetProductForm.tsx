@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
 import TagPicker from "@/components/blog/TagPicker";
+import ColorVariantsEditor from "@/components/gadgets/ColorVariantsEditor";
+import StickyFormActions from "@/components/dashboard/StickyFormActions";
+import type { ProductColor } from "@/lib/gadgets/colors";
 
 interface GadgetProductFormProps {
   mode: "create" | "edit";
@@ -24,6 +27,7 @@ interface GadgetProductFormProps {
     brand: string;
     image?: string | null;
     images?: string[] | null;
+    colors?: ProductColor[] | null;
     priceFrom?: number | null;
     published: boolean;
     categorySlug: string;
@@ -62,6 +66,8 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
   const [image, setImage] = useState(initial?.image ?? "");
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [colors, setColors] = useState<ProductColor[]>(initial?.colors ?? []);
+  const [colorsUploading, setColorsUploading] = useState(false);
   const [priceFrom, setPriceFrom] = useState(initial?.priceFrom?.toString() ?? "");
   const [published, setPublished] = useState(initial?.published ?? true);
   const [specs, setSpecs] = useState<Record<string, any>>(initial?.specs ?? {});
@@ -180,6 +186,7 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
   brand,
   image: image || null,
   images,
+  colors,
   priceFrom: priceFrom || null,
   category,
   specs,
@@ -205,7 +212,8 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
       }
 
       if (!res.ok) {
-        setError(data?.error ?? `Something went wrong (${res.status})`);
+        const base = data?.error ?? `Something went wrong (${res.status})`;
+        setError(data?.detail ? `${base}: ${data.detail}` : base);
         return;
       }
 
@@ -464,6 +472,16 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
           </label>
         </FormCard>
 
+        {/* Color variants */}
+        <FormCard title="Colors">
+          <ColorVariantsEditor
+            value={colors}
+            onChange={setColors}
+            onBusyChange={setColorsUploading}
+            onError={setError}
+          />
+        </FormCard>
+
         <FormCard title="Tags">
   <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 </FormCard>
@@ -528,26 +546,12 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
         ))}
 
         {/* Sticky action bar */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-64 z-30 border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-4">
-          <div className="max-w-3xl flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving || uploading || galleryUploading}
-              className="inline-flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {saving ? "Saving…" : mode === "create" ? "Add product" : "Save changes"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard/gadgets")}
-              disabled={saving}
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-60"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <StickyFormActions
+          saving={saving}
+          disabled={uploading || galleryUploading || colorsUploading}
+          submitLabel={mode === "create" ? "Add product" : "Save changes"}
+          onCancel={() => router.push("/dashboard/gadgets")}
+        />
       </form>
 
       {/* Success toast */}

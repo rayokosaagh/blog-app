@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { Users as UsersIcon, Search, ChevronDown, CheckCircle2, Trash, Plus, X } from "lucide-react";
+import { Users as UsersIcon, Search, ChevronDown, CheckCircle2, Plus } from "lucide-react";
+import Modal from "@/components/dashboard/Modal";
+import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 
 type Role = "ADMIN" | "EDITOR";
 type ActionType = "added" | "updated" | "deleted" | null;
@@ -409,58 +411,28 @@ export default function UsersPage() {
       </div>
 
       {/* Delete Modal */}
-      {showDeleteModal && userToDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-            <div className="p-10">
-              <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Trash className="h-7 w-7 text-red-600 dark:text-red-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">Delete user?</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">
-                Are you sure you want to delete{" "}
-                <strong className="text-zinc-700 dark:text-zinc-300">{userToDelete.name}</strong>?
-              </p>
-            </div>
-            <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setUserToDelete(null);
-                }}
-                className="flex-1 py-5 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-95 transition-all rounded-bl-3xl"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 py-5 bg-red-600 text-white font-semibold hover:bg-red-700 active:scale-95 transition-all rounded-br-3xl"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={showDeleteModal && !!userToDelete}
+        title="Delete user?"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <strong className="text-zinc-700 dark:text-zinc-300">{userToDelete?.name}</strong>?
+          </>
+        }
+        onConfirm={confirmDelete}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }}
+      />
 
       {/* Add / Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                  {editingUser ? "Edit user" : "Add new user"}
-                </h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingUser ? "Edit user" : "Add new user"}
+      >
               {error && (
                 <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl mb-6 text-sm">
                   {error}
@@ -567,10 +539,7 @@ export default function UsersPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

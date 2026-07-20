@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SlidersHorizontal, Search, RotateCcw } from "lucide-react";
+import { SlidersHorizontal, Search, RotateCcw, ChevronDown } from "lucide-react";
 import type { SpecFacet } from "@/lib/gadgets/productFilters";
 
 interface Props {
@@ -37,6 +37,9 @@ export default function ProductFilterSidebar({
   const router = useRouter();
   const sp = useSearchParams();
 
+  // On mobile the filter form collapses behind a toggle so it doesn't push the
+  // product grid far down the page. Always expanded on lg+ (see `lg:block`).
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState(sp.get("search") ?? "");
   const [category, setCategory] = useState(sp.get("category") ?? "");
   const [brand, setBrand] = useState(sp.get("brand") ?? "");
@@ -52,15 +55,16 @@ export default function ProductFilterSidebar({
     return init;
   });
 
-  const hasActive = Boolean(
-    search ||
-      category ||
-      brand ||
-      minPrice ||
-      maxPrice ||
-      sort ||
-      Object.values(specs).some(Boolean)
-  );
+  const activeCount = [
+    search,
+    category,
+    brand,
+    minPrice,
+    maxPrice,
+    sort,
+    ...Object.values(specs),
+  ].filter(Boolean).length;
+  const hasActive = activeCount > 0;
 
   function apply(e?: React.FormEvent) {
     e?.preventDefault();
@@ -97,15 +101,35 @@ export default function ProductFilterSidebar({
   return (
     <form
       onSubmit={apply}
-      className="space-y-3 rounded-none border-2 border-border-heavy bg-card p-4 shadow-brutal lg:sticky lg:top-6"
+      className="space-y-3 rounded-none border-2 border-border-heavy bg-card p-4 shadow-brutal"
     >
       <div className="flex items-center gap-2 border-b-2 border-border-heavy pb-2.5">
-        <span className="flex h-7 w-7 items-center justify-center border-2 border-border-heavy bg-accent text-on-accent">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border-heavy bg-accent text-on-accent">
           <SlidersHorizontal className="h-3.5 w-3.5" />
         </span>
         <h2 className="text-base font-extrabold tracking-tight text-foreground">Filters</h2>
+
+        {/* Mobile-only expand/collapse toggle (form stays open on lg+) */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-expanded={mobileOpen}
+          className="brutal-press ml-auto flex items-center gap-1.5 rounded-none border-2 border-border-heavy bg-card px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-foreground shadow-brutal-sm lg:hidden"
+        >
+          {hasActive && (
+            <span className="flex h-4 min-w-4 items-center justify-center border border-border-heavy bg-accent px-1 text-[9px] leading-none text-on-accent">
+              {activeCount}
+            </span>
+          )}
+          {mobileOpen ? "Hide" : "Show"}
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform duration-150 ${mobileOpen ? "rotate-180" : ""}`}
+          />
+        </button>
       </div>
 
+      {/* Collapsible body — hidden on mobile until toggled, always shown on lg+ */}
+      <div className={`${mobileOpen ? "block" : "hidden"} space-y-3 lg:block`}>
       <div>
         <label className={labelClass}>Search</label>
         <div className="relative">
@@ -218,6 +242,7 @@ export default function ProductFilterSidebar({
             <RotateCcw className="h-4 w-4" />
           </button>
         )}
+      </div>
       </div>
     </form>
   );

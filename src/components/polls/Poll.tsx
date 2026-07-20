@@ -169,7 +169,7 @@ export default function Poll() {
 
   if (loading) {
     return (
-      <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8">
+      <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-4 py-6 sm:px-6 sm:py-8 md:px-8">
         <div className="flex items-center gap-2">
           <BarChart3 size={20} className="text-accent" />
           <h2 className="text-xl font-extrabold text-foreground tracking-tight">Polls</h2>
@@ -202,7 +202,7 @@ export default function Poll() {
       transition={{ duration: 0.3, ease: "easeOut" }}
       onHoverStart={() => setIsHovering(true)}
       onHoverEnd={() => setIsHovering(false)}
-      className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8"
+      className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-4 py-6 sm:px-6 sm:py-8 md:px-8"
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-4">

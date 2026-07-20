@@ -22,6 +22,7 @@ interface Product {
   published: boolean;
   image?: string | null;
   category: { name: string; slug: string };
+  tags?: { id: string; name: string; slug: string }[];
 }
 
 export default function GadgetsPage() {
@@ -37,6 +38,7 @@ export default function GadgetsPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedTag, setSelectedTag] = useState("all");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -77,15 +79,25 @@ export default function GadgetsPage() {
     return categories.find(([slug]) => slug === selectedCategory)?.[1] ?? "All categories";
   }, [selectedCategory, categories]);
 
+  // Unique tags across all products, for the tag filter dropdown.
+  const availableTags = useMemo(() => {
+    const map = new Map<string, { name: string; slug: string }>();
+    for (const p of products) {
+      for (const t of p.tags ?? []) map.set(t.slug, { name: t.name, slug: t.slug });
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch =
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.brand.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === "all" || p.category.slug === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesTag = selectedTag === "all" || (p.tags ?? []).some((t) => t.slug === selectedTag);
+      return matchesSearch && matchesCategory && matchesTag;
     });
-  }, [products, searchTerm, selectedCategory]);
+  }, [products, searchTerm, selectedCategory, selectedTag]);
 
   async function confirmDelete() {
     if (!productToDelete) return;
@@ -230,6 +242,22 @@ export default function GadgetsPage() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Tag filter */}
+        {availableTags.length > 0 && (
+          <select
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all sm:w-52"
+          >
+            <option value="all">All tags</option>
+            {availableTags.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Products list */}

@@ -11,6 +11,7 @@ import {
   BarElement,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 import { FileText, Users, Star, Mail } from "lucide-react";
 import { useIsDark } from "@/lib/useIsDark";
@@ -22,7 +23,10 @@ ChartJS.register(
   LineElement,
   BarElement,
   Tooltip,
-  Legend
+  Legend,
+  // Required for the line charts' `fill: true` gradient area — without it
+  // Chart.js warns "Tried to use the 'fill' option without the 'Filler' plugin".
+  Filler
 );
 
 interface AnalyticsChartsProps {

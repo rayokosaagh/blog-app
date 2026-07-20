@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { FileText, Search, ChevronDown, Plus } from "lucide-react";
 import DeleteButton from "@/components/dashboard/DeleteButton";
 import AnimatedPostCard from "@/components/blog/AnimatedPostCard";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
+import { SuccessToast } from "@/components/dashboard/DashboardUI";
 
 interface Post {
   id: string;
@@ -18,6 +20,7 @@ interface Post {
     id: string;
     name: string;
   };
+  tags?: { id: string; name: string; slug: string }[];
 }
 
 export default function PostsPage() {
@@ -25,8 +28,19 @@ export default function PostsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT">("ALL");
+  const [tagFilter, setTagFilter] = useState("ALL");
+  const [deletedTitle, setDeletedTitle] = useState<string | null>(null);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Unique tags across all posts, for the tag filter dropdown.
+  const availableTags = useMemo(() => {
+    const map = new Map<string, { name: string; slug: string }>();
+    for (const post of posts) {
+      for (const t of post.tags ?? []) map.set(t.slug, { name: t.name, slug: t.slug });
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [posts]);
 
   // Fetch posts on client
   useEffect(() => {
@@ -66,9 +80,12 @@ export default function PostsPage() {
         (statusFilter === "PUBLISHED" && post.published) ||
         (statusFilter === "DRAFT" && !post.published);
 
-      return matchesSearch && matchesStatus;
+      const matchesTag =
+        tagFilter === "ALL" || (post.tags ?? []).some((t) => t.slug === tagFilter);
+
+      return matchesSearch && matchesStatus && matchesTag;
     });
-  }, [posts, searchTerm, statusFilter]);
+  }, [posts, searchTerm, statusFilter, tagFilter]);
 
   if (loading) {
     return (
@@ -122,6 +139,22 @@ export default function PostsPage() {
             className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
           />
         </div>
+
+        {/* Tag filter */}
+        {availableTags.length > 0 && (
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all sm:w-52"
+          >
+            <option value="ALL">All tags</option>
+            {availableTags.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Custom Dropdown */}
         <div className="relative sm:w-52" ref={dropdownRef}>
@@ -250,7 +283,18 @@ export default function PostsPage() {
                       >
                         Edit
                       </Link>
-                      <DeleteButton postId={post.id} postTitle={post.title} />
+                      <DeleteButton
+                        endpoint={`/api/posts/${post.id}`}
+                        itemLabel={post.title}
+                        itemType="post"
+                        onDeleted={() => {
+                          // Drop it from the list immediately so the deleted
+                          // post no longer shows, then confirm with a toast.
+                          setPosts((prev) => prev.filter((p) => p.id !== post.id));
+                          setDeletedTitle(post.title);
+                          setTimeout(() => setDeletedTitle(null), 3000);
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -259,6 +303,16 @@ export default function PostsPage() {
           ))
         )}
       </div>
+
+      {/* Success confirmation after a delete */}
+      <AnimatePresence>
+        {deletedTitle && (
+          <SuccessToast
+            message={`"${deletedTitle}" was deleted`}
+            onClose={() => setDeletedTitle(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

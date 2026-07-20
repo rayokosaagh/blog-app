@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Reorder, AnimatePresence, motion } from "framer-motion";
+import { Reorder, AnimatePresence, motion, useDragControls } from "framer-motion";
 import {
   GripVertical,
   Trash2,
@@ -10,10 +10,10 @@ import {
   EyeOff,
   Plus,
   Layers,
-  CheckCircle2,
-  AlertTriangle,
-  Trash,
 } from "lucide-react";
+import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
+import Modal from "@/components/dashboard/Modal";
+import { SuccessToast } from "@/components/dashboard/DashboardUI";
 
 interface CategoryOption { slug: string; name: string }
 interface ProductLite { id: string; name: string; brand: string; image?: string | null; categoryId: string; category: { slug: string; name: string } }
@@ -84,6 +84,81 @@ function ActiveToggle({ active, onToggle }: { active: boolean; onToggle: () => v
         style={{ marginLeft: active ? "26px" : "4px" }}
       />
     </button>
+  );
+}
+
+/**
+ * A single reorderable comparison row. Drag is started only from the grip
+ * handle (dragListener disabled) so the toggle/delete buttons never trigger an
+ * accidental drag, and reordering rides a spring for a smooth, weighty feel.
+ * Note: the item uses `transition-colors` (NOT `transition-all`) — a CSS
+ * transition on `transform` would fight framer-motion's drag/layout transforms
+ * and is the main cause of the clunky feel.
+ */
+function ComparisonRow({
+  item,
+  onDragEnd,
+  onToggle,
+  onDelete,
+}: {
+  item: ComparisonItem;
+  onDragEnd: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={item}
+      dragListener={false}
+      dragControls={controls}
+      onDragEnd={onDragEnd}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 550, damping: 42, mass: 0.7 }}
+      whileDrag={{ scale: 1.02, boxShadow: "0 14px 30px -10px rgba(0,0,0,0.3)", zIndex: 40 }}
+      className="relative flex items-center gap-4 p-3 bg-zinc-50/60 dark:bg-zinc-800/40 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-colors"
+    >
+      <button
+        type="button"
+        onPointerDown={(e) => controls.start(e)}
+        aria-label="Drag to reorder"
+        className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+      >
+        <GripVertical size={18} />
+      </button>
+
+      <DiagonalThumb item={item} />
+
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+          {item.category.name}
+        </span>
+        <p className="font-medium text-sm text-zinc-900 dark:text-zinc-50 truncate">
+          {item.productA.name} <span className="text-zinc-400 font-normal">vs</span>{" "}
+          {item.productB.name}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {item.active ? (
+          <Eye size={16} className="text-green-500" />
+        ) : (
+          <EyeOff size={16} className="text-zinc-400" />
+        )}
+        <ActiveToggle active={item.active} onToggle={onToggle} />
+      </div>
+
+      <button
+        onClick={onDelete}
+        className="p-2 rounded-xl text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-zinc-800 transition-colors flex-shrink-0"
+        title="Remove"
+      >
+        <Trash2 size={18} />
+      </button>
+    </Reorder.Item>
   );
 }
 
@@ -356,50 +431,17 @@ export default function ComparisonManager({
             axis="y"
             values={comparisons}
             onReorder={handleReorder}
-            className="p-3 space-y-2"
+            className="p-3 flex flex-col gap-2"
           >
             <AnimatePresence initial={false}>
               {comparisons.map((c) => (
-                <Reorder.Item
+                <ComparisonRow
                   key={c.id}
-                  value={c}
+                  item={c}
                   onDragEnd={handleDragEnd}
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-4 p-3 bg-zinc-50/60 dark:bg-zinc-800/40 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-all cursor-grab active:cursor-grabbing"
-                >
-                  <GripVertical className="text-zinc-300 dark:text-zinc-600 flex-shrink-0" size={18} />
-
-                  <DiagonalThumb item={c} />
-
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                      {c.category.name}
-                    </span>
-                    <p className="font-medium text-sm text-zinc-900 dark:text-zinc-50 truncate">
-                      {c.productA.name} <span className="text-zinc-400 font-normal">vs</span> {c.productB.name}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {c.active ? (
-                      <Eye size={16} className="text-green-500" />
-                    ) : (
-                      <EyeOff size={16} className="text-zinc-400" />
-                    )}
-                    <ActiveToggle active={c.active} onToggle={() => handleToggleActive(c)} />
-                  </div>
-
-                  <button
-                    onClick={() => openDeleteModal(c)}
-                    className="p-2 rounded-xl text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-zinc-800 transition-colors flex-shrink-0"
-                    title="Remove"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </Reorder.Item>
+                  onToggle={() => handleToggleActive(c)}
+                  onDelete={() => openDeleteModal(c)}
+                />
               ))}
             </AnimatePresence>
           </Reorder.Group>
@@ -407,127 +449,55 @@ export default function ComparisonManager({
       </div>
 
       {/* Delete confirm modal */}
-      <AnimatePresence>
-        {comparisonToDelete && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 26 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
-            >
-              <div className="p-10">
-                <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Trash className="h-7 w-7 text-red-600 dark:text-red-400" />
-                </div>
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">
-                  Remove comparison?
-                </h2>
-                <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">
-                  Remove{" "}
-                  <strong className="text-zinc-700 dark:text-zinc-300">
-                    {comparisonToDelete.productA.name} vs {comparisonToDelete.productB.name}
-                  </strong>{" "}
-                  from the homepage?
-                </p>
-              </div>
-              <div className="border-t border-zinc-100 dark:border-zinc-800 flex">
-                <button
-                  onClick={() => setComparisonToDelete(null)}
-                  disabled={deleting}
-                  className="flex-1 py-5 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors rounded-bl-3xl active:scale-95 disabled:opacity-60"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  disabled={deleting}
-                  className="flex-1 py-5 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded-br-3xl active:scale-95 disabled:opacity-60"
-                >
-                  {deleting ? "Removing..." : "Yes, remove"}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmDialog
+        open={!!comparisonToDelete}
+        title="Remove comparison?"
+        message={
+          comparisonToDelete ? (
+            <>
+              Remove{" "}
+              <strong className="text-zinc-700 dark:text-zinc-300">
+                {comparisonToDelete.productA.name} vs {comparisonToDelete.productB.name}
+              </strong>{" "}
+              from the homepage?
+            </>
+          ) : undefined
+        }
+        confirmLabel="Yes, remove"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onClose={() => setComparisonToDelete(null)}
+      />
 
-      {/* Success screen */}
+      {/* Success toast */}
       <AnimatePresence>
         {showSuccess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300, damping: 24 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-12 text-center max-w-md"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
-                className="w-20 h-20 bg-green-50 dark:bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <CheckCircle2 className="h-9 w-9 text-green-600 dark:text-green-400" />
-              </motion.div>
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Removed</h2>
-              <p className="text-zinc-500 dark:text-zinc-400">
-                The comparison has been taken off the homepage.
-              </p>
-            </motion.div>
-          </motion.div>
+          <SuccessToast
+            message="The comparison has been removed from the homepage."
+            onClose={() => setShowSuccess(false)}
+          />
         )}
       </AnimatePresence>
 
       {/* Error modal */}
-      <AnimatePresence>
-        {errorModalMessage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+      <Modal
+        open={!!errorModalMessage}
+        onClose={() => setErrorModalMessage("")}
+        title="Something went wrong"
+        accent="rose"
+        size="sm"
+        footer={
+          <button
+            type="button"
+            onClick={() => setErrorModalMessage("")}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300, damping: 26 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
-            >
-              <div className="p-10">
-                <div className="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <AlertTriangle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
-                </div>
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 text-center">
-                  Something went wrong
-                </h2>
-                <p className="text-zinc-500 dark:text-zinc-400 text-center mt-3">{errorModalMessage}</p>
-              </div>
-              <div className="border-t border-zinc-100 dark:border-zinc-800">
-                <button
-                  onClick={() => setErrorModalMessage("")}
-                  className="w-full py-5 text-zinc-900 dark:text-zinc-50 font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors rounded-b-3xl active:scale-95"
-                >
-                  Got it
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            Got it
+          </button>
+        }
+      >
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{errorModalMessage}</p>
+      </Modal>
     </div>
   );
 }

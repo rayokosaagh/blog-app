@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import GadgetProductForm from "@/components/gadgets/GadgetProductForm";
+import BackLink from "@/components/dashboard/BackLink";
+import { parseColors } from "@/lib/gadgets/colors";
 
 export default async function EditGadgetPage({
   params,
@@ -20,13 +21,7 @@ export default async function EditGadgetPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/dashboard/gadgets"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Gadgets
-      </Link>
+      <BackLink href="/dashboard/gadgets" label="Gadgets" />
 
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
@@ -57,6 +52,7 @@ export default async function EditGadgetPage({
           brand: product.brand,
           image: product.image,
           images: product.images,
+          colors: parseColors(product.colors),
           priceFrom: product.priceFrom,
           published: product.published,
           categorySlug: product.category.slug,
