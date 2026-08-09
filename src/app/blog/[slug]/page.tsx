@@ -26,9 +26,11 @@ import ArticleImageLightbox from "@/components/blog/ArticleImageLightbox";
 import { auth } from "@/auth";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
 import { parseKeyHighlightsBlock } from "@/components/feeds/KeyHighlights";
+import { parseProsConsBlock } from "@/components/feeds/ProsCons";
 import { parseAlsoReadBlock } from "@/components/feeds/AlsoRead";
 import AlsoReadMount from "@/components/feeds/AlsoReadMount";
 import KeyHighlightsMount from "@/components/feeds/KeyHighlightsMount";
+import ProsConsMount from "@/components/feeds/ProsConsMount";
 import { parseDropCapLedeBlock } from "@/components/blog/DropCapLede";
 import TableProcessor from "@/components/blog/TableProcessor";
 import { parseSpecificationsBlock } from "@/components/feeds/Specifications";
@@ -107,7 +109,7 @@ function stripTrailingEmptyBlocks(html: string): string {
 function generateAdString(ad: { link: string; image: string; title: string }) {
   return `
     <a href="${ad.link}" target="_blank" rel="noopener noreferrer sponsored"
-      class="relative block my-6 w-full h-24 sm:h-28 md:h-32 overflow-hidden border-[1.5px] border-border-heavy bg-card">
+      class="inline-ad relative block my-6 w-full h-24 sm:h-28 md:h-32 overflow-hidden surface-border bg-card shadow-brutal-sm">
       <img src="${ad.image}" alt="${ad.title}" class="absolute inset-0 w-full h-full object-cover" />
     </a>
   `;
@@ -136,9 +138,9 @@ function stripEmptyParagraphs(html: string): string {
 function generateBannerString(banner: { link: string; image: string; title: string }) {
   return `
     <a href="${banner.link}" target="_blank" rel="noopener noreferrer sponsored"
-      class="relative block my-10 w-full h-28 sm:h-32 md:h-40 overflow-hidden border-[1.5px] border-border-heavy bg-card group">
+      class="inline-ad relative block my-10 w-full h-28 sm:h-32 md:h-40 overflow-hidden surface-border bg-card shadow-brutal-sm group">
       <img src="${banner.image}" alt="${banner.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
-      <div class="absolute top-2 right-2 bg-accent-2 text-on-accent-2 border-[1.5px] border-border-heavy px-2 py-1 text-[10px] font-bold uppercase tracking-widest">Advertisement</div>
+      <div class="absolute top-2 right-2 bg-accent-2 text-on-accent-2 surface-pill px-2 py-1 text-[10px] font-bold uppercase tracking-widest">Advertisement</div>
     </a>
   `;
 }
@@ -291,6 +293,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   processedContent = stripEmptyParagraphs(processedContent);
   processedContent = parseBannerShortcodes(processedContent, banners);
   processedContent = parseKeyHighlightsBlock(processedContent);
+  processedContent = parseProsConsBlock(processedContent);
   processedContent = parseAlsoReadBlock(processedContent);
   processedContent = parseDropCapLedeBlock(processedContent);
   processedContent = wrapTables(processedContent);
@@ -358,7 +361,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     href={`/blog?tag=${t.slug}`}
                     className="inline-flex items-center gap-1.5 bg-accent-3 text-on-accent-3 text-xs font-bold uppercase tracking-widest px-3 py-1 border-[1.5px] border-border-heavy transition-transform duration-150 hover:-translate-y-0.5"
                   >
-                    <TagIcon icon={t.icon} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
+                    <TagIcon icon={t.icon} colorMode={t.colorMode} color={t.color} className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
                     {t.name}
                   </Link>
                 ))}
@@ -504,6 +507,38 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   border: 1.5px solid var(--border-heavy);
 }
 
+/* Ad and banner creatives fill a fixed-height frame via absolute inset-0,
+   so they must NOT pick up the article-image treatment above. That rule is
+   unlayered and therefore outranks the Tailwind utilities on the image:
+   its "margin: 2rem auto" offsets an absolutely-positioned image down from
+   the frame's top edge (leaving a strip of card background against the
+   border), "height: auto" stops it filling, and its border doubles up with
+   the frame's own. Reset all three. */
+.rich-text-render .inline-ad img {
+  margin: 0;
+  height: 100%;
+  border: 0;
+}
+
+/* Mounted widgets (gallery/carousel, key highlights, also-read, pros & cons)
+   size their own images via Tailwind classes. The article-image rule above is
+   unlayered, so it outranks those classes and re-imposes 2rem block margins, a
+   second border and height:auto — which is what pushed the gallery image down,
+   left a gap above it and knocked the absolutely-positioned arrows out of
+   alignment with the frame. Every one of those blocks carries the "not-prose"
+   class, so scope the reset to that.
+
+   Two classes + the element (0,2,1) outranks the (0,1,1) rule above, so this
+   wins regardless of source order. "revert-layer" hands height back to the
+   Tailwind utility layer rather than guessing a value here; where it isn't
+   supported the declaration is dropped and height simply stays auto — the
+   margin and border fixes still apply. */
+.rich-text-render .not-prose img {
+  margin: 0;
+  border: 0;
+  height: revert-layer;
+}
+
 .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
 .rich-text-render ul { list-style-type: disc; }
 .rich-text-render ol { list-style-type: decimal; }
@@ -573,6 +608,49 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 .rich-text-render tbody tr:hover td {
   background: var(--accent-tint);
 }
+
+/* ---- Modern theme: quieter, rounder tables ----------------------------
+   Brutalist keeps the heavy frame and the solid accent header slab, which
+   is the point of that theme. Modern trades them for the restrained data
+   table it uses everywhere else: rounded frame, hairline rules, a muted
+   header instead of a colour block, and no vertical grid lines — columns
+   read fine from alignment alone, and dropping them removes most of the
+   visual noise. Scoped so brutalist is untouched. */
+[data-theme='modern'] .rich-text-render .table-wrap {
+  border-width: 1px;
+  border-color: var(--border);
+  border-radius: var(--radius);
+}
+
+[data-theme='modern'] .rich-text-render thead th {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+[data-theme='modern'] .rich-text-render thead th + th {
+  border-left: none;
+}
+
+[data-theme='modern'] .rich-text-render td + td {
+  border-left: none;
+}
+[data-theme='modern'] .rich-text-render td:first-child {
+  font-weight: 600;
+}
+
+/* Tint the hover from the accent rather than using --accent-tint flat: at
+   6% it stays a hint on both the white and near-black surfaces, where the
+   solid tint can read as a filled row. */
+[data-theme='modern'] .rich-text-render tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+[data-theme='modern'] .rich-text-render .table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
             `}</style>
 
             <ArticleImageLightbox>
@@ -582,6 +660,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 </ArticleImageLightbox>
             <AlsoReadMount />
             <KeyHighlightsMount />
+            <ProsConsMount />
             <SpecificationsMount />
             <GalleryMount />
 

@@ -128,6 +128,8 @@ export default async function BlogPage({
                     <>
                       <TagIcon
                         icon={activeTags[0].icon}
+                        colorMode={activeTags[0].colorMode}
+                        color={activeTags[0].color}
                         className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
                       />
                       {activeTags.length === 1
@@ -156,6 +158,8 @@ export default async function BlogPage({
                   <span key={t.id} className="inline-flex items-center gap-3">
                     <TagIcon
                       icon={t.icon}
+                      colorMode={t.colorMode}
+                      color={t.color}
                       className="inline-flex w-9 h-9 md:w-12 md:h-12 [&>svg]:w-full [&>svg]:h-full text-accent"
                     />
                     {t.name}

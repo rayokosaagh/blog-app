@@ -74,14 +74,23 @@ export default function ImageCarousel({ images, alt = "", title, className = "" 
   return (
     <div className={className}>
       <div className="rounded-none border-2 border-border-heavy bg-card p-3 shadow-brutal sm:p-4">
-        {/* Header */}
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <Images className="h-4 w-4 shrink-0 text-accent" />
-            <span className="truncate text-sm font-extrabold uppercase tracking-wide text-foreground">
-              {title || "Gallery"}
-            </span>
-          </div>
+        {/* Header — the label only appears when a caller actually supplies a
+            title. It used to fall back to a hardcoded "Gallery", which just
+            restated what the block obviously is. With no title the counter
+            sits alone on the right. */}
+        <div
+          className={`mb-3 flex items-center gap-3 ${
+            title ? "justify-between" : "justify-end"
+          }`}
+        >
+          {title && (
+            <div className="flex min-w-0 items-center gap-2">
+              <Images className="h-4 w-4 shrink-0 text-accent" />
+              <span className="truncate text-sm font-extrabold uppercase tracking-wide text-foreground">
+                {title}
+              </span>
+            </div>
+          )}
           {counter}
         </div>
 

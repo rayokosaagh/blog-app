@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { resolveTagColor } from "@/lib/sanitizeSvg";
 
 function slugify(input: string) {
   return input
@@ -54,10 +55,7 @@ export async function PATCH(
     const body = await req.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const icon = typeof body.icon === "string" ? body.icon : "";
-    const colorMode =
-  body.colorMode === "KEEP_ORIGINAL" || body.colorMode === "FORCE_MONO"
-    ? body.colorMode
-    : "AUTO";
+    const { colorMode, color } = resolveTagColor(body.colorMode, body.color);
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
@@ -83,7 +81,7 @@ export async function PATCH(
 
     const updated = await prisma.tag.update({
   where: { id },
-  data: { name, icon, slug, colorMode },
+  data: { name, icon, slug, colorMode, color },
 });
 
     return NextResponse.json(updated);

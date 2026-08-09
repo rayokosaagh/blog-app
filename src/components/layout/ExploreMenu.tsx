@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Compass, Search, X, ChevronDown, ArrowRight } from "lucide-react";
 import TagIcon from "@/components/blog/TagIcon";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 
 type SearchResult = {
   id: string;
@@ -19,6 +20,8 @@ type TagItem = {
   name: string;
   slug: string;
   icon: string;
+  colorMode?: TagColorMode | null;
+  color?: string | null;
 };
 
 type ProductCategory = {
@@ -36,6 +39,8 @@ type BrowseItem = {
   href: string;
   iconKind: "tag" | "css";
   icon: string;
+  colorMode?: TagColorMode | null;
+  color?: string | null;
 };
 
 const MIN_QUERY_LENGTH = 2;
@@ -86,6 +91,8 @@ function BrowseGrid({
             {item.iconKind === "tag" ? (
               <TagIcon
                 icon={item.icon}
+                colorMode={item.colorMode}
+                color={item.color}
                 className="inline-flex w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full text-muted-foreground group-hover:text-accent"
               />
             ) : (
@@ -137,6 +144,8 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
     href: `/blog?tag=${t.slug}`,
     iconKind: "tag",
     icon: t.icon,
+    colorMode: t.colorMode,
+    color: t.color,
   }));
   const categoryItems: BrowseItem[] = productCategories.map((c) => ({
     key: c.slug,
@@ -151,6 +160,8 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
     href: `/tag/${t.slug}`,
     iconKind: "tag",
     icon: t.icon,
+    colorMode: t.colorMode,
+    color: t.color,
   }));
 
   useEffect(() => {

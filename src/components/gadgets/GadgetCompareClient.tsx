@@ -13,7 +13,6 @@ import JumpNav from "./compare/JumpNav";
 import FocusedSpecBar from "./compare/FocusedSpecBar";
 import DesktopTable from "./compare/DesktopTable";
 import MobileTable from "./compare/MobileTable";
-import Footer from "../layout/Footer";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];
@@ -389,7 +388,6 @@ function updateActiveGroup() {
           </motion.p>
         )}
       </motion.div>
-      <Footer />
     </LayoutGroup>
     
     

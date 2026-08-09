@@ -12,12 +12,15 @@ import {
   RotateCcw,
 } from "lucide-react";
 import TagIcon from "./TagIcon";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 
 interface Tag {
   id: string;
   name: string;
   slug: string;
   icon: string;
+  colorMode?: TagColorMode | null;
+  color?: string | null;
 }
 
 interface Author {
@@ -352,6 +355,8 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
                         ) : (
                           <TagIcon
                             icon={t.icon}
+                            colorMode={t.colorMode}
+                            color={t.color}
                             className="inline-flex w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full"
                           />
                         )}

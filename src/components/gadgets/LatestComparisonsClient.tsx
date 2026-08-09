@@ -81,7 +81,11 @@ function ComparisonCard({
     <motion.div variants={reduceMotion ? undefined : cardEntranceVariants} className="h-full">
       <Link
         href={`/compare?category=${item.category.slug}&p1=${item.productA.slug}&p2=${item.productB.slug}`}
-        className="group relative block h-full overflow-hidden rounded-none border-2 border-border-heavy bg-card p-6 shadow-brutal brutal-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        // Flex column (not block) so the portrait row can absorb any slack and
+        // the "Compare now" footer pins to the bottom edge of every card —
+        // otherwise it follows the content and the row of cards ends up with
+        // its footers at different heights.
+        className="group relative flex h-full flex-col overflow-hidden rounded-none border-2 border-border-heavy bg-card p-6 shadow-brutal brutal-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         {/* Signature: a single accent bar sweeps in from the left on hover */}
         <span
@@ -89,11 +93,13 @@ function ComparisonCard({
           className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-accent transition-transform duration-200 ease-out group-hover:scale-x-100"
         />
 
-        <span className="tag-pill mb-4 inline-flex bg-accent text-on-accent">
+        {/* self-start: as a flex child this would otherwise stretch to the
+            full card width instead of hugging its label. */}
+        <span className="tag-pill mb-4 inline-flex self-start bg-accent text-on-accent">
           {item.category.name}
         </span>
 
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-1 items-center justify-center gap-3">
           <ProductPortrait product={item.productA} />
 
           {/* VS badge gets its own identity via --accent-2 (permanently on,

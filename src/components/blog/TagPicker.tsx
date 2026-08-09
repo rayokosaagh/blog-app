@@ -4,13 +4,115 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pencil } from "lucide-react";
 import TagIcon from "./TagIcon";
+import { isTagColor, type TagColorMode } from "@/lib/sanitizeSvg";
+
+// Starting swatch for a new custom color — a neutral mid-grey rather than a
+// brand color, so nothing looks "already chosen".
+const DEFAULT_TAG_COLOR = "#6b7280";
+
+// Common brand colors, so tagging Android green is one click instead of a
+// trip to a color picker.
+const TAG_COLOR_PRESETS: { label: string; value: string }[] = [
+  { label: "Android green", value: "#3ddc84" },
+  { label: "Apple grey", value: "#555555" },
+  { label: "Samsung blue", value: "#1428a0" },
+  { label: "Windows blue", value: "#0078d4" },
+  { label: "YouTube red", value: "#ff0000" },
+  { label: "Nvidia green", value: "#76b900" },
+  { label: "AMD red", value: "#ed1c24" },
+  { label: "Intel blue", value: "#0068b5" },
+];
 
 export interface Tag {
   id: string;
   name: string;
   slug: string;
   icon: string;
-  colorMode: "AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO";
+  colorMode: TagColorMode;
+  color: string | null;
+}
+
+// Shared by the add and edit modals — they only differ in which piece of
+// state they're bound to.
+function ColorModeField({
+  mode,
+  onModeChange,
+  color,
+  onColorChange,
+}: {
+  mode: TagColorMode;
+  onModeChange: (m: TagColorMode) => void;
+  color: string;
+  onColorChange: (c: string) => void;
+}) {
+  const valid = isTagColor(color);
+
+  return (
+    <div className="mt-3">
+      <label className="block text-xs font-medium text-gray-500 mb-1">
+        Icon color handling
+      </label>
+      <select
+        value={mode}
+        onChange={(e) => onModeChange(e.target.value as TagColorMode)}
+        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="AUTO">Auto (recommended)</option>
+        <option value="KEEP_ORIGINAL">Keep original colors always</option>
+        <option value="FORCE_MONO">Force single color (theme text color)</option>
+        <option value="CUSTOM">Custom color</option>
+      </select>
+
+      {mode === "CUSTOM" && (
+        <div className="mt-3 rounded-xl border border-gray-200 p-3">
+          <div className="flex items-center gap-3">
+            <label
+              className="relative h-9 w-9 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-gray-300"
+              style={{ backgroundColor: valid ? color : "transparent" }}
+            >
+              <input
+                type="color"
+                value={valid ? color : "#000000"}
+                onChange={(e) => onColorChange(e.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label="Tag icon color"
+              />
+            </label>
+            <input
+              type="text"
+              value={color}
+              onChange={(e) => onColorChange(e.target.value)}
+              spellCheck={false}
+              className={`w-28 rounded-lg border px-2.5 py-1.5 font-mono text-xs uppercase text-gray-900 focus:outline-none ${
+                valid ? "border-gray-300" : "border-red-400"
+              }`}
+            />
+            <p className="text-xs text-gray-500">
+              Recolors the icon in both light and dark mode.
+            </p>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {TAG_COLOR_PRESETS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                title={p.label}
+                aria-label={p.label}
+                onClick={() => onColorChange(p.value)}
+                className={`h-6 w-6 rounded-full border transition ${
+                  color.toLowerCase() === p.value
+                    ? "border-gray-900 ring-2 ring-gray-900/20"
+                    : "border-gray-300 hover:border-gray-500"
+                }`}
+                style={{ backgroundColor: p.value }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface TagPickerProps {
@@ -28,8 +130,10 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
   const [newIcon, setNewIcon] = useState("");
   const [creating, setCreating] = useState(false);
   const [addError, setAddError] = useState("");
-  const [newColorMode, setNewColorMode] = useState<"AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO">("AUTO");
-  const [editColorMode, setEditColorMode] = useState<"AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO">("AUTO");
+  const [newColorMode, setNewColorMode] = useState<TagColorMode>("AUTO");
+  const [newColor, setNewColor] = useState(DEFAULT_TAG_COLOR);
+  const [editColorMode, setEditColorMode] = useState<TagColorMode>("AUTO");
+  const [editColor, setEditColor] = useState(DEFAULT_TAG_COLOR);
 
   // Edit modal
   const [showEditModal, setShowEditModal] = useState(false);
@@ -87,6 +191,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
     setNewName("");
     setNewIcon("");
     setNewColorMode("AUTO");
+    setNewColor(DEFAULT_TAG_COLOR);
     setAddError("");
     setShowAddModal(true);
   }
@@ -101,7 +206,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
       const res = await fetch("/api/tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, icon: newIcon, colorMode: newColorMode }),
+        body: JSON.stringify({ name: newName, icon: newIcon, colorMode: newColorMode, color: newColor }),
       });
       const tag = await res.json();
 
@@ -129,6 +234,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
     setEditName(tag.name);
     setEditIcon(tag.icon);
     setEditColorMode(tag.colorMode ?? "AUTO");
+    setEditColor(tag.color ?? DEFAULT_TAG_COLOR);
     setEditError("");
     setShowEditModal(true);
   }
@@ -143,7 +249,7 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
       const res = await fetch(`/api/tags/${tagToEdit.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName, icon: editIcon, colorMode: editColorMode }),
+        body: JSON.stringify({ name: editName, icon: editIcon, colorMode: editColorMode, color: editColor }),
       });
       const updated = await res.json();
 
@@ -368,20 +474,12 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
                     required
                   />
                 </div>
-                <div className="mt-3">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Icon color handling
-                  </label>
-                  <select
-                    value={newColorMode}
-                    onChange={(e) => setNewColorMode(e.target.value as typeof newColorMode)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="AUTO">Auto (recommended)</option>
-                    <option value="KEEP_ORIGINAL">Keep original colors always</option>
-                    <option value="FORCE_MONO">Force single color (theme text color)</option>
-                  </select>
-                </div>
+                <ColorModeField
+                  mode={newColorMode}
+                  onModeChange={setNewColorMode}
+                  color={newColor}
+                  onColorChange={setNewColor}
+                />
 
                 <div className="flex gap-4 pt-4">
                   <button
@@ -459,20 +557,12 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
                     required
                   />
                 </div>
-                <div className="mt-3">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Icon color handling
-                  </label>
-                  <select
-                    value={editColorMode}
-                    onChange={(e) => setEditColorMode(e.target.value as typeof editColorMode)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="AUTO">Auto (recommended)</option>
-                    <option value="KEEP_ORIGINAL">Keep original colors always</option>
-                    <option value="FORCE_MONO">Force single color (theme text color)</option>
-                  </select>
-                </div>
+                <ColorModeField
+                  mode={editColorMode}
+                  onModeChange={setEditColorMode}
+                  color={editColor}
+                  onColorChange={setEditColor}
+                />
 
                 <div className="flex gap-4 pt-4">
                   <button

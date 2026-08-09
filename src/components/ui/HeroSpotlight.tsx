@@ -11,6 +11,7 @@ interface Banner {
   description: string | null;
   badge: string | null;
   cta: string | null;
+  featuredLabel: string | null;
   image: string;
   link: string;
 }
@@ -60,7 +61,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-none border-2 border-border-heavy shadow-brutal-lg lg:flex-row">
+    <div className="flex flex-col overflow-hidden surface-border shadow-brutal-lg lg:flex-row">
       {/* Hero image (left / top) */}
       <div className="relative h-56 w-full overflow-hidden bg-border sm:h-72 lg:h-[30rem] lg:flex-[3]">
         <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -89,16 +90,18 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Featured flag */}
-        <span className="pointer-events-none absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 border-2 border-border-heavy bg-accent px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-on-accent shadow-brutal-sm">
+        {/* Featured flag — label is per-banner, editable on the banners
+            dashboard page; falls back to "Featured" when left blank. */}
+        <span className="pointer-events-none absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 surface-border bg-accent px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-on-accent shadow-brutal-sm">
           <Sparkles className="h-3.5 w-3.5" />
-          Featured
+          {b.featuredLabel?.trim() || "Featured"}
         </span>
       </div>
 
       {/* Attached title / description card (right / bottom).
           Hovering rolls a random neon accent (lime/cyan/pink) by overriding
-          --accent for everything inside — button, headline hover, dots. */}
+          the card background — button, headline hover, dots recolor via
+          group-hover/card in both brutalist and modern mode. */}
       <div
         onMouseEnter={() =>
           setHoverAccent(
@@ -107,9 +110,9 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
         }
         onMouseLeave={() => setHoverAccent(null)}
         style={hoverAccent ? { backgroundColor: hoverAccent } : undefined}
-        className="group/card flex w-full flex-col border-t-2 border-border-heavy bg-card p-6 transition-colors duration-300 sm:p-8 lg:w-[22rem] lg:border-l-2 lg:border-t-0 xl:w-[26rem]"
+        className="group/card flex w-full flex-col border-t border-border-heavy bg-card p-6 transition-colors duration-300 sm:p-8 lg:w-[22rem] lg:border-l lg:border-t-0 xl:w-[26rem]"
       >
-        <span className="mb-4 inline-flex w-fit items-center gap-1.5 border-2 border-border-heavy bg-accent px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-on-accent transition-colors duration-300 group-hover/card:bg-black group-hover/card:text-white">
+        <span className="mb-4 inline-flex w-fit items-center gap-1.5 surface-border bg-accent px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-on-accent transition-colors duration-300 group-hover/card:bg-black group-hover/card:text-white">
           {b.badge?.trim() || "Top Story"}
         </span>
 
@@ -141,7 +144,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
           href={b.link}
           target="_blank"
           rel="noopener noreferrer"
-          className="group mt-6 inline-flex w-fit items-center gap-2 rounded-none border-2 border-border-heavy bg-accent-2 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-on-accent-2 shadow-brutal-sm brutal-press transition-colors duration-300 group-hover/card:bg-black group-hover/card:text-white"
+          className="group mt-6 inline-flex w-fit items-center gap-2 surface-border bg-accent-2 px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-on-accent-2 shadow-brutal-sm brutal-press transition-colors duration-300 group-hover/card:bg-black group-hover/card:text-white"
         >
           {b.cta?.trim() || "Read more"}
           <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -149,7 +152,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
 
         {/* Shared controls — arrows, dots and counter drive the whole unit */}
         {banners.length > 1 && (
-          <div className="mt-6 flex items-center justify-between border-t-2 border-border-heavy pt-4">
+          <div className="mt-6 flex items-center justify-between border-t border-border-heavy pt-4">
             <div className="flex items-center gap-1.5">
               {banners.map((_, i) => (
                 <button
@@ -160,7 +163,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
                   }}
                   aria-label={`Go to slide ${i + 1}`}
                   style={{ width: i === current ? "24px" : "10px" }}
-                  className={`h-2.5 rounded-[2px] border-2 border-border-heavy transition-all ${
+                  className={`h-2.5 surface-border-w border-border-heavy transition-all ${
                     i === current
                       ? "bg-accent-2 group-hover/card:bg-black"
                       : "bg-background group-hover/card:bg-black/20"
@@ -177,14 +180,14 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
               <button
                 onClick={prev}
                 aria-label="Previous"
-                className="flex h-8 w-8 items-center justify-center rounded-none border-2 border-border-heavy bg-background text-foreground shadow-brutal-sm transition-colors duration-300 brutal-press group-hover/card:bg-black group-hover/card:text-white"
+                className="flex h-8 w-8 items-center justify-center surface-border bg-background text-foreground shadow-brutal-sm transition-colors duration-300 brutal-press group-hover/card:bg-black group-hover/card:text-white"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={next}
                 aria-label="Next"
-                className="flex h-8 w-8 items-center justify-center rounded-none border-2 border-border-heavy bg-background text-foreground shadow-brutal-sm transition-colors duration-300 brutal-press group-hover/card:bg-black group-hover/card:text-white"
+                className="flex h-8 w-8 items-center justify-center surface-border bg-background text-foreground shadow-brutal-sm transition-colors duration-300 brutal-press group-hover/card:bg-black group-hover/card:text-white"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

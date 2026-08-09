@@ -5,6 +5,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import TagIcon from "./TagIcon";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 import { sortTagsByOrder } from "@/lib/sortTags";
 // remove the local `function Underline(...)` block entirely, add:
 import Underline from "@/components/ui/Underline";
@@ -18,7 +19,7 @@ interface PostItem {
   createdAt: Date;
   tagOrder: string[];
   author: { name: string | null; image: string | null };
-  tags: { id: string; slug: string; name: string; icon: string }[];
+  tags: { id: string; slug: string; name: string; icon: string; colorMode?: TagColorMode | null; color?: string | null }[];
 }
 
 interface AnimatedPostsGridProps {
@@ -216,6 +217,8 @@ export default function AnimatedPostsGrid({
                         <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                           <TagIcon
                             icon={leadTags[0].icon}
+                            colorMode={leadTags[0].colorMode}
+                            color={leadTags[0].color}
                             className="inline-flex w-3 h-3 [&>svg]:w-full [&>svg]:h-full"
                           />
                           {leadTags[0].name}

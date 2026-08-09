@@ -33,13 +33,19 @@
   --photo-overlay: #000000;
   --on-photo: #ffffff;
 
-  /* Neo-brutalist shadow system — always keyed to --border-heavy so it
-     flips correctly in dark mode without redefining per-theme. */
+  /* --- UI-style tokens (brutalist is the default) --- */
+  --radius: 0px;
+  --border-width: 3px;
   --shadow-color: var(--border-heavy);
   --shadow-sm: 3px 3px 0 0 var(--shadow-color);
   --shadow-md: 4px 4px 0 0 var(--shadow-color);
   --shadow-lg: 6px 6px 0 0 var(--shadow-color);
   --shadow-xl: 8px 8px 0 0 var(--shadow-color);
+  --press-hover: translate(2px, 2px);
+  --press-active: translate(4px, 4px);
+  --press-hover-lg: translate(3px, 3px);
+  --press-active-lg: translate(6px, 6px);
+
   --accent-bookmark: var(--accent);
   --on-accent-bookmark: var(--on-accent);
 }
@@ -73,6 +79,81 @@
   --on-accent-bookmark: #000000;
 }
 
+/* ------------------------------------------------------------------ */
+/* Modern / clean theme — toggled via data-theme="modern" on <html>,  */
+/* independent of light/dark mode.                                    */
+/* ------------------------------------------------------------------ */
+[data-theme='modern'] {
+  --radius: 16px;
+  --radius-pill: 9999px;
+  --border-width: 1px;
+  --border-heavy: var(--border); /* no heavy black outlines in modern mode */
+  --font-sans: var(--font-modern), "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-color: transparent;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 24px -6px rgba(16, 24, 40, 0.10), 0 4px 8px -4px rgba(16, 24, 40, 0.05);
+  --shadow-xl: 0 24px 48px -8px rgba(16, 24, 40, 0.14);
+
+  /* subtle lift instead of a hard offset "press" */
+  --press-hover: translateY(-1px);
+  --press-active: translateY(0px);
+  --press-hover-lg: translateY(-2px);
+  --press-active-lg: translateY(0px);
+
+  /* Modern palette: a monochrome DEEP-PURPLE ramp — the primary is a deep
+     violet, and the secondary/tertiary accents are progressively lighter
+     tints of the same hue so everything stays cohesive.
+     - accent   → deep violet (primary: buttons, links, prices, active tabs)
+     - accent-2 → lighter violet (second accent: hover text, highlighter,
+                  "new/fresh" badges, toggles)
+     - accent-3 → lightest violet (tertiary: category badges, icon chips)
+     This does NOT affect HeroSpotlight's hover roll — that uses hardcoded
+     hex values via inline style, independent of these variables. */
+  --accent: #5b21b6;
+  --accent-2: #7c3aed;
+  --accent-3: #8b5cf6;
+  --accent-tint: #f5f3ff;
+  --on-accent: #ffffff;
+  --on-accent-2: #ffffff;
+  --on-accent-3: #ffffff;
+
+  --background: #ffffff;
+  --card: #ffffff;
+  --muted: #f7f7f9;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --footer-bg: #fafafa;
+}
+
+[data-theme='modern'].dark {
+  --background: #0a0a0c;
+  --card: #131316;
+  --border: #232328;
+  --border-heavy: var(--border);
+  --footer-bg: #131316;
+  --muted: #17171b;
+  --muted-foreground: #9ca3af;
+
+  --shadow-color: transparent;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 24px -6px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 24px 48px -8px rgba(0, 0, 0, 0.6);
+
+  /* Dark modern: lighter tints of the same deep-purple ramp so the violets
+     stay vivid on the near-black background, with dark text on the bright
+     fills for contrast. */
+  --accent: #a78bfa;
+  --accent-2: #c4b5fd;
+  --accent-3: #ddd6fe;
+  --accent-tint: #211a35;
+  --on-accent: #1a1025;
+  --on-accent-2: #1a1025;
+  --on-accent-3: #1a1025;
+}
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -96,6 +177,7 @@
   --color-photo-overlay: var(--photo-overlay);
   --color-on-photo: var(--on-photo);
   --font-sans: var(--font-sans);
+  --radius-theme: var(--radius);
 }
 
 html,
@@ -108,6 +190,12 @@ html body * {
   font-family: var(--font-sans) !important;
 }
 
+/* No transition on these: body background/foreground only ever change when
+   the colour scheme or site theme changes, and both are meant to be
+   instantaneous. next-themes already suppresses transitions for the frame it
+   swaps the .dark class, but the site-theme switch (data-theme) flips these
+   same tokens outside next-themes — leaving a transition here would fade that
+   one on its own. */
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
@@ -119,7 +207,8 @@ div[data-youtube-video] {
   aspect-ratio: 16 / 9;
   margin: 1.5rem 0;
   overflow: hidden;
-  border: 3px solid var(--border-heavy);
+  border: var(--border-width) solid var(--border-heavy);
+  border-radius: var(--radius);
 }
 
 div[data-youtube-video] iframe {
@@ -148,8 +237,8 @@ div[data-youtube-video] iframe {
   align-items: center;
   gap: 5px;
   padding: 6px 12px;
-  border: 2px solid var(--border-heavy);
-  border-radius: 0;
+  border: var(--border-width) solid var(--border-heavy);
+  border-radius: var(--radius);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -157,50 +246,92 @@ div[data-youtube-video] iframe {
   box-shadow: var(--shadow-sm);
 }
 
+[data-theme='modern'] .tag-pill {
+  border-radius: var(--radius-pill);
+}
+
 /* ------------------------------------------------------------------ */
-/* Neo-brutalist core utilities                                       */
+/* Themeable surface utilities                                        */
+/* Use these instead of hardcoded border-2 / rounded-none / shadow-[]  */
+/* in components so they respond to the theme switch.                 */
 /* ------------------------------------------------------------------ */
 
-/* Hard offset shadows. Apply to any card, panel, or raised surface.
-   Always pair with a solid border-heavy — the shadow reads as the
-   "block" the border-boxed element sits on top of. */
+/* Sets border width, color (always border-heavy), and radius together.
+   Use on panels, cards, and other non-pill surfaces whose border color
+   never changes state. */
+.surface-border {
+  border-width: var(--border-width);
+  border-color: var(--border-heavy);
+  border-radius: var(--radius);
+}
+
+/* Sets border width + radius only, leaving color to a Tailwind
+   border-{color} utility. Use when the border color changes with state
+   (active/hover/focus), e.g. nav links, toggles. */
+.surface-border-w {
+  border-width: var(--border-width);
+  border-radius: var(--radius);
+}
+
+/* Like surface-border, but always fully rounded (a capsule) rather than
+   using the general --radius. Falls back to --radius in brutalist mode
+   since --radius-pill isn't defined there — square corners preserved.
+   Use on buttons, badges, and small circular icon buttons. */
+.surface-pill {
+  border-width: var(--border-width);
+  border-color: var(--border-heavy);
+  border-radius: var(--radius-pill, var(--radius));
+}
+
+.surface-pill-w {
+  border-width: var(--border-width);
+  border-radius: var(--radius-pill, var(--radius));
+}
+
 .shadow-brutal-sm { box-shadow: var(--shadow-sm); }
 .shadow-brutal    { box-shadow: var(--shadow-md); }
 .shadow-brutal-lg { box-shadow: var(--shadow-lg); }
 .shadow-brutal-xl { box-shadow: var(--shadow-xl); }
 
 /* The signature interaction: element "presses" toward its shadow on
-   hover, and flattens completely on click — like pushing a physical
-   button into the page. Use on every clickable card, button, and pill.
-   Requires the element to already have one of the shadow-brutal-*
-   classes above and a border-heavy border. */
+   hover, and flattens completely on click in brutalist mode, or lifts
+   softly in modern mode (see --press-* tokens). Requires the element to
+   already have one of the shadow-brutal-* classes above. */
 .brutal-press {
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 .brutal-press:hover {
-  transform: translate(2px, 2px);
+  transform: var(--press-hover);
   box-shadow: var(--shadow-sm);
 }
 .brutal-press:active {
-  transform: translate(4px, 4px);
+  transform: var(--press-active);
   box-shadow: 0 0 0 0 var(--shadow-color);
 }
+[data-theme='modern'] .brutal-press:active {
+  box-shadow: var(--shadow-sm);
+}
+
 /* Variant for elements already using shadow-brutal-lg, so hover/active
    steps down proportionally instead of jumping straight to flat. */
 .brutal-press-lg {
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
 .brutal-press-lg:hover {
-  transform: translate(3px, 3px);
+  transform: var(--press-hover-lg);
   box-shadow: var(--shadow-md);
 }
 .brutal-press-lg:active {
-  transform: translate(6px, 6px);
+  transform: var(--press-active-lg);
   box-shadow: 0 0 0 0 var(--shadow-color);
+}
+[data-theme='modern'] .brutal-press-lg:active {
+  box-shadow: var(--shadow-md);
 }
 
 /* Flat inverted hover for text-only links (nav items, "view all" links
-   with no shadow) — instant color block instead of a fade. */
+   with no shadow) — instant color block in brutalist, a soft tint in
+   modern instead of a jarring full invert. */
 .brutal-invert {
   transition: background-color 100ms ease, color 100ms ease;
 }
@@ -208,7 +339,206 @@ div[data-youtube-video] iframe {
   background-color: var(--foreground);
   color: var(--background);
 }
+/* Modern: no filled highlight block on hover — the label itself takes the
+   second accent (fuchsia) instead, so nav/tab links "light up" their text. */
+[data-theme='modern'] .brutal-invert:hover {
+  background-color: transparent;
+  color: var(--accent-2);
+}
+
 .brutal-snap { transition: transform 100ms linear, box-shadow 100ms linear; }
+
+/* Navbar header framing: thick brutalist top/bottom rules + hard-step
+   scroll shadow in brutalist mode, thin rules + soft shadow in modern. */
+[data-theme='modern'] .header-frame {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+}
+[data-theme='modern'] .header-frame-scrolled {
+  box-shadow: var(--shadow-md);
+}
+
+/* ------------------------------------------------------------------ */
+/* Modern theme — retrofit for components that still hardcode the      */
+/* brutalist atomic classes (`rounded-none` + fixed border widths)     */
+/* instead of the themeable `surface-*` utilities.                     */
+/*                                                                      */
+/* These rules apply ONLY under [data-theme='modern'], so the          */
+/* brutalist theme is never touched — it stays pixel-identical.        */
+/* Color and shadow already flow through the token system (border-heavy */
+/* resolves to the soft --border, shadow-brutal-* become soft          */
+/* shadows); the only two brutalist tells left in unmigrated           */
+/* components are square corners and thick borders, handled here.      */
+/*                                                                      */
+/* Rules are intentionally unlayered so they win over Tailwind's       */
+/* utility layer regardless of specificity.                            */
+/* ------------------------------------------------------------------ */
+
+/* 1. Round every surface that was explicitly squared for brutalism.
+      Only elements that opted into `rounded-none` are affected, so
+      square-by-default table cells, dividers, etc. are left alone, and
+      there is no collision with rounded-full avatars / pills / spinners
+      (those never carry `rounded-none`). */
+[data-theme='modern'] .rounded-none {
+  border-radius: var(--radius);
+}
+
+/* 1b. Round the "square-by-omission" boxes too — small icon tiles, stat
+      blocks, category badges, quick-spec strips, etc. that carry a heavy
+      brutalist border (border-2 / border-4 / border-[3px]) but never
+      declared a radius. Scoped to the *heavy* widths (the brutalist card
+      idiom) so 1px hairline dividers and grid/table cells — which use
+      plain `.border` or directional borders — are left square.
+      `:not([class*="rounded"])` preserves anything that opts into its own
+      radius (rounded-full circles, rounded-none handled above, etc.). */
+[data-theme='modern'] :where(.border-2, .border-4, .border-\[3px\]):not([class*="rounded"]) {
+  border-radius: var(--radius);
+}
+
+/* 2. Hairline the heavy brutalist border widths for a clean modern look.
+      Border color already resolves to the soft --border via --border-heavy,
+      so only the width needs adjusting.
+
+      CRITICAL: each directional variant must set only ITS OWN side. The
+      `border-width` shorthand sets all four, so applying it to a one-sided
+      class like `border-b-2` turns a section rule into a full rectangle —
+      preflight already gives every element `border-style: solid`, and
+      `border-border-heavy` colours all four sides, so the other three edges
+      become visible the moment they get a width. */
+[data-theme='modern'] .border-2,
+[data-theme='modern'] .border-4,
+[data-theme='modern'] .border-\[3px\] {
+  border-width: 1px;
+}
+
+[data-theme='modern'] .border-t-2,
+[data-theme='modern'] .border-t-4 {
+  border-top-width: 1px;
+}
+[data-theme='modern'] .border-b-2,
+[data-theme='modern'] .border-b-4 {
+  border-bottom-width: 1px;
+}
+[data-theme='modern'] .border-l-2,
+[data-theme='modern'] .border-l-4 {
+  border-left-width: 1px;
+}
+[data-theme='modern'] .border-r-2,
+[data-theme='modern'] .border-r-4 {
+  border-right-width: 1px;
+}
+[data-theme='modern'] .border-x-2,
+[data-theme='modern'] .border-x-4 {
+  border-inline-width: 1px;
+}
+[data-theme='modern'] .border-y-2,
+[data-theme='modern'] .border-y-4 {
+  border-block-width: 1px;
+}
+
+/* 2b. Drop the outline on accent-FILLED pills/badges/buttons. In brutalist a
+      heavy border rings every element; in modern that same border resolves to
+      a near-white hairline (--border in light mode) that reads as an ugly
+      white outline once it sits on a solid accent fill (e.g. the "Trending"
+      tag, active category pills, stat blocks). Filled elements should be
+      borderless in modern — outline pills (bg-card / bg-background) keep their
+      border, since they only match a *background* accent class here. */
+[data-theme='modern'] .bg-accent,
+[data-theme='modern'] .bg-accent-2,
+[data-theme='modern'] .bg-accent-3 {
+  border-color: transparent;
+}
+
+/* 2c. Primary CTA buttons rendered in the tertiary accent for brutalist
+      variety (e.g. "View all posts", "View more products"). In modern the
+      tertiary can be a light tint whose auto-contrast text comes out dark —
+      wrong for a call-to-action — so modern promotes them to the deep primary
+      accent with its (white) on-colour. Brutalist keeps the accent-3 fill. */
+[data-theme='modern'] .cta-primary {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* 3. Product hero title bar. Brutalist keeps its inverted `bg-foreground`
+      bar (bold, intentional). In modern that resolves to a solid
+      white (light) / solid black (dark) slab that clashes with the soft
+      card — so modern gets a subtle branded surface instead: a faint
+      accent wash that reads as "clean + matching accent" and works in
+      both light and dark. Text flips back to the normal foreground. */
+[data-theme='modern'] .hero-titlebar {
+  background: linear-gradient(135deg, var(--accent-tint), var(--card));
+  color: var(--foreground);
+}
+[data-theme='modern'] .hero-titlebar :where(h1, button) {
+  color: var(--foreground);
+}
+
+/* 4. Underline component (interactive text labels). Brutalist keeps the hard
+      highlighter block that fills behind the text on hover. Modern drops the
+      block entirely — the text itself just takes the second accent (fuchsia)
+      and gains a thin underline, a lighter "highlight the text" treatment.
+      `!important` is required to beat the component's inline background-image. */
+[data-theme='modern'] .underline-swap {
+  background-image: none !important;
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+[data-theme='modern'] .group:hover .underline-swap {
+  color: var(--accent-2);
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+/* 5. Rating-meter faces. The brutalist set is deliberately angular — square
+      eyes, miter joins, star-eyed "great" face — which reads as a leftover
+      from the other theme however much the strokes are softened. So modern
+      gets a different face set entirely (lucide line icons, matching the rest
+      of its UI) and the component renders both, letting these rules pick.
+
+      Switching here rather than in the component keeps the theme out of a
+      client component, avoiding a hydration mismatch and a visible flip on
+      load. Same approach TagIcon uses for its light/dark pair. */
+.face-brutalist,
+.face-modern {
+  display: inline-flex;
+}
+.face-modern {
+  display: none;
+}
+[data-theme='modern'] .face-brutalist {
+  display: none;
+}
+[data-theme='modern'] .face-modern {
+  display: inline-flex;
+}
+
+/* ------------------------------------------------------------------ */
+/* Modern motion — smooth in-page navigation + gentle scroll reveals   */
+/* as you explore the page. Scoped to modern; brutalist stays snappy.  */
+/* ------------------------------------------------------------------ */
+/* NOTE: no `scroll-behavior: smooth` here on purpose. Next's App Router
+   scrolls to the top of each new page with a bare `domNode.scrollIntoView()`,
+   which honours that CSS value — so setting it turned every route change into
+   an animated scroll-up. Smooth in-page jumps are handled per-click by
+   <SmoothAnchors>, which also offsets for the sticky header. */
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll-driven reveal. Guarded by @supports so browsers without
+   scroll-timeline simply render the element normally (fully visible) —
+   no risk of content being stuck hidden. Respects reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-theme='modern'] .reveal-up {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
 
 .dark .tag-icon-svg svg [fill]:not([fill="none"]) {
   fill: currentColor !important;

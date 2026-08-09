@@ -23,7 +23,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { title, description, badge, cta, image, link, order } = await req.json();
+    const { title, description, badge, cta, featuredLabel, image, link, order } =
+      await req.json();
 
     if (!title || !image || !link) {
       return NextResponse.json(
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
         description: description || null,
         badge: badge || null,
         cta: cta || null,
+        featuredLabel: featuredLabel || null,
         image,
         link,
         active: true,

@@ -309,7 +309,7 @@ export default function EnhancedTable({ html }: { html: string }) {
 
         <div className="flex items-center gap-1">
           {/* View toggle */}
-          <div className="flex items-center rounded-none border-2 border-border-heavy mr-1">
+          <div className="flex items-center overflow-hidden rounded-none border-2 border-border-heavy mr-1">
             <button
               onClick={() => setViewMode("cards")}
               className={`p-1.5 transition-colors duration-100 ${

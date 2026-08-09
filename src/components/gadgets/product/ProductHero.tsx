@@ -25,6 +25,7 @@ import {
   Activity,
 } from "lucide-react";
 import TagIcon from "@/components/blog/TagIcon";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 import ProductGallery from "./ProductGallery";
 import ProductColors from "./ProductColors";
 import type { ProductColor } from "@/lib/gadgets/colors";
@@ -90,7 +91,14 @@ interface ProductHeroProps {
     images?: string[];
     priceFrom: number | null;
     currency: string;
-    tags: { id: string; name: string; slug: string; icon: string }[];
+    tags: {
+      id: string;
+      name: string;
+      slug: string;
+      icon: string;
+      colorMode?: TagColorMode | null;
+      color?: string | null;
+    }[];
   };
   categoryName: string;
   /** Color variants — swatches with hover image preview. */
@@ -140,7 +148,7 @@ export default function ProductHero({
   return (
     <div className="border-2 border-border-heavy bg-card shadow-brutal-lg rounded-none">
       {/* Title bar */}
-      <div className="flex items-center justify-between gap-4 border-b-4 border-border-heavy bg-foreground px-6 py-4 sm:px-8">
+      <div className="hero-titlebar flex items-center justify-between gap-4 border-b-4 border-border-heavy bg-foreground px-6 py-4 sm:px-8">
         <div className="min-w-0">
           <span className="tag-pill inline-flex bg-accent-3 text-on-accent-3 mb-2">
             {categoryName}
@@ -199,7 +207,7 @@ export default function ProductHero({
                     key={t.id}
                     className="inline-flex items-center gap-1.5 border-2 border-border-heavy bg-background rounded-none px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-foreground"
                   >
-                    <TagIcon icon={t.icon} className="w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
+                    <TagIcon icon={t.icon} colorMode={t.colorMode} color={t.color} className="w-3.5 h-3.5 [&>svg]:w-full [&>svg]:h-full" />
                     {t.name}
                   </span>
                 ))}

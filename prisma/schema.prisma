@@ -67,6 +67,7 @@ model Tag {
   slug      String       @unique
   icon      String       @default("🏷️")
   colorMode TagColorMode @default(AUTO)
+  color     String?      // #rrggbb used when colorMode is CUSTOM (e.g. Android green)
   createdAt DateTime     @default(now())
   posts     Post[]       @relation("PostTags")
   products  Product[]    @relation("ProductTags")
@@ -86,6 +87,7 @@ model Banner {
   description String?
   badge       String?  // small tag shown above the headline (e.g. "Top Story")
   cta         String?  // call-to-action button label (e.g. "Read more")
+  featuredLabel String? // flag overlaid on the hero image (e.g. "Featured")
   image       String
   link        String
   active      Boolean  @default(true)
@@ -217,6 +219,7 @@ enum TagColorMode {
   AUTO           // today's heuristic: per-theme correction for near-background colors
   KEEP_ORIGINAL  // never touch colors, in either theme
   FORCE_MONO     // always render as solid currentColor, in both themes
+  CUSTOM         // always render as solid Tag.color, in both themes
 }
 
 // ─── Gadget Comparison Feature ───────────────────────────────

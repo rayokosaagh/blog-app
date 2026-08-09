@@ -79,9 +79,12 @@ export default function Navbar() {
     return !!session && session.user?.role !== "READER";
   });
 
-  // Shared classes for the nav-link "icon utility button" treatment (§5 of the guide).
+  // Shared classes for the nav-link "icon utility button" treatment.
+  // rounded-none/border-2 -> surface-border-w (themed width + radius),
+  // colors stay as Tailwind border-color utilities so active/inactive
+  // states still work.
   const navLinkClass = (active: boolean) =>
-    `relative flex items-center gap-1.5 px-3 py-2 rounded-none whitespace-nowrap uppercase text-xs font-extrabold tracking-wide border-2 transition-colors duration-100 ${
+    `relative flex items-center gap-1.5 px-3 py-2 surface-border-w whitespace-nowrap uppercase text-xs font-extrabold tracking-wide transition-colors duration-100 ${
       active
         ? "border-border-heavy bg-foreground text-background"
         : "border-transparent text-muted-foreground hover:border-border-heavy hover:bg-accent-2 hover:text-on-accent-2"
@@ -90,16 +93,13 @@ export default function Navbar() {
   return (
     <>
     {/*
-      Flat masthead: no blur/glass, no shape morphing on scroll. A thick
-      top rule + heavy bottom rule frame the bar. On scroll we step in a
-      hard offset shadow (not a blurred one) to lift it off content —
-      this is a one-off directional shadow the shared utilities don't
-      cover; if this pattern gets reused elsewhere, promote it to a
-      `.shadow-brutal-header` utility in globals.css.
+      Flat masthead: thick top/bottom rule in brutalist mode, thin in
+      modern (see .header-frame overrides in globals.css). Scroll shadow
+      is a hard step in brutalist, a soft themed shadow in modern.
     */}
     <header
-      className={`sticky top-0 z-[100] w-full bg-background border-t-4 border-b-2 border-border-heavy transition-shadow duration-150 ${
-        isScrolled ? "shadow-[0_4px_0_0_var(--border-heavy)]" : ""
+      className={`header-frame sticky top-0 z-[100] w-full bg-background border-t-4 border-b-2 border-border-heavy transition-shadow duration-150 ${
+        isScrolled ? "header-frame-scrolled shadow-[0_4px_0_0_var(--border-heavy)]" : ""
       }`}
     >
       <div className="mx-auto w-full max-w-[1560px] text-foreground">
@@ -139,12 +139,12 @@ export default function Navbar() {
             <div className="w-[2px] h-5 bg-border-heavy mr-6" />
 
             {status === "loading" ? (
-              <div className="w-9 h-9 rounded-none border-2 border-border-heavy animate-pulse" />
+              <div className="w-9 h-9 surface-border-w border-border-heavy animate-pulse" />
             ) : session ? (
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center justify-center w-9 h-9 rounded-none border-2 border-border-heavy text-foreground shadow-brutal-sm brutal-press"
+                  className="flex items-center justify-center w-9 h-9 surface-border-w border-border-heavy text-foreground shadow-brutal-sm brutal-press overflow-hidden"
                 >
                   {session.user?.image ? (
                     <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
@@ -164,9 +164,9 @@ export default function Navbar() {
                       transition={{ duration: 0.12, ease: "easeOut" }}
                       className="absolute left-1/2 -translate-x-1/2 mt-3 w-64 origin-top"
                     >
-                      <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal">
+                      <div className="bg-card surface-border-w border-border-heavy shadow-brutal">
                         <div className="flex items-center gap-3 px-4 py-3.5 border-b-2 border-border">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-none border-2 border-border-heavy text-foreground">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden surface-border-w border-border-heavy text-foreground">
                             {session.user?.image ? (
                               <img src={session.user.image} alt="Profile" className="h-full w-full object-cover" />
                             ) : (
@@ -185,20 +185,17 @@ export default function Navbar() {
                           <Link
                             href="/bookmarks"
                             onClick={() => setIsProfileOpen(false)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent-tint rounded-none transition-colors duration-100 font-extrabold uppercase tracking-wide text-xs"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent-tint transition-colors duration-100 font-extrabold uppercase tracking-wide text-xs"
+                            style={{ borderRadius: "var(--radius)" }}
                           >
                             <Bookmark className="h-4 w-4" />
                             Bookmarks
                           </Link>
                         </div>
                         <div className="px-2 pb-2">
-                          {/*
-                            Destructive action: red is semantic, not a
-                            brand color, so it's kept outside the token
-                            table — but the hover is a solid block, not a
-                            translucent tint, to match §1.6.
-                          */}
-                          <SignOutButton className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-500 rounded-none transition-colors duration-100 text-left font-extrabold uppercase tracking-wide text-xs cursor-pointer">
+                          <SignOutButton
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-500 transition-colors duration-100 text-left font-extrabold uppercase tracking-wide text-xs cursor-pointer"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
@@ -213,7 +210,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="px-5 py-2.5 rounded-none border-2 border-border-heavy bg-background text-foreground hover:bg-accent hover:text-on-accent font-extrabold uppercase text-xs tracking-wide shadow-brutal-sm brutal-press"
+                className="px-5 py-2.5 surface-border-w border-border-heavy bg-background text-foreground hover:bg-accent hover:text-on-accent font-extrabold uppercase text-xs tracking-wide shadow-brutal-sm brutal-press"
               >
                 Sign In
               </Link>
@@ -223,7 +220,7 @@ export default function Navbar() {
           <button
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close menu" : "Open menu"}
-            className="md:hidden p-2 rounded-none border-2 border-border-heavy text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100 focus:outline-none"
+            className="md:hidden p-2 surface-border-w border-border-heavy text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100 focus:outline-none"
           >
             {isOpen ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -265,7 +262,7 @@ export default function Navbar() {
                 <div className="flex items-center justify-between px-4 py-4 border-b-2 border-border">
                   {session ? (
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-none border-2 border-border-heavy text-foreground">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden surface-border-w border-border-heavy text-foreground">
                         {session.user?.image ? (
                           <img src={session.user.image} alt="Profile" className="h-full w-full object-cover" />
                         ) : (
@@ -289,7 +286,7 @@ export default function Navbar() {
                   <button
                     onClick={() => setIsOpen(false)}
                     aria-label="Close menu"
-                    className="shrink-0 p-1.5 rounded-none border-2 border-transparent text-foreground hover:bg-accent-2 hover:text-on-accent-2 hover:border-border-heavy transition-colors duration-100"
+                    className="shrink-0 p-1.5 surface-border-w border-transparent text-foreground hover:bg-accent-2 hover:text-on-accent-2 hover:border-border-heavy transition-colors duration-100"
                   >
                     <X className="h-4.5 w-4.5" />
                   </button>
@@ -326,14 +323,14 @@ export default function Navbar() {
 
                   <div className="mt-auto pt-4">
                     {session ? (
-                      <SignOutButton className="flex justify-center items-center gap-2 w-full py-2.5 rounded-none border-2 border-border-heavy text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-500 transition-colors duration-100 font-extrabold uppercase text-xs tracking-wide cursor-pointer">
+                      <SignOutButton className="flex justify-center items-center gap-2 w-full py-2.5 surface-border-w border-border-heavy text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-500 transition-colors duration-100 font-extrabold uppercase text-xs tracking-wide cursor-pointer">
                         <LogOut className="h-4 w-4" />
                         Sign Out
                       </SignOutButton>
                     ) : (
                       <Link
                         href="/login"
-                        className="flex justify-center items-center gap-2 w-full py-2.5 rounded-none border-2 border-border-heavy text-foreground font-extrabold uppercase text-xs tracking-wide shadow-brutal-sm brutal-press"
+                        className="flex justify-center items-center gap-2 w-full py-2.5 surface-border-w border-border-heavy text-foreground font-extrabold uppercase text-xs tracking-wide shadow-brutal-sm brutal-press"
                       >
                         Sign In
                       </Link>

@@ -18,7 +18,7 @@ export default function ProductSpecTable({ group, specs }: ProductSpecTableProps
   return (
     <section
       id={slugifyTitle(group.title)}
-      className="scroll-mt-24 flex border-2 border-border-heavy bg-card rounded-none shadow-brutal overflow-hidden"
+      className="reveal-up scroll-mt-24 flex border-2 border-border-heavy bg-card rounded-none shadow-brutal overflow-hidden"
     >
       <div className="flex flex-col items-center justify-center gap-2 w-20 sm:w-24 shrink-0 bg-accent-2 border-r-4 border-border-heavy px-2 py-6">
         <GroupIcon className="w-10 h-10 sm:w-12 sm:h-12 text-on-accent-2" strokeWidth={2} />

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import TagIcon from "@/components/blog/TagIcon";
-import { isSvgIcon } from "@/lib/sanitizeSvg";
+import { isSvgIcon, type TagColorMode } from "@/lib/sanitizeSvg";
 
 interface TagItem {
   id: string;
   name: string;
   slug: string;
   icon: string;
-  colorMode?: "AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO";
+  colorMode?: TagColorMode | null;
+  color?: string | null;
   _count: { products: number };
 }
 
@@ -38,6 +39,7 @@ export default function ProductTagRail({ tags }: ProductTagRailProps) {
              <TagIcon
   icon={t.icon}
   colorMode={t.colorMode}
+  color={t.color}
   className={
     iconIsSvg
       ? "w-full h-full text-foreground group-hover:text-on-accent-2 [&>svg]:w-full [&>svg]:h-full"

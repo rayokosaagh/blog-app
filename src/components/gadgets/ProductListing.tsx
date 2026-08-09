@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/BackToTop";
 import PageHeader from "@/components/layout/PageHeader";
 import TagIcon from "@/components/blog/TagIcon";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 import ProductGrid from "@/components/gadgets/ProductGrid";
 import ProductFilterSidebar from "@/components/gadgets/ProductFilterSidebar";
 import ProductCategoryTabs from "@/components/gadgets/ProductCategoryTabs";
@@ -25,6 +26,8 @@ interface TagContext {
   slug: string;
   name: string;
   icon: string;
+  colorMode?: TagColorMode | null;
+  color?: string | null;
 }
 
 /**
@@ -93,6 +96,8 @@ export default async function ProductListing({
             <>
               <TagIcon
                 icon={tag.icon}
+                colorMode={tag.colorMode}
+                color={tag.color}
                 className="inline-flex h-9 w-9 shrink-0 text-accent [&>svg]:h-full [&>svg]:w-full md:h-12 md:w-12"
               />
               {tag.name}

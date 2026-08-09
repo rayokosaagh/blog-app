@@ -75,7 +75,7 @@ export default function ProductSpecNav({ groups, specs }: ProductSpecNavProps) {
   return (
     <nav className="hidden lg:block sticky top-24 self-start w-56 shrink-0">
       <div className="border-4 border-border-heavy bg-card shadow-brutal-lg rounded-none overflow-hidden">
-        <div className="flex items-center gap-2 bg-foreground text-background px-4 py-3 border-b-4 border-border-heavy">
+        <div className="hero-titlebar flex items-center gap-2 bg-accent text-on-accent px-4 py-3 border-b-4 border-border-heavy">
           <List className="w-3.5 h-3.5 shrink-0" />
           <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]">
             Jump to

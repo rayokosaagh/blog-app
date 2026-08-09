@@ -36,7 +36,11 @@ export const revalidate = 60;
 // rather than as py on each individual section — stacking top+bottom
 // padding from adjacent sections was doubling the visual gap.
 const SECTION_GAP = "gap-10 sm:gap-14 lg:gap-16";
-const SECTION_TOP_PADDING = "pt-10 sm:pt-14 lg:pt-16";
+// Deliberately tighter than SECTION_GAP: this is the space under the navbar,
+// and the first section (the hero) adds its own pt-6 under the divider rule on
+// top of it. Matching the between-sections rhythm here stacked to ~88px and
+// pushed the hero well below the fold on laptops.
+const SECTION_TOP_PADDING = "pt-4 sm:pt-6 lg:pt-8";
 const SECTION_BOTTOM_PADDING = "pb-10 sm:pb-14 lg:pb-16";
 
 // Category chips shown under the hero — mirrors the gadget categories
@@ -95,6 +99,7 @@ const [recentPosts, banners, productsByCategoryArrays, topTags, spotlightAds] = 
     slug: true,
     icon: true,
     colorMode: true,
+    color: true,
     _count: { select: { products: true } },
   },
   orderBy: { products: { _count: "desc" } },
@@ -129,20 +134,36 @@ const productsByCategory = Object.fromEntries(
         */}
         {banners.length > 0 && (
           <section className="max-w-[1600px] mx-auto px-6 w-full">
-            <div className="pt-6 border-t-4 border-border-heavy">
+            <div className="pt-6 border-t border-border-heavy">
               <FadeIn>
                 <HeroSpotlight banners={banners} />
               </FadeIn>
 
-              {/* Secondary stories header — pink accent card */}
-              <div className="mt-10 mb-4 flex items-center justify-between gap-4 rounded-none border-2 border-border-heavy bg-accent-3 text-on-accent-3 shadow-brutal-sm px-4 py-2.5">
-                <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide">
-                  <Newspaper className="h-4 w-4" />
-                  More top stories
-                </h3>
+              {/* Secondary stories header — icon chip + title/subtitle on the
+                  left, "All stories" pill on the right, over a divider rule.
+                  Uses themeable surfaces so it reads bold/blocky in brutalist
+                  and clean/rounded in modern. */}
+              <div className="mt-10 mb-5 flex items-end justify-between gap-4 border-b-2 border-border-heavy pb-3">
+                <div className="flex items-center gap-3">
+                  {/* Icon is pinned white rather than using --on-accent-3:
+                      the derived contrast colour goes dark on a light
+                      tertiary, and this chip is meant to read as a solid
+                      colour block with a white mark in every theme. */}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center surface-border border-border-heavy bg-accent-3 text-white shadow-brutal-sm">
+                    <Newspaper className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-extrabold uppercase tracking-tight leading-none text-foreground">
+                      More top stories
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                      Trending &amp; latest, hand-picked
+                    </p>
+                  </div>
+                </div>
                 <Link
                   href="/blog"
-                  className="group inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide transition-opacity hover:opacity-80"
+                  className="group inline-flex shrink-0 items-center gap-1.5 surface-pill border-border-heavy bg-card px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-foreground shadow-brutal-sm brutal-press hover:bg-accent-3 hover:text-on-accent-3"
                 >
                   All stories
                   <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -210,6 +231,7 @@ const productsByCategory = Object.fromEntries(
                     <Link
                       href="/blog"
                       className="
+                        cta-primary
                         group inline-flex items-center gap-2 px-5 py-2.5
                         rounded-none border-2 border-border-heavy bg-accent-3
                         text-xs font-extrabold uppercase tracking-wide text-on-accent-3

@@ -33,11 +33,13 @@ export default function ThemeToggle({ size = "default" }: ThemeToggleProps) {
         className={`relative w-10 h-5 border-[1.5px] border-border-heavy p-0.5 flex-shrink-0
           transition-colors duration-200
           ${isDark ? "bg-foreground" : "bg-accent-2"}`}
+        style={{ borderRadius: "var(--radius, 9999px)" }}
       >
         <span
           className={`relative flex items-center justify-center w-4 h-4 border-[1.5px] border-border-heavy
             transition-transform duration-200
             ${isDark ? "translate-x-5 bg-background" : "translate-x-0 bg-background"}`}
+          style={{ borderRadius: "var(--radius, 9999px)" }}
         >
           <Sun
             size={9}
@@ -66,11 +68,13 @@ export default function ThemeToggle({ size = "default" }: ThemeToggleProps) {
       className={`relative w-16 h-8 border-[1.5px] border-border-heavy p-1
         transition-colors duration-200
         ${isDark ? "bg-foreground" : "bg-accent-2"}`}
+      style={{ borderRadius: "var(--radius, 9999px)" }}
     >
       <span
         className={`relative flex items-center justify-center w-6 h-6 border-[1.5px] border-border-heavy
           transition-transform duration-200
           ${isDark ? "translate-x-8 bg-background" : "translate-x-0 bg-background"}`}
+        style={{ borderRadius: "var(--radius, 9999px)" }}
       >
         <Sun
           size={14}

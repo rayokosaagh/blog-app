@@ -13,7 +13,8 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { Star } from "lucide-react";
+import { Star, Frown, Annoyed, Meh, Smile, Laugh } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface RatingMeterProps {
   postId: string;
@@ -40,11 +41,44 @@ function segmentFor(value: number) {
 // Shown before anyone (including the current visitor) has rated the post.
 const UNRATED_SEG = { face: "unrated" as const, label: "Not yet rated", color: "#94a3b8" };
 
-// Hand-drawn geometric faces — square eyes, straight/angular mouths, sharp
-// miter joins (no strokeLinecap="round" anywhere). This is the brutalist
-// swap for the old rounded unicode emoji: same emotional read, none of the
-// soft curvature.
+// Clean line-drawn faces for the modern theme. Rounding the brutalist shapes
+// wasn't enough — square eyes and a star-eyed "great" face read as a leftover
+// from the other theme no matter how soft the strokes get, so modern gets a
+// different face set entirely, in the same icon family as the rest of its UI.
+const MODERN_FACES: Record<FaceKey, LucideIcon> = {
+  bad: Frown,
+  meh: Annoyed,
+  okay: Meh,
+  good: Smile,
+  great: Laugh,
+};
+
+/**
+ * Both face sets render; CSS shows the one matching the active theme (see
+ * `.face-brutalist` / `.face-modern` in globals.css).
+ *
+ * Swapping in JS would mean reading the theme in a client component, which
+ * risks a hydration mismatch and a visible flip on load. This is the same
+ * pattern TagIcon already uses for its light/dark pair.
+ */
 function Face({ face, color }: { face: FaceKey; color: string }) {
+  const ModernFace = MODERN_FACES[face];
+  return (
+    <>
+      <span className="face-brutalist leading-none">
+        <BrutalistFace face={face} color={color} />
+      </span>
+      <span className="face-modern leading-none" style={{ color }}>
+        <ModernFace size={40} strokeWidth={1.75} />
+      </span>
+    </>
+  );
+}
+
+// Hand-drawn geometric faces — square eyes, straight/angular mouths, sharp
+// miter joins. This is the brutalist swap for the old rounded unicode emoji:
+// same emotional read, none of the soft curvature.
+function BrutalistFace({ face, color }: { face: FaceKey; color: string }) {
   const line = "var(--foreground)";
   const common = { fill: "none", strokeWidth: 4, strokeLinecap: "square" as const, strokeLinejoin: "miter" as const };
 
@@ -218,7 +252,7 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8 ${className}`}
+      className={`bg-card surface-border shadow-brutal px-6 py-8 md:px-8 ${className}`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -278,13 +312,21 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
         </div>
       ) : (
         <div className="relative flex flex-col items-center gap-4 select-none">
-          {/* Emoji — bordered square badge instead of a translucent glow
-              backdrop; the segment color reads through a hard 3px border
-              rather than a soft alpha wash. */}
+          {/* Emoji — bordered badge instead of a translucent glow backdrop;
+              the segment color reads through a solid border rather than a soft
+              alpha wash. Width and radius come from the theme tokens, so it's
+              a hard 3px square in brutalist and a 1px rounded tile in modern.
+              (Inline styles are invisible to the modern retrofit rules in
+              globals.css, so these have to reference the vars directly.) */}
           <div className="relative h-16 flex items-center justify-center">
             <motion.div
               className="absolute h-14 w-14 bg-card"
-              style={{ borderWidth: 3, borderStyle: "solid", borderColor: seg.color }}
+              style={{
+                borderWidth: "var(--border-width)",
+                borderStyle: "solid",
+                borderColor: seg.color,
+                borderRadius: "var(--radius)",
+              }}
               animate={{
                 scale: dragging ? 1.15 : 1,
                 // hard mechanical shake on submit — three quick snaps, no
@@ -322,7 +364,7 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
               {justSubmitted && (
                 <motion.div
                   className="absolute h-14 w-14"
-                  style={{ boxShadow: `0 0 0 2px ${seg.color}` }}
+                  style={{ boxShadow: `0 0 0 2px ${seg.color}`, borderRadius: "var(--radius)" }}
                   initial={{ scale: 0.7, opacity: 0.8 }}
                   animate={{ scale: 1.8, opacity: 0 }}
                   exit={{ opacity: 0 }}
@@ -428,11 +470,16 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
       </motion.div>
     )}
 
-    {/* thumb — square brutalist handle instead of a circle, rendered
+    {/* thumb — square brutalist handle, circular in modern, rendered
         outside the clipped layer so it isn't sliced by the track. */}
     <motion.div
       className="absolute top-1/2 flex h-7 w-7 items-center justify-center bg-card shadow-brutal-sm"
-      style={{ borderWidth: 3, borderStyle: "solid", borderColor: seg.color }}
+      style={{
+        borderWidth: "var(--border-width)",
+        borderStyle: "solid",
+        borderColor: seg.color,
+        borderRadius: "var(--radius-pill, 0)",
+      }}
       animate={{
         left: `${pct}%`,
         scale: dragging ? 1.3 : 1,
@@ -443,6 +490,7 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
     >
       <motion.div
         className="h-2.5 w-2.5"
+        style={{ borderRadius: "var(--radius-pill, 0)" }}
         animate={{ backgroundColor: seg.color }}
         transition={{ duration: 0.3 }}
       />

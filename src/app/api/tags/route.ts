@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { isSvgIcon, sanitizeSvg } from "@/lib/sanitizeSvg";
+import { isSvgIcon, sanitizeSvg, resolveTagColor } from "@/lib/sanitizeSvg";
 
 function slugify(name: string) {
   return name
@@ -36,15 +36,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { name, icon, colorMode: rawColorMode } = await req.json();
+    const { name, icon, colorMode: rawColorMode, color: rawColor } = await req.json();
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const colorMode =
-      rawColorMode === "KEEP_ORIGINAL" || rawColorMode === "FORCE_MONO"
-        ? rawColorMode
-        : "AUTO";
+    const { colorMode, color } = resolveTagColor(rawColorMode, rawColor);
 
     const slug = slugify(name);
 
@@ -56,7 +53,7 @@ export async function POST(req: Request) {
     const tag = await prisma.tag.upsert({
       where: { slug },
       update: {},
-      create: { name: name.trim(), slug, icon: safeIcon, colorMode },
+      create: { name: name.trim(), slug, icon: safeIcon, colorMode, color },
     });
 
     return NextResponse.json(tag, { status: 201 });

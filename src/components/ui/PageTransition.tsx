@@ -1,66 +1,48 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 interface PageTransitionProps {
   children: React.ReactNode;
 }
 
-// Refined, editorial-feeling motion: a soft directional slide + blur,
-// eased with an expo-out curve for a fast start and smooth, bounce-free settle.
+// Expo-out: quick to start, long bounce-free settle.
 const EASE = [0.22, 1, 0.36, 1] as const;
-const DISTANCE = 20;
-const variants = {
-  enter: (direction: 1 | -1) => ({
-    opacity: 0,
-    x: direction * DISTANCE,
-  }),
-  center: {
-    opacity: 1,
-    x: 0,
-  },
-  exit: (direction: 1 | -1) => ({
-    opacity: 0,
-    x: direction * -DISTANCE,
-  }),
-};
+const DURATION = 0.34;
 
+/**
+ * Cross-fade between routes.
+ *
+ * Deliberately opacity-only — no slide, scale or blur. This wrapper contains
+ * the whole page, including the sticky <Navbar>, the fixed BackToTop button and
+ * the sticky sidebars. `transform` and `filter` both make an element the
+ * containing block for its `position: fixed` descendants — the same trap
+ * already documented in PopupAd, which had to portal out to <body> because of
+ * it. Animating either one detaches those elements for the duration of every
+ * navigation, so the navbar unsticks and slides along with the page. The
+ * previous slide-in on `x` did exactly that.
+ *
+ * Opacity creates a stacking context but NOT a containing block, so the fade
+ * composites on the GPU and leaves layout completely alone. `mode="popLayout"`
+ * pulls the outgoing page out of flow so the two don't stack and briefly
+ * double the document height mid-transition.
+ */
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
-  const isBackForward = useRef(false);
-  const [direction, setDirection] = useState<1 | -1>(1);
-
-  // Browser back/forward buttons fire `popstate`; regular Link clicks and
-  // router.push() do not. That's enough to distinguish "going back" (-1)
-  // from "moving forward" (1) without needing a full history stack.
-  useEffect(() => {
-    function handlePopState() {
-      isBackForward.current = true;
-    }
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  useEffect(() => {
-    setDirection(isBackForward.current ? -1 : 1);
-    isBackForward.current = false;
-  }, [pathname]);
+  const reduced = useReducedMotion();
 
   return (
-    <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-  <motion.div
-    key={pathname}
-    custom={direction}
-    variants={variants}
-    initial="enter"
-    animate="center"
-    exit="exit"
-    transition={{ duration: 0.25, ease: EASE }}
-  >
-    {children}
-  </motion.div>
-</AnimatePresence>
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={reduced ? { duration: 0 } : { duration: DURATION, ease: EASE }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

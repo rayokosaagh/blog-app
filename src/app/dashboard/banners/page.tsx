@@ -25,6 +25,7 @@ interface Banner {
   description: string | null;
   badge: string | null;
   cta: string | null;
+  featuredLabel: string | null;
   image: string;
   link: string;
   active: boolean;
@@ -51,7 +52,7 @@ export default function BannersPage() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [form, setForm] = useState({ title: "", description: "", badge: "", cta: "", image: "", link: "", active: true, order: 0 });
+  const [form, setForm] = useState({ title: "", description: "", badge: "", cta: "", featuredLabel: "", image: "", link: "", active: true, order: 0 });
 
   useEffect(() => {
     loadBanners();
@@ -94,14 +95,14 @@ export default function BannersPage() {
 
   function openAdd() {
     setEditingBanner(null);
-    setForm({ title: "", description: "", badge: "", cta: "", image: "", link: "", active: true, order: banners.length });
+    setForm({ title: "", description: "", badge: "", cta: "", featuredLabel: "", image: "", link: "", active: true, order: banners.length });
     setError("");
     setView("add");
   }
 
   function openEdit(banner: Banner) {
     setEditingBanner(banner);
-    setForm({ title: banner.title, description: banner.description ?? "", badge: banner.badge ?? "", cta: banner.cta ?? "", image: banner.image, link: banner.link, active: banner.active, order: banner.order });
+    setForm({ title: banner.title, description: banner.description ?? "", badge: banner.badge ?? "", cta: banner.cta ?? "", featuredLabel: banner.featuredLabel ?? "", image: banner.image, link: banner.link, active: banner.active, order: banner.order });
     setError("");
     setView("edit");
   }
@@ -293,6 +294,19 @@ export default function BannersPage() {
                   />
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
                     Call-to-action button text. Defaults to “Read more”.
+                  </p>
+                </div>
+                <div>
+                  <label className={labelClass}>Featured flag</label>
+                  <input
+                    type="text"
+                    value={form.featuredLabel}
+                    onChange={(e) => setForm({ ...form, featuredLabel: e.target.value })}
+                    className={inputClass}
+                    placeholder="Featured"
+                  />
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                    Corner flag overlaid on the banner image. Defaults to “Featured”.
                   </p>
                 </div>
               </div>

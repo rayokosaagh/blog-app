@@ -101,15 +101,28 @@ export default function DesktopTable({
                           const empty = v === undefined || v === null || v === "";
                           return (
                             <td key={p.id} className="p-3 whitespace-pre-line">
-                              {highlightDiff && differs && !empty ? (
-                                <span className="inline-flex items-center rounded-none border-2 border-border-heavy bg-accent-2 text-on-accent-2 font-extrabold px-2 py-0.5">
-                                  {String(v)}
-                                </span>
-                              ) : (
-                                <span className={empty ? "text-muted-foreground" : "text-foreground"}>
-                                  {empty ? "—" : String(v)}
-                                </span>
-                              )}
+                              {/*
+                                One span in both states, with the badge's box
+                                metrics always applied and only its colours
+                                toggling. Swapping between a bare span and a
+                                bordered/padded one changed every differing
+                                cell's size, so flipping Highlight reflowed row
+                                heights and column widths — that jolt was the
+                                "wacky" part, not the transition itself.
+                                Applied to every value cell, not just differing
+                                ones, so columns stay aligned.
+                              */}
+                              <span
+                                className={`inline-flex items-center rounded-none border-2 px-2 py-0.5 font-semibold transition-colors duration-200 ease-out ${
+                                  highlightDiff && differs && !empty
+                                    ? "border-border-heavy bg-accent-2 text-on-accent-2"
+                                    : `border-transparent ${
+                                        empty ? "text-muted-foreground" : "text-foreground"
+                                      }`
+                                }`}
+                              >
+                                {empty ? "—" : String(v)}
+                              </span>
                             </td>
                           );
                         })}

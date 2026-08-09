@@ -106,15 +106,19 @@ export default function MobileTable({
                           const empty = v === undefined || v === null || v === "";
                           return (
                             <td key={p.id} className="p-2 whitespace-pre-line min-w-[100px] max-w-[110px]">
-                              {highlightDiff && differs && !empty ? (
-                                <span className="inline-flex items-center rounded-none border-2 border-border-heavy bg-accent-2 text-on-accent-2 font-extrabold px-1.5 py-0.5 text-[11px]">
-                                  {String(v)}
-                                </span>
-                              ) : (
-                                <span className={empty ? "text-muted-foreground" : "text-foreground"}>
-                                  {empty ? "—" : String(v)}
-                                </span>
-                              )}
+                              {/* Constant box metrics, colours only — see the
+                                  matching comment in DesktopTable. */}
+                              <span
+                                className={`inline-flex items-center rounded-none border-2 px-1.5 py-0.5 text-[11px] font-semibold transition-colors duration-200 ease-out ${
+                                  highlightDiff && differs && !empty
+                                    ? "border-border-heavy bg-accent-2 text-on-accent-2"
+                                    : `border-transparent ${
+                                        empty ? "text-muted-foreground" : "text-foreground"
+                                      }`
+                                }`}
+                              >
+                                {empty ? "—" : String(v)}
+                              </span>
                             </td>
                           );
                         })}

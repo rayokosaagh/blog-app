@@ -138,7 +138,38 @@ function neutralizeForBackground(svg: string, bgLuminance: number): string {
   return out;
 }
 
-export type TagColorMode = "AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO";
+export type TagColorMode = "AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO" | "CUSTOM";
+
+/** True for a `#rrggbb` / `#rgb` string — the only colors we'll inline. */
+export function isTagColor(value: unknown): value is string {
+  return typeof value === "string" && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
+}
+
+/**
+ * Normalise an untrusted colorMode/color pair from a request body.
+ *
+ * CUSTOM without a usable hex falls back to AUTO rather than persisting a mode
+ * the renderer can't satisfy. The color itself is kept whenever it's valid,
+ * even for other modes, so flipping a tag to AUTO and back doesn't silently
+ * throw away the brand color the admin picked.
+ */
+export function resolveTagColor(
+  rawMode: unknown,
+  rawColor: unknown,
+): { colorMode: TagColorMode; color: string | null } {
+  const color = isTagColor(rawColor) ? rawColor.trim().toLowerCase() : null;
+
+  const colorMode: TagColorMode =
+    rawMode === "CUSTOM"
+      ? color
+        ? "CUSTOM"
+        : "AUTO"
+      : rawMode === "KEEP_ORIGINAL" || rawMode === "FORCE_MONO"
+        ? rawMode
+        : "AUTO";
+
+  return { colorMode, color };
+}
 
 export function sanitizeSvgForTheme(
   input: string,
@@ -165,8 +196,12 @@ export function sanitizeSvgForTheme(
     return clean;
   }
 
-  if (colorMode === "FORCE_MONO") {
-    // Strip every explicit color so everything falls back to currentColor.
+  // FORCE_MONO and CUSTOM are the same transform — flatten the icon to a
+  // single color by removing every explicit fill/stroke so the whole thing
+  // inherits currentColor. They differ only in what currentColor resolves to,
+  // which is the caller's job: FORCE_MONO leaves it as the surrounding text
+  // color, CUSTOM sets it to the tag's chosen hex (see TagIcon).
+  if (colorMode === "FORCE_MONO" || colorMode === "CUSTOM") {
     clean = clean.replace(/\b(fill|stroke)\s*=\s*("|')[^"']*\2/gi, "");
     clean = clean.replace(/\b(fill|stroke)\s*:\s*[^;"']+;?/gi, "");
     clean = clean.replace(/<svg([^>]*)>/i, (m, attrs) => `<svg${attrs} fill="currentColor">`);

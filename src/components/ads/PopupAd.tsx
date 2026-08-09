@@ -230,6 +230,30 @@ export default function PopupAd() {
           color: var(--on-accent-2);
         }
 
+        /* Modern theme: soften the brutalist framing to match the rest of the
+           site — borderless rounded modal, circular close button, pill CTA with
+           no outline (a filled accent element reads cleaner borderless). These
+           are scoped to [data-theme='modern'] via :global(), so the brutalist
+           look (4px border, square corners) is left exactly as-is.
+
+           The modal drops its border entirely rather than hairlining it:
+           --border-heavy resolves to the soft --border in modern, which is a
+           near-white #e5e7eb in light mode. With the image running edge to
+           edge that reads as a white ring around the photo. The radius and
+           soft shadow already separate the modal from the backdrop. */
+        :global([data-theme='modern']) .popup-ad-modal {
+          border: none;
+          border-radius: var(--radius);
+        }
+        :global([data-theme='modern']) .popup-ad-close {
+          border-width: 1px;
+          border-radius: 999px;
+        }
+        :global([data-theme='modern']) .popup-ad-cta-overlay {
+          border-color: transparent;
+          border-radius: 999px;
+        }
+
         .popup-fade-in { animation: fadeIn 0.2s ease forwards; }
         .popup-fade-out { animation: fadeOut 0.2s ease forwards; }
 

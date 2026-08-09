@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Underline from "../ui/Underline";
 import ProductTagRail from "./ProductTagRail";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 import SwapDeck from "./SwapDeck";
 
 interface CategoryDef {
@@ -29,7 +30,8 @@ interface TagItem {
      name: string;
      slug: string;
      icon: string;
-     colorMode?: "AUTO" | "KEEP_ORIGINAL" | "FORCE_MONO";
+     colorMode?: TagColorMode | null;
+     color?: string | null;
      _count: { products: number };
    }
 interface ProductsByCategoryTabsProps {
@@ -148,7 +150,7 @@ export default function ProductsByCategoryTabs({
               <div className="flex justify-center mt-4">
                 <Link
                   href={`/products?category=${active}`}
-                  className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-accent-3 text-xs font-extrabold uppercase tracking-wide text-on-accent-3 shadow-brutal-sm brutal-press"
+                  className="cta-primary group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-accent-3 text-xs font-extrabold uppercase tracking-wide text-on-accent-3 shadow-brutal-sm brutal-press"
                 >
                   View more products
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />

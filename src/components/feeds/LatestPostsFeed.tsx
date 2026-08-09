@@ -7,6 +7,7 @@ import { Bookmark } from "lucide-react";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import { formatRelativeTime } from "@/lib/postUtils";
 import TagIcon from "@/components/blog/TagIcon";
+import type { TagColorMode } from "@/lib/sanitizeSvg";
 import Underline from "@/components/ui/Underline";
 
 export interface FeedTag {
@@ -14,6 +15,8 @@ export interface FeedTag {
   name: string;
   slug: string;
   icon?: string | null;
+  colorMode?: TagColorMode | null;
+  color?: string | null;
 }
 
 export interface FeedPost {
@@ -158,7 +161,7 @@ function Tile({
               } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
             >
               <span className="font-bold text-on-photo">
-                <Underline>{post.title}</Underline>
+                <Underline block>{post.title}</Underline>
               </span>
             </h3>
             <p className={`text-on-photo/80 ${mobileHero ? "text-[11px]" : "text-[10px]"} ${big ? "md:text-xs lg:text-sm" : "md:text-[11px]"}`}>
@@ -176,7 +179,9 @@ function Tile({
               } ${big ? "md:text-[11px] md:px-3 md:py-1" : "md:text-[10px] md:px-2.5 md:py-0.5"}`}
             >
               <TagIcon
-                icon={primaryTag.icon}
+                icon={primaryTag.icon ?? ""}
+                colorMode={primaryTag.colorMode}
+                color={primaryTag.color}
                 className="inline-flex w-2.5 h-2.5 md:w-3 md:h-3 [&>svg]:w-full [&>svg]:h-full"
               />
               <span>{primaryTag.name}</span>
