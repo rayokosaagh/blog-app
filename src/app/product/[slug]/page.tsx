@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { APP_URL } from "@/lib/appUrl";
+import JsonLd from "@/components/seo/JsonLd";
 import { getCategoryDef } from "@/lib/gadgets/categories";
 import { parseColors } from "@/lib/gadgets/colors";
 import Navbar from "@/components/layout/Navbar";
@@ -30,13 +33,32 @@ async function getProduct(slug: string) {
   return product;
 }
 
-export async function generateMetadata({ params }: ProductPageProps) {
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return { title: "Product not found" };
+
+  const title = `${product.name} — Full Specifications`;
+  const description = `${product.name} by ${product.brand} — detailed specifications, price and features.`;
+  const url = `/product/${product.slug}`;
+
   return {
-    title: `${product.name} — Full Specifications`,
-    description: `${product.name} by ${product.brand} — detailed specifications, price and features.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title,
+      description,
+      images: product.image ? [product.image] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: product.image ? [product.image] : undefined,
+    },
   };
 }
 
@@ -154,8 +176,36 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const meta = metaRaw.filter((m): m is HeroMetaItem => m !== null);
   const quickSpecs = quickRaw.filter((q): q is HeroQuickSpec => q !== null);
 
+  // Product structured data. `offers` is emitted only when a price exists —
+  // an Offer without a price is invalid and Google rejects the whole block,
+  // which would be worse than shipping no structured data at all.
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    brand: { "@type": "Brand", name: product.brand },
+    url: `${APP_URL}/product/${product.slug}`,
+    description: `${product.name} by ${product.brand} — detailed specifications, price and features.`,
+    category: product.category.name,
+    ...(product.image && {
+      image: [product.image, ...product.images]
+        .filter(Boolean)
+        .map((src) => (src.startsWith("http") ? src : `${APP_URL}${src}`)),
+    }),
+    ...(product.priceFrom != null && {
+      offers: {
+        "@type": "Offer",
+        price: product.priceFrom,
+        priceCurrency: product.currency,
+        availability: "https://schema.org/InStock",
+        url: `${APP_URL}/product/${product.slug}`,
+      },
+    }),
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd data={productJsonLd} />
       <Navbar />
 
       <main className="max-w-[1400px] mx-auto px-6 pt-10 sm:pt-14 pb-16">

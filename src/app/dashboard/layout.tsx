@@ -1,6 +1,14 @@
 // app/dashboard/layout.tsx
+import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+
+// Admin area. It's already behind auth, but the noindex covers the case where
+// a dashboard URL leaks into a sitemap, a referrer header or someone's tweet.
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 

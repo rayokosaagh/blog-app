@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountClient from "@/components/account/AccountClient";
+
+// Signed-in only, and personal to each reader — never index it.
+export const metadata: Metadata = {
+  title: "Your Account",
+  robots: { index: false, follow: false },
+};
 
 export default async function AccountPage() {
   const session = await auth();

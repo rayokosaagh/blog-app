@@ -1,4 +1,5 @@
 // src/app/search/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +9,15 @@ import SearchResultsGrid from "@/components/blog/SearchResultsGrid";
 import Pagination from "@/components/blog/Pagination";
 
 const PAGE_SIZE = 12;
+
+// Result pages are thin, endlessly variable and worthless in an index, so this
+// is the one public route that asks not to be indexed. Links are still
+// followed, so anything reachable only via search still gets crawled.
+export const metadata: Metadata = {
+  title: "Search",
+  description: "Search articles, reviews and gadgets.",
+  robots: { index: false, follow: true },
+};
 
 type SearchPageProps = {
   searchParams: Promise<{ q?: string; page?: string }>;

@@ -1,7 +1,23 @@
 // src/app/compare/page.tsx
+import type { Metadata } from "next";
 import GadgetCompare from "@/components/gadgets/GadgetCompare";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+
+const COMPARE_DESCRIPTION =
+  "Put phones, laptops, smartwatches or earbuds head to head and compare their " +
+  "full specifications side by side.";
+
+export const metadata: Metadata = {
+  title: "Compare Gadgets Side by Side",
+  description: COMPARE_DESCRIPTION,
+  alternates: { canonical: "/compare" },
+  openGraph: {
+    url: "/compare",
+    title: "Compare Gadgets Side by Side",
+    description: COMPARE_DESCRIPTION,
+  },
+};
 
 const MAX_COMPARE_SLOTS = 8;
 

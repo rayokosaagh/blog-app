@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { getThemeSettings } from "@/lib/settings";
 import { modernAccentCss, brutalistAccentCss, darkSurfaceCss } from "@/lib/color";
+import { APP_URL } from "@/lib/appUrl";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,9 +25,40 @@ const modernSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+const SITE_NAME = "Blog";
+const SITE_TAGLINE = "Tech news, reviews and gadget comparisons";
+const SITE_DESCRIPTION =
+  "In-depth phone, laptop, smartwatch and earbud reviews, launch news and " +
+  "side-by-side spec comparisons — with prices for Nepal.";
+
 export const metadata: Metadata = {
-  title: "Blog",
-  description: "",
+  // Makes every relative canonical/OG URL below resolve to an absolute one.
+  // Without it Next emits relative og:url/og:image, which crawlers and social
+  // scrapers ignore.
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
+  // NOTE: `alternates.canonical` is intentionally NOT set here. Metadata is
+  // merged field-by-field from layout down to page, so a canonical declared at
+  // the root would be inherited by every page that doesn't override it — and
+  // they'd all claim to be "/". Each page sets its own.
 };
 
 // Tells the mobile browser chrome (address bar / status bar) what color to

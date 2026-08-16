@@ -17,6 +17,9 @@ import CommentSection from "@/components/blog/CommentSection";
 import RelatedArticles from "@/components/feeds/RelatedArticles";
 import TagIcon from "@/components/blog/TagIcon";
 import { sortTagsByOrder } from "@/lib/sortTags";
+import { getExcerpt, getReadingTime } from "@/lib/postUtils";
+import { APP_URL } from "@/lib/appUrl";
+import JsonLd from "@/components/seo/JsonLd";
 import ViewTracker from "@/components/blog/ViewTracker";
 import { FadeIn } from "@/components/ui/AnimatedSection";
 import { ArrowLeft, Clock } from "lucide-react";
@@ -111,7 +114,7 @@ function generateAdString(ad: { link: string; image: string; title: string }) {
   return `
     <a href="${ad.link}" target="_blank" rel="noopener noreferrer sponsored"
       class="inline-ad relative block my-6 w-full h-24 sm:h-28 md:h-32 overflow-hidden surface-border bg-card shadow-brutal-sm">
-      <img src="${ad.image}" alt="${ad.title}" class="absolute inset-0 w-full h-full object-cover" />
+      <img loading="lazy" decoding="async" src="${ad.image}" alt="${ad.title}" class="absolute inset-0 w-full h-full object-cover" />
     </a>
   `;
 }
@@ -140,7 +143,7 @@ function generateBannerString(banner: { link: string; image: string; title: stri
   return `
     <a href="${banner.link}" target="_blank" rel="noopener noreferrer sponsored"
       class="inline-ad relative block my-10 w-full h-28 sm:h-32 md:h-40 overflow-hidden surface-border bg-card shadow-brutal-sm group">
-      <img src="${banner.image}" alt="${banner.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+      <img loading="lazy" decoding="async" src="${banner.image}" alt="${banner.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
       <div class="absolute top-2 right-2 bg-accent-2 text-on-accent-2 surface-pill px-2 py-1 text-[10px] font-bold uppercase tracking-widest">Advertisement</div>
     </a>
   `;
@@ -157,6 +160,22 @@ function parseBannerShortcodes(html: string, banners: any[]): string {
     updatedHtml = updatedHtml.replace(regex, () => generateBannerString(banner));
   });
   return updatedHtml;
+}
+
+/**
+ * Marks images inside the article body lazy.
+ *
+ * These come from the editor as raw HTML, so they never pass through a React
+ * component where the attribute could be set — a long review can easily carry
+ * 20+ full-width photos that all download eagerly on first paint. Tags that
+ * already declare `loading` (the injected ad and banner markup) are left alone.
+ */
+function lazyLoadContentImages(html: string): string {
+  return html.replace(/<img(?=[\s\n])((?:[^>])*?)(\/?)>/g, (match, attrs, slash) =>
+    /\bloading=/.test(attrs)
+      ? match
+      : `<img loading="lazy" decoding="async"${attrs}${slash}>`
+  );
 }
 
 function stripTags(html: string): string {
@@ -177,13 +196,39 @@ function stripWrappingParagraph(html: string): string {
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await prisma.post.findUnique({ where: { slug } });
+  const post = await prisma.post.findUnique({
+    where: { slug },
+    include: { author: { select: { name: true } } },
+  });
   if (!post) return { title: "Post not found" };
+
+  // getExcerpt turns tags into spaces before collapsing whitespace. The old
+  // inline `replace(/<[^>]*>/g, "")` deleted them outright, which fused the
+  // last word of each block onto the next — the description for this very post
+  // used to read "Review OverviewThe Xiaomi 17T is…".
+  const description = getExcerpt(post.content, 32).slice(0, 160);
+  const url = `/blog/${post.slug}`;
 
   return {
     title: post.title,
-    description: post.content.replace(/<[^>]*>/g, "").substring(0, 160),
-    openGraph: post.featuredImage ? { images: [post.featuredImage] } : undefined,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: post.title,
+      description,
+      publishedTime: post.createdAt.toISOString(),
+      modifiedTime: post.updatedAt.toISOString(),
+      authors: post.author?.name ? [post.author.name] : undefined,
+      images: post.featuredImage ? [post.featuredImage] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description,
+      images: post.featuredImage ? [post.featuredImage] : undefined,
+    },
   };
 }
 
@@ -301,6 +346,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   processedContent = parseSpecificationsBlock(processedContent);
   processedContent = parseGalleryBlock(processedContent);
   processedContent = stripTrailingEmptyBlocks(processedContent);
+  // Last, so it also catches images produced by the block parsers above.
+  processedContent = lazyLoadContentImages(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
 
@@ -319,8 +366,32 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     post.updatedAt &&
     new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
 
+  // Article structured data — what turns a plain blue link into a result card
+  // with headline, author, date and image. Absolute URLs are required here;
+  // unlike the Metadata API, JSON-LD is not resolved against metadataBase.
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: getExcerpt(post.content, 32).slice(0, 160),
+    url: `${APP_URL}/blog/${post.slug}`,
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${APP_URL}/blog/${post.slug}` },
+    datePublished: post.createdAt.toISOString(),
+    dateModified: post.updatedAt.toISOString(),
+    author: { "@type": "Person", name: post.author?.name ?? "Unknown" },
+    ...(post.featuredImage && {
+      image: post.featuredImage.startsWith("http")
+        ? post.featuredImage
+        : `${APP_URL}${post.featuredImage}`,
+    }),
+    keywords: post.tags.map((t) => t.name).join(", "),
+    wordCount: getExcerpt(post.content, Number.MAX_SAFE_INTEGER).split(" ").length,
+    timeRequired: `PT${getReadingTime(post.content)}M`,
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
+      <JsonLd data={articleJsonLd} />
       <ViewTracker postId={post.id} />
       <ReadingProgressBar />
       <Navbar />
@@ -379,7 +450,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-14 h-14 overflow-hidden border-[1.5px] border-white shrink-0 bg-card">
                   {post.author.image ? (
-                    <img src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
+                    <img loading="lazy" decoding="async" src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent font-bold text-2xl">
                       {post.author.name?.charAt(0).toUpperCase() || "U"}
@@ -683,7 +754,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
                 <div className="hidden sm:block h-8 w-px bg-border" />
 
-                {/* Author-bio position */}
+                {/* Author-bio position. Sharing lives in the hero row at the
+                    top of the post only — the duplicate set that used to sit
+                    here was removed. */}
                 <div className="flex items-center gap-3 shrink-0">
                   <BookmarkButton
                     postId={post.id}
@@ -691,7 +764,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     showLabel
                     className="px-3 py-1.5 border-[1.5px] shrink-0"
                   />
-                  <ShareButtons title={post.title} showLabel />
                 </div>
 
                 <div className="hidden sm:block h-8 w-px bg-border" />
@@ -699,7 +771,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <div className="flex items-center gap-3.5 w-full sm:w-auto justify-center sm:justify-end">
                   <div className="w-11 h-11 overflow-hidden bg-card border-[1.5px] border-border-heavy shrink-0">
                     {post.author.image ? (
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={post.author.image}
                         alt={post.author.name || "Author"}
                         className="w-full h-full object-cover"
