@@ -109,4 +109,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signOut: "/",
   },
   session: { strategy: "jwt" },
+  // Required for self-hosted production. Auth.js v5 infers the host in dev but
+  // refuses to in a production build unless the deployment is one it recognises
+  // (Vercel sets this itself), so `next start` was failing every request to
+  // /api/auth/session with `UntrustedHost` — a 500 that breaks sign-in,
+  // sessions, bookmarks, comments and the dashboard. Never surfaces under
+  // `next dev`, which is why it went unnoticed.
+  //
+  // Safe here because the callback origin is pinned by NEXTAUTH_URL in .env
+  // rather than being taken from the incoming Host header. Keep that variable
+  // set to the real domain in production.
+  trustHost: true,
 });
