@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
@@ -6,9 +7,29 @@ import TagIcon from "@/components/blog/TagIcon";
 import BlogFilters from "@/components/blog/BlogFilters";
 import AnimatedPostsGrid from "@/components/blog/AnimatedPostsGrid";
 import Pagination from "@/components/blog/Pagination";
+import BlogSort from "@/components/blog/BlogSort";
+import { parseSort } from "@/lib/blogSort";
 import type { Prisma } from "@/generated/prisma";
 
 const PAGE_SIZE = 12;
+
+const BLOG_DESCRIPTION =
+  "Reviews, launch news and buying advice on phones, laptops, smartwatches and " +
+  "earbuds — sorted by newest, oldest or most read.";
+
+// Canonical points at the bare /blog on purpose: the filter, sort and page
+// params produce many URLs over the same article set, and pointing them all at
+// one canonical is what stops search engines treating them as duplicates.
+export const metadata: Metadata = {
+  title: "Articles & Insights",
+  description: BLOG_DESCRIPTION,
+  alternates: { canonical: "/blog" },
+  openGraph: {
+    url: "/blog",
+    title: "Articles & Insights",
+    description: BLOG_DESCRIPTION,
+  },
+};
 
 export default async function BlogPage({
   searchParams,
@@ -20,9 +41,12 @@ export default async function BlogPage({
     month?: string;
     year?: string;
     page?: string;
+    sort?: string;
   }>;
 }) {
-  const { search, tag, author, month, year, page: pageParam } = await searchParams;
+  const { search, tag, author, month, year, page: pageParam, sort: sortParam } =
+    await searchParams;
+  const sort = parseSort(sortParam);
   const tagSlugs = tag ? tag.split(",").filter(Boolean) : [];
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
@@ -83,10 +107,19 @@ export default async function BlogPage({
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const clampedPage = Math.min(page, totalPages);
 
+  // `views` is indexed on Post, so "Most read" is as cheap as the date orders.
+  // Ties fall back to newest-first so the ordering stays stable across pages.
+  const orderBy: Prisma.PostOrderByWithRelationInput[] =
+    sort === "oldest"
+      ? [{ createdAt: "asc" }]
+      : sort === "popular"
+      ? [{ views: "desc" }, { createdAt: "desc" }]
+      : [{ createdAt: "desc" }];
+
   const [posts, activeTags, allTags, authors, availableYearsRaw] = await Promise.all([
     prisma.post.findMany({
       where: postsWhere,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       include: { author: true, tags: true },
       skip: (clampedPage - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -122,7 +155,9 @@ export default async function BlogPage({
       <Navbar />
 
       {/* Header */}
-      <header className="max-w-6xl mx-auto px-6 pt-16 pb-10 relative">
+      {/* overflow-x-clip: the ambient glow below is wider than a phone viewport,
+          and without this it makes the whole page pan sideways. */}
+      <header className="max-w-6xl mx-auto px-6 pt-16 pb-10 relative overflow-x-clip">
         {/* Soft ambient glow behind the headline — the one signature touch */}
         <div
           aria-hidden
@@ -196,6 +231,7 @@ export default async function BlogPage({
           </h1>
 
           <BlogFilters tags={allTags} authors={authors} years={availableYears} />
+          <BlogSort total={totalCount} />
         </div>
       </header>
 
@@ -204,7 +240,7 @@ export default async function BlogPage({
         <AnimatedPostsGrid
           posts={posts}
           hasFilters={hasFilters}
-          filterKey={`${search ?? ""}-${tag ?? ""}-${author ?? ""}-${month ?? ""}-${year ?? ""}-${clampedPage}`}
+          filterKey={`${search ?? ""}-${tag ?? ""}-${author ?? ""}-${month ?? ""}-${year ?? ""}-${sort}-${clampedPage}`}
         />
         <Pagination basePath="/blog" currentPage={clampedPage} totalPages={totalPages} />
       </main>

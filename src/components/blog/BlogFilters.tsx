@@ -122,6 +122,10 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
     if (values.month) params.set("month", values.month);
     if (values.year) params.set("year", values.year);
     if (values.tags.length) params.set("tag", values.tags.join(","));
+    // Sort is owned by BlogSort, not this form — carry it through so applying a
+    // filter doesn't silently snap the reader back to the default ordering.
+    const sort = searchParams.get("sort");
+    if (sort) params.set("sort", sort);
     return params.toString();
   }
 
@@ -148,7 +152,9 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
     setMonth("");
     setYear("");
     setSelectedTags([]);
-    router.push("/blog");
+    // "Clear all" clears filters; the chosen ordering is not one of them.
+    const sort = searchParams.get("sort");
+    router.push(sort ? `/blog?sort=${sort}` : "/blog");
   }
 
   return (

@@ -27,9 +27,10 @@ interface AnimatedPostsGridProps {
   hasFilters: boolean;
   filterKey: string;
   /**
-   * TEMP / DEV ONLY: pads the "More posts" list with placeholder posts so the
-   * load-more pagination can be tested even if the real post list is short.
-   * Set to false (or delete the generateDummyPosts call below) before shipping.
+   * DEV ONLY, off by default: pads the "More posts" list with placeholder posts
+   * so load-more can be exercised when the real post list is short. Their slugs
+   * (`/blog/dummy-post-N`) do not exist, so anything rendered from them is a
+   * dead link — never enable this on a page real visitors see.
    */
   showDemoPosts?: boolean;
 }
@@ -45,7 +46,14 @@ function formatDate(date: Date) {
 }
 
 function excerpt(html: string, len: number) {
-  return html.replace(/<[^>]*>/g, "").substring(0, len);
+  // Tags become a space, not "": stripping them bare fuses the last word of one
+  // block onto the first of the next ("Nepal launchNothing has expanded...").
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .substring(0, len);
 }
 
 // --- DEV ONLY: dummy posts so "More posts" + load-more can be tested locally ---
@@ -80,11 +88,19 @@ function generateDummyPosts(count: number, offset: number): PostItem[] {
 }
 // --- end dev-only block ---
 
-function PostThumb({ post }: { post: PostItem }) {
+/**
+ * `eager` is for the lead story only. It's the largest image above the fold and
+ * therefore the page's LCP element — lazy-loading it would delay the metric
+ * rather than improve it. Everything else in the grid starts below the fold.
+ */
+function PostThumb({ post, eager = false }: { post: PostItem; eager?: boolean }) {
   return post.featuredImage ? (
     <img
       src={post.featuredImage}
       alt={post.title}
+      loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : undefined}
+      decoding="async"
       className="w-full h-full object-cover"
     />
   ) : (
@@ -104,7 +120,7 @@ export default function AnimatedPostsGrid({
   posts,
   hasFilters,
   filterKey,
-  showDemoPosts = true,
+  showDemoPosts = false,
 }: AnimatedPostsGridProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -181,7 +197,7 @@ export default function AnimatedPostsGrid({
             >
               <Link href={`/blog/${lead.slug}`} className="flex flex-col h-full">
                 <div className="overflow-hidden aspect-video border-b-2 border-border-heavy">
-                  <PostThumb post={lead} />
+                  <PostThumb post={lead} eager />
                 </div>
                 <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-center gap-2 mb-3 text-xs">
@@ -201,6 +217,8 @@ export default function AnimatedPostsGrid({
                       <img
                         src={lead.author.image}
                         alt={lead.author.name ?? "Author"}
+                        loading="lazy"
+                        decoding="async"
                         className="w-8 h-8 rounded-none object-cover shrink-0 border-2 border-border-heavy"
                       />
                     ) : (
@@ -253,6 +271,8 @@ export default function AnimatedPostsGrid({
                           <img
                             src={post.featuredImage}
                             alt={post.title}
+                            loading="lazy"
+                            decoding="async"
                             className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
