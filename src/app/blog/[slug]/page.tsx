@@ -252,22 +252,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   if (!post || !post.published) notFound();
 
-  console.log("POST UPDATED AT:", post.updatedAt, "| CONTENT LENGTH:", post.content.length);
-
-  const khIdx = post.content.toLowerCase().indexOf("key highlights");
-  if (khIdx !== -1) {
-    console.log(
-      "CONTEXT AROUND KEY HIGHLIGHTS:",
-      post.content.slice(Math.max(0, khIdx - 50), khIdx + 500)
-    );
-    console.log(
-      "OCCURRENCES OF 'key highlights' IN CONTENT:",
-      (post.content.toLowerCase().match(/key highlights/g) || []).length
-    );
-  } else {
-    console.log("'key highlights' NOT FOUND IN RAW CONTENT");
-  }
-
   const session = await auth();
   const isBookmarked = session?.user
     ? !!(await prisma.bookmark.findUnique({
@@ -350,17 +334,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   processedContent = lazyLoadContentImages(processedContent);
 
   const { modifiedHtml, toc } = parseContentAndGenerateToc(processedContent);
-
-  console.log("MODIFIED HTML CONTAINS OVERVIEW TEXT:", modifiedHtml.includes("Overview"));
-  console.log(
-    "MODIFIED HTML CONTAINS LOWERCASE 'Key highlights' (our injected box):",
-    modifiedHtml.includes("Key highlights")
-  );
-  console.log(
-    "MODIFIED HTML CONTAINS RAW 'Key Highlights' (untouched heading):",
-    modifiedHtml.includes(">Key Highlights<") || modifiedHtml.includes("Key Highlights</strong>")
-  );
-  console.log("MODIFIED HTML LENGTH:", modifiedHtml.length);
 
   const wasUpdated =
     post.updatedAt &&
