@@ -296,7 +296,7 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                         className="flex items-center gap-3 px-2.5 py-2 hover:bg-accent-tint transition-colors group"
                       >
                         {post.featuredImage ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={post.featuredImage}
                             alt={post.title}
                             className="w-9 h-9 object-cover flex-shrink-0 border-[1.5px] border-border-heavy"

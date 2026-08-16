@@ -83,7 +83,7 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
               {/* Thumbnail: hard-bordered block that "presses" on hover, flips from grayscale to full color */}
               <div className="w-14 h-14 overflow-hidden shrink-0 bg-border border-2 border-border-heavy shadow-brutal-sm transition-all duration-150 ease-out group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none">
                 {post.featuredImage ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={post.featuredImage}
                     alt={post.title}
                     className="w-full h-full object-cover grayscale contrast-[1.05] transition-all duration-200 ease-out group-hover:grayscale-0"

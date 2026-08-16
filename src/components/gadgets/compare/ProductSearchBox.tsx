@@ -86,7 +86,7 @@ const ProductSearchBox = forwardRef<
                   className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-border/20 text-xs"
                 >
                   {p.image ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={p.image}
                       alt=""
                       className="h-7 w-7 object-contain rounded bg-white p-0.5 ring-1 ring-black/5 dark:ring-white/10 shrink-0"

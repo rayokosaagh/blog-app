@@ -160,7 +160,7 @@ export default function SpotlightAdRail({
                 />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={ad.mediaUrl} alt={ad.title} className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={ad.mediaUrl} alt={ad.title} className="h-full w-full object-cover" />
               )}
 
               {/* Title plate */}

@@ -176,7 +176,7 @@ export default function MobileNewsTabs({ trendingPosts = [], latestPosts = [] }:
                     {/* Thumbnail: hard-bordered block, presses with the row on hover */}
                     <div className="shrink-0 w-14 h-14 overflow-hidden bg-border border-2 border-border-heavy shadow-brutal-sm transition-all duration-150 ease-out group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none">
                       {post.featuredImage ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={post.featuredImage}
                           alt={post.title}
                           width={56}

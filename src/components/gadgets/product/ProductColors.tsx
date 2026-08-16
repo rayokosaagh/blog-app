@@ -32,7 +32,7 @@ export default function ProductColors({ colors }: { colors: ProductColor[] }) {
                 {color.image && (
                   <div className="mb-2 flex h-36 w-36 items-center justify-center border-2 border-border-heavy bg-white p-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={color.image}
                       alt={color.name}
                       className="h-full w-full object-contain"

@@ -93,7 +93,7 @@ function ProductCardContent({
       <div className="aspect-square bg-background relative overflow-hidden">
         {product.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <img loading="lazy" decoding="async"
             src={product.image}
             alt={product.name}
             className="w-full h-full object-cover"

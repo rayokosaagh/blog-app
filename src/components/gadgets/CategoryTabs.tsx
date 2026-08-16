@@ -17,7 +17,7 @@ export default function CategoryTabs({ current }: { current: string }) {
               : "text-gray-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400"
           }`}
         >
-          <img src={c.icon} alt={c.name} className="h-6 w-6" />
+          <img loading="lazy" decoding="async" src={c.icon} alt={c.name} className="h-6 w-6" />
           {c.name}
         </button>
       ))}

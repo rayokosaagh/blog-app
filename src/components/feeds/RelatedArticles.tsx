@@ -58,7 +58,7 @@ function FeaturedCard({ post }: { post: RelatedArticlePost }) {
       <article className="group rounded-none border-2 border-border-heavy bg-card overflow-hidden shadow-brutal-lg brutal-press-lg">
         <Link href={href} className="relative block aspect-[16/10] overflow-hidden bg-muted">
           {post.featuredImage ? (
-            <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-accent-tint" />
           )}
@@ -89,7 +89,7 @@ function FeaturedCard({ post }: { post: RelatedArticlePost }) {
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-none overflow-hidden bg-accent-tint shrink-0 border-2 border-border-heavy">
                 {post.author.image ? (
-                  <img src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={post.author.image} alt={post.author.name || "Author"} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent font-extrabold text-xs">
                     {post.author.name?.charAt(0).toUpperCase() || "U"}
@@ -134,7 +134,7 @@ function ListItem({ post }: { post: RelatedArticlePost }) {
       >
         <div className="relative w-24 h-[68px] md:w-28 md:h-20 rounded-none overflow-hidden shrink-0 bg-muted border-2 border-border-heavy">
           {post.featuredImage ? (
-            <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-accent-tint" />
           )}

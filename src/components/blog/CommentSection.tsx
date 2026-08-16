@@ -374,7 +374,7 @@ function CommentItem({
       >
         <div className="w-9 h-9 rounded-none border-2 border-border-heavy overflow-hidden bg-muted shrink-0">
           {comment.author.image ? (
-            <img
+            <img loading="lazy" decoding="async"
               src={comment.author.image}
               alt={comment.author.name || "User"}
               className="w-full h-full object-cover"

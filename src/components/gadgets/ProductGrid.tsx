@@ -71,7 +71,7 @@ export default function ProductGrid({
             <div className="relative aspect-[4/3] overflow-hidden border-b-2 border-border-heavy bg-white">
               {p.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <img loading="lazy" decoding="async"
                   src={p.image}
                   alt={p.name}
                   className="h-full w-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"

@@ -283,7 +283,7 @@ export default function NavbarSearch() {
                       className="flex items-center gap-4 px-5 py-3 hover:bg-accent-tint transition-colors duration-100 border-b-2 border-border last:border-0 group"
                     >
                       {post.featuredImage ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={post.featuredImage}
                           alt={post.title}
                           className="w-10 h-10 rounded-none object-cover flex-shrink-0 border-2 border-border-heavy"
@@ -318,7 +318,7 @@ export default function NavbarSearch() {
                       className="flex items-center gap-4 px-5 py-3 hover:bg-accent-tint transition-colors duration-100 border-b-2 border-border last:border-0 group"
                     >
                       {prod.image ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={prod.image}
                           alt={prod.name}
                           className="w-10 h-10 rounded-none object-cover flex-shrink-0 border-2 border-border-heavy"

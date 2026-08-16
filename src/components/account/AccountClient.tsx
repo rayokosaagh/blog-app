@@ -153,7 +153,7 @@ export default function AccountClient() {
           <div className="flex flex-col items-center gap-3 shrink-0">
             <div className="w-24 h-24 border-2 border-border-heavy overflow-hidden bg-muted">
               {image ? (
-                <img src={image} alt={name || "Profile"} className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={image} alt={name || "Profile"} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent text-3xl font-extrabold">
                   {name?.charAt(0).toUpperCase() || "?"}

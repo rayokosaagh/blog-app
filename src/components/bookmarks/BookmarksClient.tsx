@@ -161,7 +161,7 @@ export default function BookmarksClient() {
               <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal overflow-hidden flex">
                 {/* Featured Image */}
                 {post.featuredImage ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={post.featuredImage}
                     alt={post.title}
                     className="w-48 h-36 object-cover flex-shrink-0"

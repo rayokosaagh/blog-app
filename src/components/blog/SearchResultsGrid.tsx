@@ -69,7 +69,7 @@ export default function SearchResultsGrid({
               <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
                 <div className="aspect-video w-full bg-accent-tint overflow-hidden border-b-2 border-border-heavy">
                   {post.featuredImage ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={post.featuredImage}
                       alt={post.title}
                       className="w-full h-full object-cover"

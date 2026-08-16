@@ -35,7 +35,7 @@ export default function ComparisonTable({
           <div key={p.id} className="text-center px-2">
             <div className="mx-auto mb-1 h-20 w-20 flex items-center justify-center rounded-none border-2 border-border-heavy bg-accent-tint">
               {p.image ? (
-                <img src={p.image} alt={p.name} className="h-full w-full object-contain" />
+                <img loading="lazy" decoding="async" src={p.image} alt={p.name} className="h-full w-full object-contain" />
               ) : (
                 <span className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
                   {p.brand?.slice(0, 2)}
