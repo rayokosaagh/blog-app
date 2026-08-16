@@ -114,10 +114,17 @@ export type ThemeAccents = { light: AccentTrio; dark: AccentTrio };
 // rather than in settings.ts because this module is dependency-free — the
 // dashboard's client-side colour picker can import them without dragging the
 // server-only settings module (and Prisma with it) into the browser bundle.
+// accent3 is deliberately the lightest step of the ramp, but it still has to
+// carry text: it fills the small uppercase badges (category chips, the ad-rail
+// eyebrow) that render at 9–12px, so it needs 4.5:1, not the 3:1 large-text
+// bar. The previous #8b5cf6 could not reach that against *any* text colour —
+// white 4.23:1, the warm ink 4.42:1, pure black only 4.96:1 — so the fill
+// itself is a step darker here. #8055e2 gives white 4.87:1 while staying
+// lighter than accent2 (5.70:1), which keeps the ramp reading in order.
 export const MODERN_ACCENTS_DEFAULT: AccentTrio = {
   accent: "#5b21b6",
   accent2: "#7c3aed",
-  accent3: "#8b5cf6",
+  accent3: "#8055e2",
 };
 
 // Brutalist keeps two independent trios: its light palette is primary-bright

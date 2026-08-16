@@ -113,7 +113,10 @@
      hex values via inline style, independent of these variables. */
   --accent: #5b21b6;
   --accent-2: #7c3aed;
-  --accent-3: #8b5cf6;
+  /* Kept in sync with MODERN_ACCENTS_DEFAULT in lib/color.ts — a step darker
+     than the #8b5cf6 this ramp started on, so the small uppercase badges it
+     fills clear 4.5:1 against their white label. See the note there. */
+  --accent-3: #8055e2;
   --accent-tint: #f5f3ff;
   --on-accent: #ffffff;
   --on-accent-2: #ffffff;
