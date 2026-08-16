@@ -9,7 +9,6 @@ import {
   FileText,
   Smartphone,
   BarChart3,
-  Mail,
   Menu,
   X,
 } from "lucide-react";
@@ -99,7 +98,11 @@ export default function DashboardShell({
           </div>
         </div>
 
-        <div onClick={() => setDrawerOpen(false)}>
+        {/* flex-1 + min-h-0 so the nav itself scrolls when the sections don't
+            fit. Without min-h-0 this flex child refuses to shrink below its
+            content height and pushes the "Signed in as" footer off-screen
+            instead — the taller the nav grows, the worse it gets. */}
+        <div className="flex-1 min-h-0" onClick={() => setDrawerOpen(false)}>
           <SidebarNav isAdmin={isAdmin} />
         </div>
 

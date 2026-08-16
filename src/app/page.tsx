@@ -145,11 +145,16 @@ const productsByCategory = Object.fromEntries(
                   and clean/rounded in modern. */}
               <div className="mt-10 mb-5 flex items-end justify-between gap-4 border-b-2 border-border-heavy pb-3">
                 <div className="flex items-center gap-3">
-                  {/* Icon is pinned white rather than using --on-accent-3:
-                      the derived contrast colour goes dark on a light
-                      tertiary, and this chip is meant to read as a solid
-                      colour block with a white mark in every theme. */}
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center surface-border border-border-heavy bg-accent-3 text-white shadow-brutal-sm">
+                  {/* Icon colour comes from --on-accent-3, not a pinned white.
+                      Pinning white assumed accent-3 is always dark enough to
+                      carry it, which holds for both brutalist schemes and
+                      modern light — but modern dark derives accent-3 as a pale
+                      lilac (#bfa5fa), where white drops to 2.1:1 and the mark
+                      all but disappears. The token already solves this: it
+                      resolves to white on dark fills and to dark ink on light
+                      ones, so the chip reads as a solid colour block with a
+                      legible mark in every theme, which was the intent. */}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center surface-border border-border-heavy bg-accent-3 text-on-accent-3 shadow-brutal-sm">
                     <Newspaper className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">

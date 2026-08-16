@@ -1,8 +1,8 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import ShareMenu from "@/components/ui/ShareMenu";
 import {
-  Share2,
   Calendar,
   Smartphone,
   Monitor,
@@ -111,7 +111,6 @@ interface ProductHeroProps {
   quickSpecs?: HeroQuickSpec[];
   /** Bottom tab row — Review / Opinions / Compare / Pictures / Prices. */
   tabs?: HeroTab[];
-  onShare?: () => void;
 }
 
 export default function ProductHero({
@@ -122,7 +121,6 @@ export default function ProductHero({
   stats = [],
   quickSpecs = [],
   tabs = [],
-  onShare,
 }: ProductHeroProps) {
   const priceStat: HeroStat[] =
     product.priceFrom != null
@@ -158,16 +156,12 @@ export default function ProductHero({
           </h1>
         </div>
 
-        {onShare && (
-          <button
-            type="button"
-            onClick={onShare}
-            aria-label="Share this product"
-            className="shrink-0 p-2 rounded-none border-2 border-transparent text-background hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
-          >
-            <Share2 size={18} />
-          </button>
-        )}
+        {/* Self-contained rather than an onShare callback: this is a client
+            component rendered by a server page, so a function prop could never
+            be passed — the old button was unreachable and never rendered.
+            `text-background` matches the inverted brutalist title bar; modern
+            repaints it via the .hero-titlebar rule in globals.css. */}
+        <ShareMenu title={product.name} className="text-background" />
       </div>
 
       <div className="p-6 sm:p-8">

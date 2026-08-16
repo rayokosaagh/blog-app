@@ -34,27 +34,130 @@ import {
 
 type Scheme = "light" | "dark";
 
-const MODERN_PRESETS: { label: string; trio: AccentTrio }[] = [
-  { label: "Deep purple", trio: MODERN_ACCENTS_DEFAULT },
-  { label: "Purple + blue", trio: { accent: "#5b21b6", accent2: "#2563eb", accent3: "#7c3aed" } },
-  { label: "Deeper purple", trio: { accent: "#4c1d95", accent2: "#7c3aed", accent3: "#a78bfa" } },
-  { label: "Navy + blue", trio: { accent: "#1e3a8a", accent2: "#3b82f6", accent3: "#60a5fa" } },
-  { label: "Emerald", trio: { accent: "#047857", accent2: "#10b981", accent3: "#34d399" } },
-  { label: "Crimson", trio: { accent: "#9f1239", accent2: "#e11d48", accent3: "#fb7185" } },
+// Every colour here has to survive onColor() in lib/color, which picks white
+// text once white clears 3:1 and dark ink below that. That leaves a trap: an
+// accent whose white contrast lands between 3.0 and 4.5 gets white text that
+// is NOT readable at the 9-12px these fills are used at (category badges, the
+// ad-rail eyebrow). Building a ramp as three progressively lighter tints walks
+// straight into it — the third step lands in the gap almost every time.
+//
+// So each trio's third step is deliberately pushed to one side or the other:
+// either dark enough to carry white (>= 4.5), or light enough that ink is
+// chosen and comfortably readable (white < 3.0). Verified ratios are noted per
+// line. If you add a preset, check the third colour before shipping it.
+type Preset = { label: string; trio: AccentTrio };
+
+/**
+ * Presets, grouped by hue family so a long list stays scannable — an admin
+ * looking for "something green" reads one group instead of sixteen pills.
+ *
+ * `heading` is optional: a single headingless group renders exactly as a plain
+ * wrapped row, which is what the brutalist sets (five each) still want.
+ */
+type PresetGroup = { heading?: string; items: Preset[] };
+
+const MODERN_PRESET_GROUPS: PresetGroup[] = [
+  {
+    heading: "Blues & purples",
+    items: [
+      // white 8.98 / 5.17 / 5.70 — all three carry white
+      { label: "Purple + blue", trio: { accent: "#5b21b6", accent2: "#2563eb", accent3: "#7c3aed" } },
+      // white 10.36 / 5.17, accent3 takes ink at 7.36. accent2 was #3b82f6 (3.68 —
+      // in the gap, white text unreadable); #2563eb is the same blue, one step down.
+      { label: "Navy + blue", trio: { accent: "#1e3a8a", accent2: "#2563eb", accent3: "#60a5fa" } },
+      // white 9.93 / 6.29, accent3 takes ink at 9.38
+      { label: "Indigo", trio: { accent: "#3730a3", accent2: "#4f46e5", accent3: "#a5b4fc" } },
+      // white 10.95 / 7.10, accent3 takes ink at 10.13
+      { label: "Aubergine", trio: { accent: "#4c1d95", accent2: "#6d28d9", accent3: "#c4b5fd" } },
+      // white 10.88 / 6.32, accent3 takes ink at 10.63
+      { label: "Plum", trio: { accent: "#581c87", accent2: "#a21caf", accent3: "#f0abfc" } },
+    ],
+  },
+  {
+    heading: "Greens & teals",
+    items: [
+      // white 9.48 / 5.47, accent3 takes ink at 12.65
+      { label: "Teal", trio: { accent: "#134e4a", accent2: "#0f766e", accent3: "#5eead4" } },
+      // white 9.46 / 5.93, accent3 takes ink at 12.91
+      { label: "Midnight & cyan", trio: { accent: "#0c4a6e", accent2: "#0369a1", accent3: "#67e8f9" } },
+      // white 9.11 / 5.36, accent3 takes ink at 14.99
+      { label: "Ocean", trio: { accent: "#164e63", accent2: "#0e7490", accent3: "#a5f3fc" } },
+      // white 9.72 / 5.48, accent3 takes ink at 12.27
+      { label: "Emerald", trio: { accent: "#064e3b", accent2: "#047857", accent3: "#6ee7b7" } },
+      // white 9.11 / 5.02, accent3 takes ink at 15.44
+      { label: "Forest", trio: { accent: "#14532d", accent2: "#15803d", accent3: "#bbf7d0" } },
+    ],
+  },
+  {
+    heading: "Warm",
+    items: [
+      // white 14.68 / 5.02, accent3 takes ink at 11.21
+      { label: "Graphite & amber", trio: { accent: "#1f2937", accent2: "#b45309", accent3: "#fbbf24" } },
+      // white 9.37 / 5.18, accent3 takes ink at 13.82
+      { label: "Copper", trio: { accent: "#7c2d12", accent2: "#c2410c", accent3: "#fed7aa" } },
+      // white 9.57 / 6.29, accent3 takes ink at 9.89
+      { label: "Rose", trio: { accent: "#881337", accent2: "#be123c", accent3: "#fda4af" } },
+      // white 7.88 / 6.04, accent3 takes ink at 13.53. accent2 was #db2777, which
+      // clears the bar by only 0.10 (4.60); #be185d is the same pink one step down.
+      { label: "Sunset", trio: { accent: "#9d174d", accent2: "#be185d", accent3: "#fbcfe8" } },
+    ],
+  },
+  {
+    heading: "Neutral",
+    items: [
+      // white 17.85 / 10.35, accent3 takes ink at 7.30
+      { label: "Slate", trio: { accent: "#0f172a", accent2: "#334155", accent3: "#94a3b8" } },
+      // white 14.63 / 7.58, accent3 takes ink at 12.60
+      { label: "Steel", trio: { accent: "#1e293b", accent2: "#475569", accent3: "#cbd5e1" } },
+    ],
+  },
 ];
 
 // Modern dark presets — lighter, desaturated tints that hold up against the
 // near-black modern surface, since the deep light-mode violets go muddy there.
-const MODERN_DARK_PRESETS: { label: string; trio: AccentTrio }[] = [
-  { label: "Soft violet", trio: deriveModernDark(MODERN_ACCENTS_DEFAULT) },
-  { label: "Lilac", trio: { accent: "#c4b5fd", accent2: "#ddd6fe", accent3: "#ede9fe" } },
-  { label: "Sky", trio: { accent: "#7dd3fc", accent2: "#a5f3fc", accent3: "#bae6fd" } },
-  { label: "Mint", trio: { accent: "#6ee7b7", accent2: "#a7f3d0", accent3: "#5eead4" } },
-  { label: "Peach", trio: { accent: "#fdba74", accent2: "#fcd34d", accent3: "#fda4af" } },
+// Every step here is pale enough that onColor picks ink rather than white, so
+// all three land well past 4.5 against the near-black surface. Measured ink
+// ratios noted per line.
+const MODERN_DARK_PRESET_GROUPS: PresetGroup[] = [
+  {
+    heading: "Violets & blues",
+    items: [
+      { label: "Soft violet", trio: deriveModernDark(MODERN_ACCENTS_DEFAULT) },
+      // ink 10.13 / 13.47 / 15.76
+      { label: "Lilac", trio: { accent: "#c4b5fd", accent2: "#ddd6fe", accent3: "#ede9fe" } },
+      // ink 9.38 / 12.54 / 10.58
+      { label: "Iris", trio: { accent: "#a5b4fc", accent2: "#c7d2fe", accent3: "#d8b4fe" } },
+      // ink 11.22 / 14.99 / 14.10
+      { label: "Sky", trio: { accent: "#7dd3fc", accent2: "#a5f3fc", accent3: "#bae6fd" } },
+    ],
+  },
+  {
+    heading: "Greens & aquas",
+    items: [
+      // ink 12.27 / 14.59 / 12.65
+      { label: "Mint", trio: { accent: "#6ee7b7", accent2: "#a7f3d0", accent3: "#5eead4" } },
+      // ink 12.91 / 14.99 / 14.84
+      { label: "Aqua", trio: { accent: "#67e8f9", accent2: "#a5f3fc", accent3: "#99f6e4" } },
+      // ink 15.44 / 16.02 / 14.59
+      { label: "Sage", trio: { accent: "#bbf7d0", accent2: "#d9f99d", accent3: "#a7f3d0" } },
+    ],
+  },
+  {
+    heading: "Warm",
+    items: [
+      // ink 11.09 / 12.97 / 9.89
+      { label: "Peach", trio: { accent: "#fdba74", accent2: "#fcd34d", accent3: "#fda4af" } },
+      // ink 9.89 / 13.26 / 13.53
+      { label: "Rose quartz", trio: { accent: "#fda4af", accent2: "#fecdd3", accent3: "#fbcfe8" } },
+      // ink 12.97 / 15.02 / 11.09
+      { label: "Amber", trio: { accent: "#fcd34d", accent2: "#fde68a", accent3: "#fdba74" } },
+    ],
+  },
 ];
 
 // Brutalist presets are per-scheme: light leans primary-bright, dark leans
-// neon, matching how the theme's two palettes are designed.
+// neon, matching how the theme's two palettes are designed. Five each, so they
+// stay a single unlabelled group rather than being split into hue families.
 const BRUTALIST_LIGHT_PRESETS: { label: string; trio: AccentTrio }[] = [
   { label: "Classic", trio: BRUTALIST_LIGHT_DEFAULT },
   { label: "Traffic", trio: { accent: "#e11d48", accent2: "#facc15", accent3: "#0ea5e9" } },
@@ -241,13 +344,15 @@ export default function UiSettingsForm({
     : scheme === "light"
       ? BRUTALIST_LIGHT_DEFAULT
       : BRUTALIST_DARK_DEFAULT;
-  const presets = isModern
+  // Brutalist's five-item lists are wrapped as one headingless group so the
+  // renderer below has a single shape to deal with.
+  const presetGroups: PresetGroup[] = isModern
     ? scheme === "light"
-      ? MODERN_PRESETS
-      : MODERN_DARK_PRESETS
+      ? MODERN_PRESET_GROUPS
+      : MODERN_DARK_PRESET_GROUPS
     : scheme === "light"
-      ? BRUTALIST_LIGHT_PRESETS
-      : BRUTALIST_DARK_PRESETS;
+      ? [{ items: BRUTALIST_LIGHT_PRESETS }]
+      : [{ items: BRUTALIST_DARK_PRESETS }];
 
   const accentsDirty = isModern
     ? !modernEqual(modern, savedModern)
@@ -597,35 +702,46 @@ export default function UiSettingsForm({
             )}
 
             {/* Presets */}
-            <div className={`mt-4 flex flex-wrap gap-2 ${modernDarkLocked ? "pointer-events-none opacity-50" : ""}`}>
-              {presets.map((p) => {
-                const active = trioEqual(editing, p.trio);
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    disabled={modernDarkLocked}
-                    onClick={() => setEditingTrio(p.trio)}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      active
-                        ? "border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100"
-                        : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
-                    }`}
-                  >
-                    <span className="flex -space-x-1">
-                      {[p.trio.accent, p.trio.accent2, p.trio.accent3].map((c, i) => (
-                        <span
-                          key={i}
-                          className="h-3.5 w-3.5 rounded-full ring-1 ring-white dark:ring-zinc-900"
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                    </span>
-                    {p.label}
-                    {active && <Check className="h-3 w-3" />}
-                  </button>
-                );
-              })}
+            <div className={`mt-4 space-y-3 ${modernDarkLocked ? "pointer-events-none opacity-50" : ""}`}>
+              {presetGroups.map((group, gi) => (
+                <div key={group.heading ?? `group-${gi}`}>
+                  {group.heading && (
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">
+                      {group.heading}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {group.items.map((p) => {
+                      const active = trioEqual(editing, p.trio);
+                      return (
+                        <button
+                          key={p.label}
+                          type="button"
+                          disabled={modernDarkLocked}
+                          onClick={() => setEditingTrio(p.trio)}
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                            active
+                              ? "border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100"
+                              : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
+                          }`}
+                        >
+                          <span className="flex -space-x-1">
+                            {[p.trio.accent, p.trio.accent2, p.trio.accent3].map((c, i) => (
+                              <span
+                                key={i}
+                                className="h-3.5 w-3.5 rounded-full ring-1 ring-white dark:ring-zinc-900"
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </span>
+                          {p.label}
+                          {active && <Check className="h-3 w-3" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Individual pickers */}
