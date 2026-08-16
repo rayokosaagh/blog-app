@@ -15,6 +15,72 @@ interface PopupAd {
   linkText: string;
 }
 
+/* --- Frequency capping ---
+ * The homepage is a hub users return to between articles, so mounting alone is
+ * a terrible reason to show a modal — reading four posts would mean four
+ * interruptions, each one after the user already dismissed it.
+ *
+ * Two independent gates:
+ *   sessionStorage  one popup per browser session, whatever happens.
+ *   localStorage    per-ad memory of an explicit dismissal or a conversion,
+ *                   keyed by ad id so a NEW campaign is never suppressed by
+ *                   the user's response to an old one.
+ * Both are wrapped in try/catch: Safari private mode throws on write, and an
+ * ad is never worth breaking the homepage over.
+ */
+const SEEN_PREFIX = "popupAd:seen:";
+const SESSION_KEY = "popupAd:shownThisSession";
+const DISMISS_SUPPRESS_MS = 7 * 24 * 60 * 60 * 1000;
+/** Fallback trigger for users who never scroll. */
+const DWELL_TRIGGER_MS = 20_000;
+/** Scroll trigger, as a fraction of viewport height. */
+const SCROLL_TRIGGER_RATIO = 0.5;
+
+type SeenRecord = { dismissedAt?: number; converted?: boolean };
+
+function readSeen(id: string): SeenRecord {
+  try {
+    const raw = window.localStorage.getItem(SEEN_PREFIX + id);
+    return raw ? (JSON.parse(raw) as SeenRecord) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeSeen(id: string, patch: SeenRecord) {
+  try {
+    window.localStorage.setItem(
+      SEEN_PREFIX + id,
+      JSON.stringify({ ...readSeen(id), ...patch })
+    );
+  } catch {
+    /* storage unavailable — degrade to the session gate only */
+  }
+}
+
+function isSuppressed(id: string): boolean {
+  const rec = readSeen(id);
+  if (rec.converted) return true;
+  if (rec.dismissedAt && Date.now() - rec.dismissedAt < DISMISS_SUPPRESS_MS) return true;
+  return false;
+}
+
+function shownThisSession(): boolean {
+  try {
+    return window.sessionStorage.getItem(SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markShownThisSession() {
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function PopupAd() {
   const [ad, setAd] = useState<PopupAd | null>(null);
   const [visible, setVisible] = useState(false);
@@ -27,33 +93,80 @@ export default function PopupAd() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    let dwellTimer: ReturnType<typeof setTimeout> | undefined;
+    let onScroll: (() => void) | undefined;
+
+    const clearTriggers = () => {
+      if (dwellTimer) clearTimeout(dwellTimer);
+      if (onScroll) window.removeEventListener("scroll", onScroll);
+      dwellTimer = undefined;
+      onScroll = undefined;
+    };
+
     const fetchAd = async () => {
       try {
+        // Global cap first — cheapest check, and skips the request entirely.
+        if (shownThisSession()) return;
+
         const res = await fetch("/api/popup-ads?active=true");
         if (!res.ok) return;
         const ads: PopupAd[] = await res.json();
 
-        const adsWithImages = ads.filter((a) => a.imageUrl);
-        if (adsWithImages.length === 0) return;
+        // Filter out suppressed ads BEFORE picking, so dismissing one campaign
+        // doesn't cost the user a different one they've never been shown.
+        const eligible = ads.filter((a) => a.imageUrl && !isSuppressed(a.id));
+        if (eligible.length === 0 || cancelled) return;
 
-        const randomAd = adsWithImages[Math.floor(Math.random() * adsWithImages.length)];
-        setAd(randomAd);
-        setTimeout(() => setVisible(true), 600);
+        const chosen = eligible[Math.floor(Math.random() * eligible.length)];
+        setAd(chosen);
+
+        // Wait for a sign of engagement rather than firing on load: a modal
+        // shown before the user has read a single headline is the variant
+        // people resent most (and the one Google flags as an intrusive
+        // interstitial on mobile).
+        const reveal = () => {
+          if (cancelled) return;
+          clearTriggers();
+          markShownThisSession();
+          setVisible(true);
+        };
+
+        dwellTimer = setTimeout(reveal, DWELL_TRIGGER_MS);
+        onScroll = () => {
+          if (window.scrollY > window.innerHeight * SCROLL_TRIGGER_RATIO) reveal();
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
       } catch (err) {
         console.error("Failed to fetch popup ad:", err);
       }
     };
 
     fetchAd();
+
+    return () => {
+      cancelled = true;
+      clearTriggers();
+    };
   }, []);
 
   const handleClose = () => {
+    // An explicit dismissal is the strongest signal the user can give; record
+    // it so the same ad stays gone for a week rather than 15 seconds.
+    if (ad) writeSeen(ad.id, { dismissedAt: Date.now() });
     setClosing(true);
     setTimeout(() => {
       setVisible(false);
       setClosing(false);
       setAd(null);
     }, 260);
+  };
+
+  // Clicking through is a conversion — there is no reason to ever show this
+  // particular ad to this user again.
+  const handleConvert = () => {
+    if (ad) writeSeen(ad.id, { converted: true });
+    handleClose();
   };
 
   if (!mounted || !visible || !ad) return null;
@@ -96,7 +209,7 @@ export default function PopupAd() {
             target="_blank"
             rel="noopener noreferrer"
             className="popup-ad-image-wrapper"
-            onClick={handleClose}
+            onClick={handleConvert}
           >
             {/* Entrance fade/rise lives on this wrapper */}
             <div className="popup-ad-image-mount">
