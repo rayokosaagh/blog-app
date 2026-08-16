@@ -85,9 +85,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
 
-      // Re-fetch image from DB when session is updated (e.g. after admin changes avatar)
-      if (trigger === "update" && session?.image !== undefined) {
-        token.image = session.image;
+      // Re-sync name/image on session.update() calls (e.g. after a user edits
+      // their own profile), so the change shows up without a re-login.
+      if (trigger === "update") {
+        if (session?.image !== undefined) token.image = session.image;
+        if (session?.name !== undefined) token.name = session.name;
       }
 
       return token;
@@ -97,6 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.image = token.image as string | null;
+        if (token.name) session.user.name = token.name as string;
       }
       return session;
     },
