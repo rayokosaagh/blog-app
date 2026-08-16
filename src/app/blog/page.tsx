@@ -5,7 +5,10 @@ import Footer from "@/components/layout/Footer";
 import TagIcon from "@/components/blog/TagIcon";
 import BlogFilters from "@/components/blog/BlogFilters";
 import AnimatedPostsGrid from "@/components/blog/AnimatedPostsGrid";
+import Pagination from "@/components/blog/Pagination";
 import type { Prisma } from "@/generated/prisma";
+
+const PAGE_SIZE = 12;
 
 export default async function BlogPage({
   searchParams,
@@ -16,10 +19,12 @@ export default async function BlogPage({
     author?: string;
     month?: string;
     year?: string;
+    page?: string;
   }>;
 }) {
-  const { search, tag, author, month, year } = await searchParams;
+  const { search, tag, author, month, year, page: pageParam } = await searchParams;
   const tagSlugs = tag ? tag.split(",").filter(Boolean) : [];
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
   const monthNum = month ? parseInt(month, 10) : undefined;
   const yearNum = year ? parseInt(year, 10) : undefined;
@@ -52,24 +57,39 @@ export default async function BlogPage({
     monthOnlyIds = rows.map((r) => r.id);
   }
 
+  // Searches title, body content, tag names, and author name — not just the
+  // headline — so "search" actually finds posts by topic, not just title.
+  const postsWhere: Prisma.PostWhereInput = {
+    published: true,
+    ...(search && {
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
+        { author: { name: { contains: search, mode: "insensitive" } } },
+        { tags: { some: { name: { contains: search, mode: "insensitive" } } } },
+      ],
+    }),
+    ...(tagSlugs.length > 0 && {
+      AND: tagSlugs.map((slug) => ({
+        tags: { some: { slug } },
+      })),
+    }),
+    ...(author && { authorId: author }),
+    ...(createdAtFilter && { createdAt: createdAtFilter }),
+    ...(monthOnlyIds && { id: { in: monthOnlyIds } }),
+  };
+
+  const totalCount = await prisma.post.count({ where: postsWhere });
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const clampedPage = Math.min(page, totalPages);
+
   const [posts, activeTags, allTags, authors, availableYearsRaw] = await Promise.all([
     prisma.post.findMany({
-      where: {
-        published: true,
-        ...(search && {
-          title: { contains: search, mode: "insensitive" },
-        }),
-        ...(tagSlugs.length > 0 && {
-          AND: tagSlugs.map((slug) => ({
-            tags: { some: { slug } },
-          })),
-        }),
-        ...(author && { authorId: author }),
-        ...(createdAtFilter && { createdAt: createdAtFilter }),
-        ...(monthOnlyIds && { id: { in: monthOnlyIds } }),
-      },
+      where: postsWhere,
       orderBy: { createdAt: "desc" },
       include: { author: true, tags: true },
+      skip: (clampedPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
     tagSlugs.length > 0
       ? prisma.tag.findMany({ where: { slug: { in: tagSlugs } } })
@@ -184,8 +204,9 @@ export default async function BlogPage({
         <AnimatedPostsGrid
           posts={posts}
           hasFilters={hasFilters}
-          filterKey={`${search ?? ""}-${tag ?? ""}-${author ?? ""}-${month ?? ""}-${year ?? ""}`}
+          filterKey={`${search ?? ""}-${tag ?? ""}-${author ?? ""}-${month ?? ""}-${year ?? ""}-${clampedPage}`}
         />
+        <Pagination basePath="/blog" currentPage={clampedPage} totalPages={totalPages} />
       </main>
 
       <Footer />

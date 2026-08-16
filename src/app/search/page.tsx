@@ -5,21 +5,38 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SearchEmptyState from "@/components/blog/SearchEmptyState";
 import SearchResultsGrid from "@/components/blog/SearchResultsGrid";
+import Pagination from "@/components/blog/Pagination";
+
+const PAGE_SIZE = 12;
 
 type SearchPageProps = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 };
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
   const query = q?.trim() ?? "";
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
-  const posts =
+  // Searches title, body content, tag names, and author name — not just the
+  // headline — so a reader who half-remembers a post can still find it.
+  const where =
     query.length >= 2
-      ? await prisma.post.findMany({
-          where: {
-            title: { contains: query, mode: "insensitive" },
-          },
+      ? {
+          published: true,
+          OR: [
+            { title: { contains: query, mode: "insensitive" as const } },
+            { content: { contains: query, mode: "insensitive" as const } },
+            { author: { name: { contains: query, mode: "insensitive" as const } } },
+            { tags: { some: { name: { contains: query, mode: "insensitive" as const } } } },
+          ],
+        }
+      : null;
+
+  const [posts, totalCount] = where
+    ? await Promise.all([
+        prisma.post.findMany({
+          where,
           select: {
             id: true,
             title: true,
@@ -30,10 +47,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               select: { name: true },
             },
           },
-          take: 30,
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
           orderBy: { createdAt: "desc" },
-        })
-      : [];
+        }),
+        prisma.post.count({ where }),
+      ])
+    : [[], 0];
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +83,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         <p className="mt-4 text-sm text-muted-foreground">
           {query
-            ? `${posts.length} result${posts.length !== 1 ? "s" : ""} found`
+            ? `${totalCount} result${totalCount !== 1 ? "s" : ""} found`
             : "Type at least 2 characters to search."}
         </p>
       </header>
@@ -71,7 +93,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {posts.length === 0 ? (
           <SearchEmptyState query={query} />
         ) : (
-          <SearchResultsGrid posts={posts} filterKey={query} />
+          <>
+            <SearchResultsGrid posts={posts} filterKey={`${query}-${page}`} />
+            <Pagination basePath="/search" currentPage={page} totalPages={totalPages} />
+          </>
         )}
       </main>
 
