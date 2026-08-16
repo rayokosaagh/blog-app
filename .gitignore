@@ -49,3 +49,6 @@ generated/
 # Claude Code — local agent config, not part of the project.
 CLAUDE.md
 .claude/
+
+# audit tooling output (screenshots + json)
+tools/audit/.out/
