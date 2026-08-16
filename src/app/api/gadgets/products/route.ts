@@ -8,8 +8,17 @@ import { NextRequest } from "next/server";
 export async function GET(req: NextRequest) {
   const category = new URL(req.url).searchParams.get("category");
   if (!category) {
-    // no category filter = return everything, used by the admin list page
+    // The uncategorised listing is the admin list page's data source, so it
+    // returns drafts — but it had no auth check and is also fetched by the
+    // PUBLIC navbar search, which meant every unpublished product was visible
+    // to any visitor (and to anyone hitting this route directly).
+    // Staff keep the full list; everyone else gets published rows only.
+    const session = await auth();
+    const isStaff =
+      session?.user?.role === "ADMIN" || session?.user?.role === "EDITOR";
+
     const products = await prisma.product.findMany({
+      ...(isStaff ? {} : { where: { published: true } }),
       include: { category: true, tags: true },
       orderBy: { createdAt: "desc" },
     });
