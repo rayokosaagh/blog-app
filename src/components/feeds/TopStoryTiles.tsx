@@ -1,43 +1,32 @@
-import { prisma } from "@/lib/prisma";
 import TopStoryTilesList from "./TopStoryTilesList";
 
+export interface TopStoryPost {
+  id: string;
+  slug: string;
+  title: string;
+  featuredImage: string | null;
+  createdAt: Date;
+  views: number;
+}
+
 /**
- * Server component feeding the homepage "Top Stories" magazine grid — the 2×2
- * tiles that sit beside the featured carousel. Blends two feeds: 2 trending
- * (the most-viewed posts, all-time) + 2 newest, deduplicated. Each tile carries
- * a kind badge so Trending and New read as complementary halves of one grid.
+ * The 2x2 tile strip under the featured carousel.
+ *
+ * Previously this blended "2 trending + 2 newest", which put the newest posts
+ * directly above the Latest Posts feed that exists to show exactly that — and
+ * because the most-viewed posts on this site are also recent, in practice all
+ * four tiles reappeared in the feed below. The strip is now purely the four
+ * most-read posts, so it answers a question the feed underneath does not.
+ *
+ * The posts are supplied by the homepage rather than fetched here, because
+ * page.tsx needs the same ids to exclude them from Latest Posts — one query,
+ * one source of truth.
  */
-export default async function TopStoryTiles() {
-  const select = {
-    id: true,
-    slug: true,
-    title: true,
-    featuredImage: true,
-    createdAt: true,
-  };
+export default function TopStoryTiles({ posts }: { posts: TopStoryPost[] }) {
+  if (posts.length === 0) return null;
 
-  // Trending = the most-viewed published posts, ranked purely by view count.
-  const trending = await prisma.post.findMany({
-    where: { published: true },
-    orderBy: { views: "desc" },
-    take: 2,
-    select,
-  });
-
-  const trendingIds = trending.map((p) => p.id);
-  const latest = await prisma.post.findMany({
-    where: { published: true, id: { notIn: trendingIds } },
-    orderBy: { createdAt: "desc" },
-    take: 2,
-    select,
-  });
-
-  const tiles = [
-    ...trending.map((p) => ({ ...p, kind: "trending" as const })),
-    ...latest.map((p) => ({ ...p, kind: "latest" as const })),
-  ];
-
-  if (tiles.length === 0) return null;
+  // Rank comes from array position: the list arrives ordered by views desc.
+  const tiles = posts.map((p, i) => ({ ...p, rank: i + 1 }));
 
   return <TopStoryTilesList tiles={tiles} />;
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
@@ -25,6 +26,13 @@ import {
   getSpotlightAdsHeader,
   getSpotlightAdsTitle,
 } from "@/lib/settings";
+
+// Title/description come from the root layout's defaults — the homepage is the
+// one page those defaults were written for, so only the canonical is set here.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  openGraph: { url: "/" },
+};
 
 // Safety-net revalidation: even if revalidatePath("/") from the view
 // route is ever missed (e.g. multi-instance deploys, edge caching),
@@ -62,10 +70,12 @@ export default async function HomePage() {
     getSpotlightAdsTitle(),
   ]);
 
-const [recentPosts, banners, productsByCategoryArrays, topTags, spotlightAds] = await Promise.all([
+const [recentPostsPool, banners, productsByCategoryArrays, topTags, spotlightAds, activePollCount, topStories] = await Promise.all([
+  // Over-fetched (11, not 7) because the most-read posts are filtered out of
+  // this list below — see the dedupe under this Promise.all.
   prisma.post.findMany({
     where: { published: true },
-    take: 7,
+    take: 11,
     orderBy: { createdAt: "desc" },
     include: { author: true, tags: true },
   }),
@@ -110,7 +120,33 @@ const [recentPosts, banners, productsByCategoryArrays, topTags, spotlightAds] = 
     orderBy: { position: "asc" },
     select: { id: true, title: true, mediaUrl: true, mediaType: true, link: true },
   }),
+  // Mirrors the condition in /api/polls/active, which is what <Poll /> fetches.
+  // Used only to decide whether the poll column gets laid out at all.
+  prisma.poll.count({
+    where: {
+      isActive: true,
+      OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }],
+    },
+  }),
+  // Top stories = the four most-read posts. Ranked purely by views so the strip
+  // answers "what are people actually reading", which is a different question
+  // from the Latest Posts feed below it.
+  prisma.post.findMany({
+    where: { published: true },
+    orderBy: { views: "desc" },
+    take: 4,
+    select: { id: true, slug: true, title: true, featuredImage: true, createdAt: true, views: true },
+  }),
 ]);
+
+const hasActivePoll = activePollCount > 0;
+
+// The two feeds must not show the same article twice. Top stories takes
+// priority (it is higher on the page and its selection is the deliberate one),
+// so anything it claims is dropped from Latest Posts, which then falls back to
+// the next-newest post. This is why the query above fetches 11 instead of 7.
+const topStoryIds = new Set(topStories.map((p) => p.id));
+const recentPosts = recentPostsPool.filter((p) => !topStoryIds.has(p.id)).slice(0, 7);
 
 const productsByCategory = Object.fromEntries(
   CATEGORY_LIST.map((c, i) => [c.slug, productsByCategoryArrays[i]])
@@ -127,6 +163,13 @@ const productsByCategory = Object.fromEntries(
       <PopupAd />
 
       <main className={`flex flex-col ${SECTION_GAP} ${SECTION_TOP_PADDING} ${SECTION_BOTTOM_PADDING}`}>
+        {/* The homepage had no h1 at all — its first heading was an h2 inside
+            the promo carousel, so screen readers and crawlers got no statement
+            of what this page is. Visually hidden because the hero carousel is
+            the intended visual opener; the design is unchanged. */}
+        <h1 className="sr-only">
+          Blog — tech news, gadget reviews and spec comparisons
+        </h1>
         {/*
           CNET-style hero: a large featured carousel image joined to a
           title/description card that changes in lockstep with the banner,
@@ -158,11 +201,15 @@ const productsByCategory = Object.fromEntries(
                     <Newspaper className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="text-lg font-extrabold uppercase tracking-tight leading-none text-foreground">
-                      More top stories
-                    </h3>
+                    {/* h2, not h3: this is a top-level section of the page and
+                        sat below the article cards' own h3s, which scrambled
+                        the outline. Renamed too — "More top stories" was the
+                        FIRST content section, so "more" referred to nothing. */}
+                    <h2 className="text-lg font-extrabold uppercase tracking-tight leading-none text-foreground">
+                      Top stories
+                    </h2>
                     <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                      Trending &amp; latest, hand-picked
+                      The most-read articles right now
                     </p>
                   </div>
                 </div>
@@ -174,7 +221,7 @@ const productsByCategory = Object.fromEntries(
                   <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
               </div>
-              <TopStoryTiles />
+              <TopStoryTiles posts={topStories} />
             </div>
           </section>
         )}
@@ -187,22 +234,53 @@ const productsByCategory = Object.fromEntries(
 
 
         <section className="max-w-[1600px] mx-auto px-6 w-full">
+          {/* Two layouts, driven by whether a poll will actually render.
+              With a poll it's the original three columns: socials | feed | poll.
+              Without one, <Poll /> returns null but its 20rem track did not,
+              leaving a dead column; worse, the surviving two-column form put a
+              263px socials card in the LEAD position with ~750px of empty rail
+              under it, before the reader reached any article. So the no-poll
+              layout flips to feed-first with socials trailing — which is also
+              what every other section on this page does (Explore Gadgets and
+              Comparisons both run content left, sidebar right). */}
           <div
-            className="
+            className={`
               flex flex-col gap-10
               lg:grid lg:gap-12 lg:items-stretch
-              lg:grid-cols-[18rem_minmax(0,1fr)_20rem]
-            "
+              ${
+                hasActivePoll
+                  ? "lg:grid-cols-[18rem_minmax(0,1fr)_20rem]"
+                  : // 20rem, not 18rem: every other right-hand rail on this
+                    // page is 20rem (the poll column, and Featured Products in
+                    // Explore Gadgets). At 18rem this one started 32px further
+                    // right than the others, so the rail visibly jogged
+                    // sideways as you scrolled past it.
+                    "lg:grid-cols-[minmax(0,1fr)_20rem]"
+              }
+            `}
           >
-            {/* Left Sidebar - Social Sidebar (desktop only) */}
-            <div className="hidden lg:block h-full pt-4 lg:pt-0">
+            {/* Social Sidebar (desktop only). Ordered after the feed when it is
+                the only sidebar, so the articles lead. */}
+            <div
+              className={`hidden lg:block h-full pt-4 lg:pt-0 ${
+                hasActivePoll ? "" : "lg:order-2"
+              }`}
+            >
               <div className="sticky top-24 self-start">
                 <SocialSidebar />
               </div>
             </div>
 
-            {/* Center - Latest Posts (bento mosaic, both mobile and desktop) */}
-            <div className="w-full lg:max-w-[900px] mx-auto">
+            {/* Latest Posts (bento mosaic, both mobile and desktop).
+                The 900px cap belongs to the three-column layout, where the feed
+                is the middle track. In the no-poll layout it is the wide track,
+                and capping it there would just re-introduce the empty space as
+                margins either side — so it fills its column instead. */}
+            <div
+              className={`w-full mx-auto ${
+                hasActivePoll ? "lg:max-w-[900px]" : "lg:order-1"
+              }`}
+            >
               <FadeIn>
                 <div className="mb-10 text-center lg:text-left pb-4 border-b-4 border-border-heavy">
                   <div className="inline-flex items-center gap-2 mb-3 justify-center lg:justify-start w-full lg:w-auto bg-accent-2 text-on-accent-2 border-2 border-border-heavy px-3 py-1 w-fit">
@@ -251,8 +329,11 @@ const productsByCategory = Object.fromEntries(
               )}
             </div>
 
-            {/* Right Sidebar - Poll (+ Social Sidebar stacked below it, mobile only) */}
-            <div className="h-full pt-4 lg:pt-0">
+            {/* Right Sidebar - Poll (+ Social Sidebar stacked below it, mobile only).
+                On mobile this block still has to render even with no poll,
+                because it carries the Socials card; on desktop it collapses
+                away entirely so the grid above can drop to two columns. */}
+            <div className={`h-full pt-4 lg:pt-0 ${hasActivePoll ? "" : "lg:hidden"}`}>
               <div className="lg:sticky lg:top-24 lg:self-start">
                 <div className="flex flex-col gap-6 lg:block">
                   <Poll />
@@ -327,15 +408,14 @@ const productsByCategory = Object.fromEntries(
   </div>
 </section>
 
+        {/* Comparisons run full width now. There used to be a NewsletterForm in
+            a right-hand column here, which put two different signup forms on
+            screen at once next to the footer's — same ask, two designs, and
+            only the footer's collects the terms consent. One form, in the
+            footer, is the honest version. */}
         <section className="max-w-[1600px] mx-auto px-6 w-full">
-          <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12 lg:items-stretch">
-            <div className="min-w-0">
-              <LatestComparisons />
-            </div>
-
-            <div className="flex justify-center lg:justify-start">
-              <NewsletterForm />
-            </div>
+          <div className="min-w-0">
+            <LatestComparisons />
           </div>
         </section>
       </main>

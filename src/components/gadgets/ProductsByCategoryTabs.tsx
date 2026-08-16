@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 import Underline from "../ui/Underline";
 import ProductTagRail from "./ProductTagRail";
 import type { TagColorMode } from "@/lib/sanitizeSvg";
-import SwapDeck from "./SwapDeck";
+import SwapDeck, { SWAP_LAYOUT_T } from "./SwapDeck";
 
 interface CategoryDef {
   slug: string;
@@ -53,9 +53,93 @@ export default function ProductsByCategoryTabs({
   const products = allProducts.slice(0, VISIBLE_COUNT);
   const hasMore = allProducts.length > VISIBLE_COUNT;
 
+  // The product grid belongs to the "Categories" side of the deck, so it is
+  // passed in as part of `front` rather than rendered as a sibling. Previously
+  // it lived outside SwapDeck behind its own `view === "front"` check with a
+  // separate AnimatePresence on a different duration — so flipping to Tags ran
+  // two independent exit animations while the card's height collapsed
+  // underneath them. One owner, one timeline.
+  const categoryGrid = (
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={active}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={SWAP_LAYOUT_T}
+        className="mt-5"
+      >
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          {products.length === 0 ? (
+            <div className="col-span-full bg-background border-2 border-border-heavy rounded-none p-8 text-center text-muted-foreground">
+              No products yet in this category.
+            </div>
+          ) : (
+            products.map((p) => (
+              <Link
+                key={p.id}
+                href={`/product/${p.slug}`}
+                className="group flex flex-col bg-background border-2 border-border-heavy rounded-none overflow-hidden shadow-brutal-sm brutal-press"
+              >
+                <div className="aspect-square relative overflow-hidden">
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img loading="lazy" decoding="async"
+                      src={p.image}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="p-2 flex-1 flex flex-col">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                    {p.brand}
+                  </p>
+                  {/* break-words: names like "Nothing(4a)Pro" are a single
+                      unbroken token, which line-clamp cannot wrap — it ran past
+                      the cell edge and was sliced by the card border. */}
+                  {/* 16px, not 18px: these cells are ~137px wide, and at 18px a
+                      space-less name like "Nothing(4a)Pro" cannot fit on one
+                      line, so break-words split it mid-token ("Nothing(4a)Pr" /
+                      "o"). At 16px it fits whole and the longer names still
+                      wrap on their spaces. */}
+                  <h4 className="text-base font-extrabold text-foreground mt-0.5 line-clamp-2 break-words">
+                    <Underline>{p.name}</Underline>
+                  </h4>
+                  {p.priceFrom != null && (
+                    <p className="text-[11px] font-bold text-accent mt-1">
+                      {p.currency} {p.priceFrom.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+
+        {hasMore && (
+          <div className="flex justify-center mt-4">
+            <Link
+              href={`/products?category=${active}`}
+              className="cta-primary group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-accent-3 text-xs font-extrabold uppercase tracking-wide text-on-accent-3 shadow-brutal-sm brutal-press"
+            >
+              View more products
+              <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+
   return (
     <motion.div
       layout
+      transition={{ layout: SWAP_LAYOUT_T }}
       className="bg-card border-2 border-border-heavy shadow-brutal rounded-none p-5"
     >
       <SwapDeck
@@ -66,8 +150,9 @@ export default function ProductsByCategoryTabs({
         frontTitle="Browse by Category"
         backTitle="Browse by Brands"
         front={
-          <div className="flex flex-wrap gap-2">
-            {categories.map((c) => {
+          <div>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => {
               const isActive = c.slug === active;
               return (
                 <button
@@ -85,81 +170,14 @@ export default function ProductsByCategoryTabs({
                   {c.name}
                 </button>
               );
-            })}
+              })}
+            </div>
+            {categoryGrid}
           </div>
         }
         back={<ProductTagRail tags={tags} />}
       />
 
-      {/* Product grid — category view only */}
-      <AnimatePresence mode="wait">
-        {view === "front" && (
-          <motion.div
-            key={active}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="mt-5"
-          >
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {products.length === 0 ? (
-                <div className="col-span-full bg-background border-2 border-border-heavy rounded-none p-8 text-center text-muted-foreground">
-                  No products yet in this category.
-                </div>
-              ) : (
-                products.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/product/${p.slug}`}
-                    className="group flex flex-col bg-background border-2 border-border-heavy rounded-none overflow-hidden shadow-brutal-sm brutal-press"
-                  >
-                    <div className="aspect-square relative overflow-hidden">
-                      {p.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">
-                          No image
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-2 flex-1 flex flex-col">
-                      <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-                        {p.brand}
-                      </p>
-                      <h4 className="text-[18px] font-extrabold text-foreground mt-0.5 line-clamp-2">
-                        <Underline>{p.name}</Underline>
-                      </h4>
-                      {p.priceFrom != null && (
-                        <p className="text-[11px] font-bold text-accent mt-1">
-                          {p.currency} {p.priceFrom.toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-
-            {hasMore && (
-              <div className="flex justify-center mt-4">
-                <Link
-                  href={`/products?category=${active}`}
-                  className="cta-primary group inline-flex items-center gap-2 px-5 py-2.5 rounded-none border-2 border-border-heavy bg-accent-3 text-xs font-extrabold uppercase tracking-wide text-on-accent-3 shadow-brutal-sm brutal-press"
-                >
-                  View more products
-                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

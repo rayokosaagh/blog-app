@@ -238,6 +238,11 @@ div[data-youtube-video] iframe {
 .tag-pill {
   display: inline-flex;
   align-items: center;
+  /* Many tag pills are real links/buttons (category filters, brand chips) but
+     rendered only 20-21px tall, under the 24x24 WCAG 2.2 target minimum.
+     min-height raises the interactive ones without changing the padding,
+     type size or look of the purely decorative ones. */
+  min-height: 24px;
   gap: 5px;
   padding: 6px 12px;
   border: var(--border-width) solid var(--border-heavy);
@@ -393,8 +398,14 @@ div[data-youtube-video] iframe {
       idiom) so 1px hairline dividers and grid/table cells — which use
       plain `.border` or directional borders — are left square.
       `:not([class*="rounded"])` preserves anything that opts into its own
-      radius (rounded-full circles, rounded-none handled above, etc.). */
-[data-theme='modern'] :where(.border-2, .border-4, .border-\[3px\]):not([class*="rounded"]) {
+      radius (rounded-full circles, rounded-none handled above, etc.).
+
+      `border-[1.5px]` belongs here too: the article page's footer bar, tag
+      chips and meta strips use it, and without it they stayed hard-cornered
+      while every neighbouring card rounded — the single most visible way the
+      post page fell out of step with the modern theme. Its width is already
+      near-hairline, so only the radius needs correcting, not the width. */
+[data-theme='modern'] :where(.border-2, .border-4, .border-\[3px\], .border-\[1\.5px\]):not([class*="rounded"]) {
   border-radius: var(--radius);
 }
 

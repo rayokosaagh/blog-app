@@ -242,7 +242,11 @@ export default function Navbar() {
           <button
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close menu" : "Open menu"}
-            className="md:hidden p-2 surface-border-w border-border-heavy text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100 focus:outline-none"
+            /* `focus:outline-none` with no replacement left the primary mobile
+               nav control with no visible focus state, so a keyboard user
+               tabbing the header lost the cursor entirely. Swapped for the
+               focus ring used elsewhere in the codebase. */
+            className="md:hidden p-2 surface-border-w border-border-heavy text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             {isOpen ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

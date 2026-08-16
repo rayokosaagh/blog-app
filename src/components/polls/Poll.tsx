@@ -332,14 +332,23 @@ export default function Poll() {
       {hasMultiple && (
         <div className="flex justify-center gap-1.5 mt-6">
           {polls.map((_, i) => (
+            /* The dot used to BE the button — a 10x10 target, under the 24x24
+               WCAG 2.2 minimum and fiddly on a phone. The button is now 24x24
+               with the dot as an inner span: identical visually, tappable. */
             <button
               key={i}
+              type="button"
               onClick={() => goToIndex(i)}
               aria-label={`Go to poll ${i + 1}`}
-              className={`w-2.5 h-2.5 rounded-none border border-border-heavy transition-colors duration-100 ${
-                i === currentIndex ? "bg-accent" : "bg-border hover:bg-foreground"
-              }`}
-            />
+              aria-current={i === currentIndex ? "true" : undefined}
+              className="flex h-6 w-6 items-center justify-center"
+            >
+              <span
+                className={`block w-2.5 h-2.5 rounded-none border border-border-heavy transition-colors duration-100 ${
+                  i === currentIndex ? "bg-accent" : "bg-border hover:bg-foreground"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Flame, Clock } from "lucide-react";
+import { Flame } from "lucide-react";
 
 interface Tile {
   id: string;
@@ -10,7 +10,8 @@ interface Tile {
   title: string;
   featuredImage: string | null;
   createdAt: Date;
-  kind: "trending" | "latest";
+  /** 1-based position in the most-read ranking. */
+  rank: number;
 }
 
 function formatDate(date: Date) {
@@ -43,9 +44,10 @@ const itemVariants = {
  * the photo slightly on hover.
  */
 function StoryTile({ t }: { t: Tile }) {
-  const isTrending = t.kind === "trending";
-  const KindIcon = isTrending ? Flame : Clock;
-  const kindLabel = isTrending ? "Trending" : "New";
+  // Every tile is now a most-read tile, so a repeated "Trending" badge on all
+  // four would be noise. The rank is what actually differs between them, and
+  // the section heading above supplies the context.
+  const isTop = t.rank === 1;
 
   return (
     <Link
@@ -54,7 +56,7 @@ function StoryTile({ t }: { t: Tile }) {
     >
       {/* Image */}
       {t.featuredImage ? (
-        <img
+        <img loading="lazy" decoding="async"
           src={t.featuredImage}
           alt={t.title}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
@@ -65,15 +67,18 @@ function StoryTile({ t }: { t: Tile }) {
         </div>
       )}
 
-      {/* Dark caption plate over the image */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+      {/* Dark caption plate over the image. Strengthened from
+          via-black/25 → /55: through the middle band the headline was sitting
+          on close to bare photo, so titles over bright images (the iPhone and
+          OnePlus tiles) fell well below readable contrast. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/15" />
       <span
-        className={`absolute left-2 top-2 inline-flex items-center gap-1 border-2 border-border-heavy px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide shadow-brutal-sm ${
-          isTrending ? "bg-accent text-on-accent" : "bg-accent-2 text-on-accent-2"
+        className={`absolute left-2 top-2 inline-flex min-h-6 items-center gap-1 border-2 border-border-heavy px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide shadow-brutal-sm ${
+          isTop ? "bg-accent text-on-accent" : "bg-accent-2 text-on-accent-2"
         }`}
       >
-        <KindIcon className="h-3 w-3" fill={isTrending ? "currentColor" : "none"} />
-        {kindLabel}
+        <Flame className="h-3 w-3" fill={isTop ? "currentColor" : "none"} />
+        {isTop ? "Most read" : `#${t.rank}`}
       </span>
       <div className="absolute inset-x-0 bottom-0 p-3">
         <p className="line-clamp-2 text-sm font-bold leading-snug text-white">

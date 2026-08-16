@@ -142,7 +142,7 @@ function Tile({
         <Link href={href} className="absolute inset-0 block bg-muted">
           <div className="relative w-full h-full overflow-hidden">
             {post.featuredImage ? (
-              <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-accent-tint" />
             )}
@@ -174,7 +174,7 @@ function Tile({
           {primaryTag ? (
             <Link
               href={`/blog?tag=${primaryTag.slug}`}
-              className={`pointer-events-auto inline-flex items-center gap-1 border-2 border-border-heavy font-extrabold uppercase tracking-wide rounded-none shadow-brutal-sm brutal-press ${accentBg} ${accentText} ${
+              className={`pointer-events-auto inline-flex min-h-6 items-center gap-1 border-2 border-border-heavy font-extrabold uppercase tracking-wide rounded-none shadow-brutal-sm brutal-press ${accentBg} ${accentText} ${
                 mobileHero ? "text-[10px] px-2.5 py-0.5" : "text-[9px] px-2 py-0.5"
               } ${big ? "md:text-[11px] md:px-3 md:py-1" : "md:text-[10px] md:px-2.5 md:py-0.5"}`}
             >

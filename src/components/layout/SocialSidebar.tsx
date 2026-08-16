@@ -60,14 +60,22 @@ export default async function SocialSidebar() {
                 dangerouslySetInnerHTML={{ __html: social.iconSvg }}
               />
 
-              <span className="min-w-0 flex-1 truncate font-bold text-foreground transition-colors duration-150 group-hover/row:text-[var(--social-color)]">
-                {social.platform}
+              {/* Name over action, rather than side by side. This sidebar is a
+                  fixed 18rem column: with a 36px icon and a `shrink-0`
+                  "SUBSCRIBE"/"FOLLOW" both competing for the row, the platform
+                  name was squeezed to about 79px and rendered "You…" and
+                  "Instag…" — the one word in the row that actually matters.
+                  Stacking gives the name the full remaining width. */}
+              <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                <span className="truncate font-bold text-foreground transition-colors duration-150 group-hover/row:text-[var(--social-color)]">
+                  {social.platform}
+                </span>
+                <span className="truncate text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground transition-colors duration-150 group-hover/row:text-[var(--social-color)]">
+                  {social.actionText}
+                </span>
               </span>
 
-              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-extrabold uppercase tracking-wide text-muted-foreground transition-colors duration-150 group-hover/row:text-[var(--social-color)]">
-                {social.actionText}
-                <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5" />
-              </span>
+              <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-all duration-150 group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5 group-hover/row:text-[var(--social-color)]" />
             </Link>
           ))
         )}

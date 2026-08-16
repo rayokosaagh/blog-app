@@ -80,7 +80,11 @@ export default function FooterNewsletter() {
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded-none border-2 border-border-heavy accent-[var(--accent)]"
+              /* 16x16 was the entire hit area for the one control gating the
+                 subscribe button. Grown to 24x24 (the WCAG 2.2 minimum) — the
+                 surrounding <label> is clickable too, but the box itself
+                 shouldn't be the hard part. */
+              className="h-6 w-6 shrink-0 rounded-none border-2 border-border-heavy accent-[var(--accent)]"
             />
             <span>
               I agree to the{" "}

@@ -1,7 +1,7 @@
 "use client";
 // src/components/PopupAd.tsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X } from "lucide-react";
@@ -168,6 +168,36 @@ export default function PopupAd() {
     if (ad) writeSeen(ad.id, { converted: true });
     handleClose();
   };
+
+  // Modal hygiene this dialog was missing. It declares role="dialog"
+  // aria-modal="true" but left the page behind it scrollable, and offered no
+  // Escape key — so the only way out was hitting the small close button, and
+  // the content kept moving underneath the overlay. Held in a ref because
+  // handleClose is re-created every render; depending on it directly would
+  // re-run this effect (and re-lock the body) on every render.
+  const closeRef = useRef(handleClose);
+  // Synced in an effect, not during render: writing to a ref while rendering is
+  // unsafe under concurrent rendering (and react-hooks/refs flags it).
+  useEffect(() => {
+    closeRef.current = handleClose;
+  });
+
+  useEffect(() => {
+    if (!mounted || !visible || !ad) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeRef.current();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mounted, visible, ad]);
 
   if (!mounted || !visible || !ad) return null;
 

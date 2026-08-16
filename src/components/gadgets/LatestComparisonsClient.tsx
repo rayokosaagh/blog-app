@@ -45,16 +45,25 @@ const rowEntranceVariants: Variants = {
   },
 };
 
+/**
+ * `min-w-0 flex-1` is load-bearing. A flex child defaults to
+ * `min-width: auto`, i.e. it refuses to shrink below its content's intrinsic
+ * width — so with two portraits plus the VS badge inside a ~190px card, the
+ * fixed `max-w-[9rem]` name below each photo pushed the column wider than the
+ * card and the text visibly crossed the border ("Oppo Find X9 Ultra",
+ * "Asus ProArt P16…"). Allowing the column to shrink and letting the label
+ * wrap to the width it actually has keeps every name inside the card.
+ */
 function ProductPortrait({ product }: { product: ComparisonProduct }) {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex min-w-0 flex-1 flex-col items-center">
       {/* bg-white is deliberate, not a hardcode oversight: product photos are
           shot on white, and framing them in the near-black dark-mode --card
           color would make them look broken rather than themed. Promote to
           a --color-product-frame token if this pattern keeps showing up. */}
-      <div className="flex h-24 w-24 items-center justify-center rounded-none bg-white p-2.5 border-2 border-border-heavy">
+      <div className="flex h-24 w-24 max-w-full items-center justify-center rounded-none bg-white p-2.5 border-2 border-border-heavy">
         {product.image ? (
-          <img
+          <img loading="lazy" decoding="async"
             src={product.image}
             alt={product.name}
             className="h-full w-full object-contain"
@@ -63,7 +72,7 @@ function ProductPortrait({ product }: { product: ComparisonProduct }) {
           <span className="text-[10px] text-muted-foreground">No image</span>
         )}
       </div>
-      <p className="mt-3 min-h-[2.5rem] max-w-[9rem] text-center text-sm font-bold leading-snug text-foreground line-clamp-2">
+      <p className="mt-3 min-h-[2.5rem] w-full break-words text-center text-sm font-bold leading-snug text-foreground line-clamp-2">
         {product.name}
       </p>
     </div>
@@ -156,7 +165,7 @@ function ComparisonRow({
         <div className="relative flex shrink-0 items-center">
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
             {item.productA.image ? (
-              <img src={item.productA.image} alt={item.productA.name} className="h-full w-full object-contain" />
+              <img loading="lazy" decoding="async" src={item.productA.image} alt={item.productA.name} className="h-full w-full object-contain" />
             ) : (
               <span className="text-[8px] text-muted-foreground">No image</span>
             )}
@@ -168,7 +177,7 @@ function ComparisonRow({
           </span>
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
             {item.productB.image ? (
-              <img src={item.productB.image} alt={item.productB.name} className="h-full w-full object-contain" />
+              <img loading="lazy" decoding="async" src={item.productB.image} alt={item.productB.name} className="h-full w-full object-contain" />
             ) : (
               <span className="text-[8px] text-muted-foreground">No image</span>
             )}

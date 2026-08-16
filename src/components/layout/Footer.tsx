@@ -68,7 +68,7 @@ function LinkColumn({
           <li key={link.label}>
             <Link
               href={link.href}
-              className="group inline-flex text-sm font-bold text-muted-foreground transition-colors duration-100 hover:text-foreground"
+              className="group inline-flex py-1 text-sm font-bold text-muted-foreground transition-colors duration-100 hover:text-foreground"
             >
               <Underline>{link.label}</Underline>
             </Link>
@@ -85,7 +85,10 @@ export default function Footer() {
   return (
     <footer className="bg-footer text-foreground border-t-4 border-border-heavy mt-20">
       <FadeIn>
-        <div className="max-w-6xl mx-auto px-6 py-14">
+        {/* Same container as the page sections (max-w-[1600px] px-6), not the
+            narrower max-w-6xl it used to use — that inset the footer columns
+            ~144px from every content block above it, so nothing lined up. */}
+        <div className="max-w-[1600px] mx-auto px-6 py-14">
           <div className="grid grid-cols-2 gap-10 lg:grid-cols-12 lg:gap-8">
             {/* Newsletter — footer-specific inline design */}
             <div className="col-span-2 lg:col-span-4">

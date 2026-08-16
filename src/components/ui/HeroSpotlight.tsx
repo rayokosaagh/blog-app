@@ -63,7 +63,12 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
   return (
     <div className="flex flex-col overflow-hidden surface-border shadow-brutal-lg lg:flex-row">
       {/* Hero image (left / top) */}
-      <div className="relative h-56 w-full overflow-hidden bg-border sm:h-72 lg:h-[30rem] lg:flex-[3]">
+      {/* aspect-video below lg instead of a fixed h-56/h-72. Banner artwork is
+          16:9 and routinely has the product name set into the image; a 340x224
+          box (1.52:1) cropped ~15% off each side with `object-cover`, slicing
+          that lettering off. Matching the source ratio shows the full artwork.
+          Fixed height returns at lg, where the hero sits beside the text card. */}
+      <div className="relative aspect-video w-full overflow-hidden bg-border lg:aspect-auto lg:h-[30rem] lg:flex-[3]">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
             key={b.id}
@@ -116,8 +121,13 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
           {b.badge?.trim() || "Top Story"}
         </span>
 
-        {/* Headline + description swap in sync with the image */}
-        <div className="min-h-0 flex-1">
+        {/* Headline + description swap in sync with the image.
+            Deliberately NOT `flex-1`: stretching this block pushed the CTA to
+            the bottom of the card, so a banner saved without a description
+            (the "Summer sale" one) rendered as a headline, ~250px of void, then
+            a button. The controls row below carries `mt-auto` instead, so it
+            still pins to the bottom while the text and CTA stay together. */}
+        <div className="min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={b.id}
@@ -152,23 +162,33 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
 
         {/* Shared controls — arrows, dots and counter drive the whole unit */}
         {banners.length > 1 && (
-          <div className="mt-6 flex items-center justify-between border-t border-border-heavy pt-4">
-            <div className="flex items-center gap-1.5">
+          <div className="mt-auto flex items-center justify-between border-t border-border-heavy pt-4">
+            {/* The dots were 10x10 hit areas — under the 24x24 WCAG 2.2
+                minimum and painful on a phone. The button is now a 24px-tall
+                target with horizontal padding; the visible bar is an inner
+                span, so the dot looks identical but the tappable area is not. */}
+            <div className="flex items-center">
               {banners.map((_, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => {
                     setDirection(i > current ? 1 : -1);
                     setCurrent(i);
                   }}
                   aria-label={`Go to slide ${i + 1}`}
-                  style={{ width: i === current ? "24px" : "10px" }}
-                  className={`h-2.5 surface-border-w border-border-heavy transition-all ${
-                    i === current
-                      ? "bg-accent-2 group-hover/card:bg-black"
-                      : "bg-background group-hover/card:bg-black/20"
-                  }`}
-                />
+                  aria-current={i === current ? "true" : undefined}
+                  className="flex h-6 items-center px-2"
+                >
+                  <span
+                    style={{ width: i === current ? "24px" : "10px" }}
+                    className={`block h-2.5 surface-border-w border-border-heavy transition-all ${
+                      i === current
+                        ? "bg-accent-2 group-hover/card:bg-black"
+                        : "bg-background group-hover/card:bg-black/20"
+                    }`}
+                  />
+                </button>
               ))}
             </div>
             <div className="flex items-center gap-2">
