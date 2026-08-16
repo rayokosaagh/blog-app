@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resend, NEWSLETTER_FROM } from "@/lib/resend";
+import { sendEmail } from "@/lib/email/send";
 import { confirmSubscriptionEmail } from "@/lib/newsLetterEmails";
 // Adjust this import to match your actual auth setup (see src/auth/index.ts)
 import { auth } from "@/auth";
@@ -38,14 +38,12 @@ export async function POST(req: NextRequest) {
           data: { email: normalizedEmail },
         });
 
-    const { subject, html } = confirmSubscriptionEmail(subscriber.token);
+    const { subject, text, html } = confirmSubscriptionEmail(subscriber.token);
 
-    await resend.emails.send({
-      from: NEWSLETTER_FROM,
-      to: normalizedEmail,
-      subject,
-      html,
-    });
+    // Result is deliberately not surfaced: the response below must read the
+    // same whether or not delivery worked, so a caller can't probe which
+    // addresses exist. Failures are logged inside sendEmail.
+    await sendEmail({ to: normalizedEmail, subject, text, html });
 
     return NextResponse.json(
       { message: "Check your inbox to confirm your subscription." },

@@ -1,12 +1,25 @@
 import { prisma } from "@/lib/prisma";
-import { resend, NEWSLETTER_FROM } from "@/lib/resend";
+import { sendEmail } from "@/lib/email/send";
 import { newPostNotificationEmail } from "@/lib/newsLetterEmails";
 
-const BATCH_SIZE = 100; // Resend's batch.send max per call
+/**
+ * How many messages to have in flight at once.
+ *
+ * Gmail SMTP has no batch endpoint — the previous provider accepted 100
+ * messages per API call, this one is one message per send. A small amount of
+ * concurrency keeps the fan-out from crawling, but it stays deliberately low:
+ * Gmail throttles aggressive senders, and nodemailer's pooled transport is
+ * doing the connection reuse underneath.
+ *
+ * Note the hard ceiling this transport brings with it — roughly 500
+ * recipients/day on a free Gmail account, ~2,000 on Workspace. Past that,
+ * this needs a real bulk provider again.
+ */
+const CONCURRENCY = 5;
 
 /**
  * Emails every confirmed subscriber about a new post.
- * Returns how many subscribers were notified.
+ * Returns how many subscribers were successfully notified.
  */
 export async function notifySubscribersOfNewPost(post: {
   title: string;
@@ -24,26 +37,32 @@ export async function notifySubscribersOfNewPost(post: {
   const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/blog/${post.slug}`;
 
   const emails = subscribers.map((s) => {
-    const { subject, html } = newPostNotificationEmail({
+    const { subject, text, html } = newPostNotificationEmail({
       title: post.title,
       excerpt: post.excerpt,
       url,
       token: s.token,
       featuredImage: post.featuredImage,
     });
-    return {
-      from: NEWSLETTER_FROM,
-      to: s.email,
-      subject,
-      html,
-    };
+    return { to: s.email, subject, text, html };
   });
 
-  // Send in batches of 100 to stay within Resend's batch.send limit
-  for (let i = 0; i < emails.length; i += BATCH_SIZE) {
-    const chunk = emails.slice(i, i + BATCH_SIZE);
-    await resend.batch.send(chunk);
+  // One send per recipient, a few at a time. Count only what actually left —
+  // returning subscribers.length regardless (as the batch version did) would
+  // report a clean run even when every message bounced off a bad app password.
+  let sent = 0;
+  for (let i = 0; i < emails.length; i += CONCURRENCY) {
+    const results = await Promise.all(
+      emails.slice(i, i + CONCURRENCY).map((m) => sendEmail(m))
+    );
+    sent += results.filter((r) => r.ok).length;
   }
 
-  return subscribers.length;
+  if (sent < emails.length) {
+    console.error(
+      `[newsletter] notified ${sent}/${emails.length} subscribers — see [email] errors above`
+    );
+  }
+
+  return sent;
 }

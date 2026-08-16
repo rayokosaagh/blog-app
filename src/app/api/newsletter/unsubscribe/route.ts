@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resend, NEWSLETTER_FROM, APP_URL } from "@/lib/resend";
-import { welcomeEmail } from "@/lib/newsLetterEmails";
+import { APP_URL } from "@/lib/appUrl";
 
+/**
+ * Unsubscribe, reached from the link at the foot of every newsletter email.
+ *
+ * Clears `confirmed` rather than deleting the row, for two reasons:
+ *   - The token survives, so the link stays idempotent. Mail clients prefetch
+ *     and users double-click; a deleted row would make the second visit report
+ *     "that link isn't valid", which reads as a failed unsubscribe.
+ *   - `notifySubscribersOfNewPost` selects on `confirmed: true`, so clearing
+ *     the flag is what actually stops the mail.
+ *
+ * Re-subscribing still works: POST /api/newsletter reuses the existing row and
+ * sends a fresh confirmation.
+ */
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
 
@@ -18,20 +30,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/newsletter/confirmed?status=invalid`);
   }
 
-  if (!subscriber.confirmed) {
+  // Only write when there is something to change — a repeat visit is a no-op
+  // that still reports success.
+  if (subscriber.confirmed) {
     await prisma.newsletterSubscriber.update({
       where: { token },
-      data: { confirmed: true, confirmedAt: new Date() },
-    });
-
-    const { subject, html } = welcomeEmail(subscriber.token);
-    await resend.emails.send({
-      from: NEWSLETTER_FROM,
-      to: subscriber.email,
-      subject,
-      html,
+      data: { confirmed: false, confirmedAt: null },
     });
   }
 
-  return NextResponse.redirect(`${APP_URL}/newsletter/confirmed?status=success`);
+  // No email on the way out. Sending "you've unsubscribed" mail to someone who
+  // just asked for no more mail is the one message guaranteed to be unwelcome.
+  return NextResponse.redirect(
+    `${APP_URL}/newsletter/confirmed?status=unsubscribed`
+  );
 }

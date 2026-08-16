@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resend, NEWSLETTER_FROM, APP_URL } from "@/lib/resend";
+import { sendEmail } from "@/lib/email/send";
+import { APP_URL } from "@/lib/appUrl";
 import { welcomeEmail } from "@/lib/newsLetterEmails";
 
 export async function GET(req: NextRequest) {
@@ -32,12 +33,12 @@ export async function GET(req: NextRequest) {
     console.log("update result:", updated);
 
     try {
-      const { subject, html } = welcomeEmail(subscriber.token);
+      const { subject, text, html } = welcomeEmail(subscriber.token);
       console.log("sending welcome email to:", subscriber.email);
-      const emailResult = await resend.emails.send({
-        from: NEWSLETTER_FROM,
+      const emailResult = await sendEmail({
         to: subscriber.email,
         subject,
+        text,
         html,
       });
       console.log("welcome email result:", emailResult);
