@@ -36,6 +36,9 @@ export default function PollsPage() {
   const [isActive, setIsActive] = useState(true);
   const [pollToDelete, setPollToDelete] = useState<Poll | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Which poll's active-toggle is mid-flight, and the last toggle failure.
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   const fetchPolls = async () => {
     setLoading(true);
@@ -116,6 +119,46 @@ export default function PollsPage() {
     setView("edit");
   };
 
+  /**
+   * Flips a poll's isActive straight from the list, without opening the edit
+   * form. Deliberately PATCHes ONLY `isActive`: the same endpoint rebuilds the
+   * options (delete + recreate) whenever an `options` array is present, which
+   * would discard every vote already cast. Sending the single field takes the
+   * simple-update branch and leaves votes intact.
+   *
+   * Updated optimistically and rolled back on failure, so the switch never
+   * shows a state the server did not accept.
+   */
+  const handleToggleActive = async (poll: Poll) => {
+    const next = !poll.isActive;
+    setTogglingId(poll.id);
+    setPolls((prev) =>
+      prev.map((p) => (p.id === poll.id ? { ...p, isActive: next } : p))
+    );
+
+    try {
+      const res = await fetch(`/api/polls/${poll.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: next }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Request failed");
+      }
+    } catch (error) {
+      console.error("Failed to toggle poll", error);
+      setPolls((prev) =>
+        prev.map((p) => (p.id === poll.id ? { ...p, isActive: poll.isActive } : p))
+      );
+      setToggleError(
+        `Could not ${next ? "enable" : "disable"} "${poll.question}". Please try again.`
+      );
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!pollToDelete) return;
     setDeleting(true);
@@ -178,6 +221,23 @@ export default function PollsPage() {
         </div>
       </div>
 
+      {view === "list" && toggleError && (
+        <div
+          role="alert"
+          className="mb-4 flex items-start justify-between gap-3 rounded-2xl bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300 ring-1 ring-red-200 dark:ring-red-500/20"
+        >
+          <span>{toggleError}</span>
+          <button
+            type="button"
+            onClick={() => setToggleError(null)}
+            aria-label="Dismiss error"
+            className="shrink-0 rounded-lg p-0.5 hover:bg-red-100 dark:hover:bg-red-500/20"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {view === "list" ? (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
           {loading ? (
@@ -222,6 +282,31 @@ export default function PollsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    {/* Enable/disable without opening the edit form. A poll can
+                        be pulled off the site instantly this way, and turned
+                        back on without retyping anything — deleting is the only
+                        thing that loses the votes. */}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={poll.isActive}
+                      aria-label={`${poll.isActive ? "Disable" : "Enable"} poll: ${poll.question}`}
+                      title={poll.isActive ? "Disable poll" : "Enable poll"}
+                      onClick={() => handleToggleActive(poll)}
+                      disabled={togglingId === poll.id}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
+                        poll.isActive
+                          ? "bg-emerald-500"
+                          : "bg-zinc-300 dark:bg-zinc-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          poll.isActive ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+
                     <button
                       onClick={() => handleEdit(poll)}
                       className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-xl transition-colors"
