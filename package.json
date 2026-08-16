@@ -1,6 +1,7 @@
 {
   "name": "blog-app",
   "version": "0.1.0",
+  "description": "Tech blog and gadget spec-comparison site: reviews, news, a structured product catalogue and a built-in publishing dashboard.",
   "private": true,
   "scripts": {
     "db": "prisma dev start default",
