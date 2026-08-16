@@ -26,6 +26,11 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   const isAdmin = session.user?.role === "ADMIN";
+  const isStaff = isAdmin || session.user?.role === "EDITOR";
+
+  // Belt-and-braces alongside the middleware check: a READER has a valid
+  // session but isn't staff, so shouldn't see dashboard tooling.
+  if (!isStaff) redirect("/");
 
   return (
     <div className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}>
