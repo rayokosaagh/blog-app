@@ -10,10 +10,16 @@ import SignOutButton from "@/components/layout/SignOutButton";
 import NavbarSearch from "@/components/layout/NavbarSearch";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ExploreMenu from "@/components/layout/ExploreMenu";
-import { Newspaper, Scale, Gauge, LogOut, X, Bookmark } from "lucide-react";
+import { Newspaper, Smartphone, Scale, Gauge, LogOut, X, Bookmark, User } from "lucide-react";
 
+// "Blog" and "Gadgets" are the two things this site actually is — leading
+// with both, as equal-weight nouns, is what tells a first-time visitor
+// there are two separate experiences here instead of one blended feed.
+// "Compare" stays as a secondary tool link since it's a specific utility
+// (the multi-way spec comparison), not another top-level content type.
 const NAV_LINKS = [
-  { href: "/blog", label: "Posts", authOnly: false, Icon: Newspaper },
+  { href: "/blog", label: "Blog", authOnly: false, Icon: Newspaper },
+  { href: "/products", label: "Gadgets", authOnly: false, Icon: Smartphone },
   { href: "/compare", label: "Compare", authOnly: false, Icon: Scale },
   { href: "/dashboard", label: "Dashboard", authOnly: true, Icon: Gauge },
 ];
@@ -72,7 +78,14 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const isActiveLink = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isActiveLink = (href: string) => {
+    if (pathname === href || pathname.startsWith(`${href}/`)) return true;
+    // Product detail pages live at the singular /product/[slug], a
+    // different route from the /products listing — without this, "Gadgets"
+    // wouldn't highlight while actually looking at a gadget.
+    if (href === "/products" && pathname.startsWith("/product/")) return true;
+    return false;
+  };
 
   const visibleLinks = NAV_LINKS.filter((link) => {
     if (!link.authOnly) return true;
@@ -181,7 +194,16 @@ export default function Navbar() {
                           </div>
                         </div>
 
-                        <div className="px-2 py-2">
+                        <div className="px-2 py-2 space-y-0.5">
+                          <Link
+                            href="/account"
+                            onClick={() => setIsProfileOpen(false)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent-tint transition-colors duration-100 font-extrabold uppercase tracking-wide text-xs"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <User className="h-4 w-4" />
+                            Profile
+                          </Link>
                           <Link
                             href="/bookmarks"
                             onClick={() => setIsProfileOpen(false)}
@@ -314,10 +336,16 @@ export default function Navbar() {
                     })}
 
                     {session && (
-                      <Link href="/bookmarks" className={`w-full ${navLinkClass(isActiveLink("/bookmarks"))}`}>
-                        <Bookmark className="h-4 w-4 shrink-0" />
-                        <span className="truncate">Bookmarks</span>
-                      </Link>
+                      <>
+                        <Link href="/account" className={`w-full ${navLinkClass(isActiveLink("/account"))}`}>
+                          <User className="h-4 w-4 shrink-0" />
+                          <span className="truncate">Profile</span>
+                        </Link>
+                        <Link href="/bookmarks" className={`w-full ${navLinkClass(isActiveLink("/bookmarks"))}`}>
+                          <Bookmark className="h-4 w-4 shrink-0" />
+                          <span className="truncate">Bookmarks</span>
+                        </Link>
+                      </>
                     )}
                   </nav>
 

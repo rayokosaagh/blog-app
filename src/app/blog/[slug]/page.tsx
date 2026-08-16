@@ -25,6 +25,7 @@ import ParallaxHeroImage from "@/components/ui/ParallaxHeroImage";
 import ArticleImageLightbox from "@/components/blog/ArticleImageLightbox";
 import { auth } from "@/auth";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
+import ShareButtons from "@/components/blog/ShareButtons";
 import { parseKeyHighlightsBlock } from "@/components/feeds/KeyHighlights";
 import { parseProsConsBlock } from "@/components/feeds/ProsCons";
 import { parseAlsoReadBlock } from "@/components/feeds/AlsoRead";
@@ -398,13 +399,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 </div>
               </div>
 
-              <div className="shrink-0">
-                {/* Hero position */}
-<BookmarkButton
-  postId={post.id}
-  initialBookmarked={isBookmarked}
-  className="bg-card px-3 py-2 border-[1.5px] shrink-0"
-/>
+              <div className="shrink-0 flex items-center gap-2">
+                {/* Hero position — sits on the photo overlay, so it takes the
+                    fixed on-photo colours rather than the theme's foreground
+                    token, which is near-black in light mode. */}
+                <ShareButtons
+                  title={post.title}
+                  tone="onPhoto"
+                  omit={["Telegram"]}
+                  className="hidden sm:inline-flex"
+                />
+                <BookmarkButton
+                  postId={post.id}
+                  initialBookmarked={isBookmarked}
+                  className="bg-card px-3 py-2 border-[1.5px] shrink-0"
+                />
               </div>
             </div>
           </FadeIn>
@@ -675,12 +684,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <div className="hidden sm:block h-8 w-px bg-border" />
 
                 {/* Author-bio position */}
-<BookmarkButton
-  postId={post.id}
-  initialBookmarked={isBookmarked}
-  showLabel
-  className="px-3 py-1.5 border-[1.5px] shrink-0"
-/>
+                <div className="flex items-center gap-3 shrink-0">
+                  <BookmarkButton
+                    postId={post.id}
+                    initialBookmarked={isBookmarked}
+                    showLabel
+                    className="px-3 py-1.5 border-[1.5px] shrink-0"
+                  />
+                  <ShareButtons title={post.title} showLabel />
+                </div>
 
                 <div className="hidden sm:block h-8 w-px bg-border" />
 
