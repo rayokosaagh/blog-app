@@ -69,20 +69,21 @@ export interface SpecAccent {
 type IconComponent = ComponentType<{
   size?: number | string;
   className?: string;
+  strokeWidth?: number | string;
 }>;
 
-function AntutuIcon({ size = 24, className }: { size?: number | string; className?: string }) {
+function AntutuIcon({ size = 24, className, strokeWidth = 2 }: { size?: number | string; className?: string; strokeWidth?: number | string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} className={className}>
       <path d="M12 3v6M12 15v6M4.2 7.8l5.2 3M14.6 13.2l5.2 3M4.2 16.2l5.2-3M14.6 10.8l5.2-3" strokeLinecap="round" />
       <circle cx="12" cy="12" r="2.4" />
     </svg>
   );
 }
 
-function GeekbenchIcon({ size = 24, className }: { size?: number | string; className?: string }) {
+function GeekbenchIcon({ size = 24, className, strokeWidth = 2 }: { size?: number | string; className?: string; strokeWidth?: number | string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} className={className}>
       <rect x="4" y="10" width="4" height="10" rx="1" />
       <rect x="10" y="5" width="4" height="15" rx="1" />
       <rect x="16" y="13" width="4" height="7" rx="1" />
@@ -90,9 +91,9 @@ function GeekbenchIcon({ size = 24, className }: { size?: number | string; class
   );
 }
 
-function ThreeDMarkIcon({ size = 24, className }: { size?: number | string; className?: string }) {
+function ThreeDMarkIcon({ size = 24, className, strokeWidth = 2 }: { size?: number | string; className?: string; strokeWidth?: number | string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} className={className}>
       <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" strokeLinejoin="round" />
       <path d="M12 3v9M12 12l8-4.5M12 12l-8-4.5" strokeLinejoin="round" />
     </svg>

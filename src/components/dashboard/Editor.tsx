@@ -71,7 +71,9 @@ export default function Editor({ content, onChange }: EditorProps) {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({ placeholder: "Write your blog post here..." }),
       Image.configure({
-        resizable: true,
+        // Renamed from `resizable: true` in TipTap v3 — the old key was
+        // silently ignored, so resizing was inert until this was updated.
+        resize: { enabled: true },
         inline: false,
         allowBase64: true,
       }),

@@ -1,12 +1,12 @@
 // src/components/gadgets/compare/ProductSlots.tsx
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { PlusIcon } from "./icons";
 import ProductSearchBox, { ProductSearchBoxHandle } from "./ProductSearchBox";
 import { Product, ProductLite } from "./types";
 
-const slotContainerVariants = {
+const slotContainerVariants: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
 };
@@ -15,7 +15,7 @@ const slotContainerVariants = {
 // feedback lives on the inner plain element via .brutal-press instead,
 // so Framer's leftover inline transform never fights the CSS :hover
 // transform (see guide §3).
-const slotCardVariants = {
+const slotCardVariants: Variants = {
   hidden: { opacity: 0, y: 14 },
   show: {
     opacity: 1,
@@ -114,7 +114,7 @@ export default function ProductSlots({
                     >
                       {current.image && (
                         <div className="h-14 sm:h-16 w-14 sm:w-16 mx-auto mb-2 rounded-none border-2 border-border-heavy bg-card p-1.5">
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={current.image}
                             alt={current.name}
                             className="h-full w-full object-contain"
@@ -148,7 +148,9 @@ export default function ProductSlots({
                 </AnimatePresence>
 
                 <ProductSearchBox
-                  ref={(el) => (searchBoxRefs.current[i] = el)}
+                  ref={(el) => {
+                    searchBoxRefs.current[i] = el;
+                  }}
                   options={categoryProducts.filter(
                     (p) => p.slug === current?.slug || !usedSlugs.has(p.slug)
                   )}
