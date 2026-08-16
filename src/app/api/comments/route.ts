@@ -47,7 +47,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const comments = await prisma.comment.findMany({
-      where: { postId },
+      // Reported comments (status PENDING) and rejected ones stay out of the
+      // public thread — only what's actually cleared to be seen shows here.
+      where: { postId, status: "APPROVED" },
       orderBy: { createdAt: "asc" },
       include: {
         author: { select: { id: true, name: true, image: true, role: true } },

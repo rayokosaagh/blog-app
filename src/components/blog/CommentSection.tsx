@@ -5,7 +5,7 @@ import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useSession, signIn } from "next-auth/react";
 import type { Session } from "next-auth";
 import Link from "next/link";
-import { Smile, Loader2, MessageCircle, Reply as ReplyIcon, Trash2 } from "lucide-react";
+import { Smile, Loader2, MessageCircle, Reply as ReplyIcon, Trash2, Flag } from "lucide-react";
 
 interface CommentAuthor {
   id: string;
@@ -310,6 +310,7 @@ function CommentItem({
   session,
   onReply,
   onDelete,
+  onReport,
   isNew,
 }: {
   comment: CommentNode;
@@ -317,16 +318,22 @@ function CommentItem({
   session: Session | null;
   onReply: (parentId: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onReport: (id: string) => Promise<void>;
   isNew?: boolean;
 }) {
   const [replying, setReplying] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [confirmingReport, setConfirmingReport] = useState(false);
+  const [reportError, setReportError] = useState("");
   const [hovered, setHovered] = useState(false);
 
   const isOwner = session?.user?.id === comment.author.id;
   const isAdmin = session?.user?.role === "ADMIN";
+  const isStaff = isAdmin || session?.user?.role === "EDITOR";
   const canDelete = isOwner || isAdmin;
+  const canReport = !!session && !isOwner && !isStaff;
   const indented = Math.min(depth, 4) > 0;
 
   const handleDelete = async () => {
@@ -335,6 +342,17 @@ function CommentItem({
       await onDelete(comment.id);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleReport = async () => {
+    setReporting(true);
+    setReportError("");
+    try {
+      await onReport(comment.id);
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : "Failed to report comment");
+      setReporting(false);
     }
   };
 
@@ -447,6 +465,52 @@ function CommentItem({
                 )}
               </AnimatePresence>
             )}
+            {canReport && (
+              <AnimatePresence mode="wait" initial={false}>
+                {confirmingReport ? (
+                  <motion.span
+                    key="confirm-report"
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="text-xs flex items-center gap-2 overflow-hidden whitespace-nowrap"
+                  >
+                    <span className="text-muted-foreground">
+                      {reportError || "Report this comment?"}
+                    </span>
+                    {!reportError && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleReport}
+                          disabled={reporting}
+                          className="font-extrabold text-danger hover:underline disabled:opacity-50"
+                        >
+                          {reporting ? "Reporting…" : "Yes"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingReport(false)}
+                          className="font-bold text-muted-foreground hover:underline"
+                        >
+                          No
+                        </button>
+                      </>
+                    )}
+                  </motion.span>
+                ) : (
+                  <motion.button
+                    key="trigger-report"
+                    type="button"
+                    onClick={() => setConfirmingReport(true)}
+                    className="text-xs font-bold text-muted-foreground hover:text-danger transition-colors inline-flex items-center gap-1"
+                  >
+                    <Flag size={12} />
+                    Report
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            )}
           </div>
 
           <AnimatePresence>
@@ -483,6 +547,7 @@ function CommentItem({
                     session={session}
                     onReply={onReply}
                     onDelete={onDelete}
+                    onReport={onReport}
                   />
                 ))}
               </AnimatePresence>
@@ -540,6 +605,15 @@ export default function CommentSection({ postId }: { postId: string }) {
     const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to delete comment");
+    setComments((prev) => removeComment(prev, id));
+  }
+
+  async function reportComment(id: string) {
+    const res = await fetch(`/api/comments/${id}`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to report comment");
+    // A report hides the comment pending review, so it disappears from this
+    // thread immediately, the same way a delete would.
     setComments((prev) => removeComment(prev, id));
   }
 
@@ -674,6 +748,7 @@ export default function CommentSection({ postId }: { postId: string }) {
                   session={session}
                   onReply={(parentId, content) => postComment(content, parentId)}
                   onDelete={deleteComment}
+                  onReport={reportComment}
                   isNew={comment.id === justPostedId}
                 />
               ))}
