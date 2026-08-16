@@ -43,10 +43,17 @@ function buildGalleryPlaceholder(urls: string[], index: number): string {
   const payload = JSON.stringify(urls).replace(/</g, "\\u003c");
   const first = escapeAttr(urls[0]);
 
+  // The stage height here deliberately mirrors ImageCarousel's fixed stage
+  // (h-[360px] / sm:460 / lg:540). If the two disagree, the photo visibly
+  // resizes the moment GalleryMount swaps the placeholder for the real
+  // carousel — the same "images are different sizes" symptom, just on hydration.
   return `
     <div class="gallery-placeholder not-prose" data-gallery-mount data-gallery-index="${index}" style="margin:2rem 0;">
-      <div style="position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border:2px solid var(--border-heavy);background:var(--card);">
-        <img src="${first}" alt="" style="width:100%;height:100%;object-fit:contain;" />
+      <div class="relative w-full h-[360px] sm:h-[460px] lg:h-[540px] overflow-hidden border-2 border-border-heavy bg-card">
+        <img loading="lazy" decoding="async" src="${first}" alt="" aria-hidden="true"
+          class="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl" />
+        <img loading="lazy" decoding="async" src="${first}" alt=""
+          class="absolute inset-0 z-[1] h-full w-full object-contain" />
       </div>
       <script type="application/json" data-gallery-json>${payload}</script>
     </div>`;

@@ -94,63 +94,84 @@ export default function ImageCarousel({ images, alt = "", title, className = "" 
           {counter}
         </div>
 
-        {/* Stage — the bordered frame shrink-wraps each image, so any aspect
-            ratio fits exactly: no letterbox bars, no cropping. */}
-        <div className="flex justify-center">
-          <div
-            tabIndex={0}
-            role="group"
-            aria-roledescription="carousel"
-            aria-label={alt || title || "Image gallery"}
-            onKeyDown={onKeyNav}
-            className="group relative inline-block max-w-full select-none rounded-none shadow-brutal focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        {/* Stage — a FIXED box: always the full column width, always the same
+            height. It used to be `inline-block` shrink-wrapping a `w-auto`
+            image, which meant the frame's width was `height x that photo's
+            aspect ratio` — so a portrait shot produced a narrow frame and a
+            landscape one a wide frame. Two visible bugs fell out of that: every
+            image rendered at a different size, and the arrows (anchored
+            `left-3` / `right-3` to the frame) jumped horizontally on every
+            navigation. Pinning the box makes both stable.
+
+            The photo is `object-contain` inside it, so nothing is ever cropped;
+            the leftover letterbox area is filled by a blurred, dimmed copy of
+            the same photo — which is what this component's docstring described
+            all along but was never actually implemented. */}
+        <div
+          tabIndex={0}
+          role="group"
+          aria-roledescription="carousel"
+          aria-label={alt || title || "Image gallery"}
+          onKeyDown={onKeyNav}
+          className="group relative h-[360px] w-full select-none overflow-hidden rounded-none border-2 border-border-heavy bg-card shadow-brutal focus:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:h-[460px] lg:h-[540px]"
+        >
+          {/* Letterbox fill. Purely decorative, so it's hidden from assistive
+              tech and never intercepts the drag/click handlers below. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={`bg-${index}`}
+            src={src}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl"
+          />
+
+          <motion.img
+            key={index}
+            src={src}
+            alt={label(index)}
+            initial={{ opacity: 0.35 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25, ease: EASE }}
+            className="absolute inset-0 z-[1] h-full w-full object-contain"
+            draggable={false}
+            drag={count > 1 ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.15}
+            onDragEnd={handleDragEnd}
+            style={{ cursor: count > 1 ? "grab" : "default" }}
+          />
+
+          <button
+            type="button"
+            onClick={() => setLightbox(true)}
+            aria-label="View full screen"
+            className={`${navBtn} absolute right-3 top-3 h-9 w-9 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100`}
           >
-            <motion.img
-              key={index}
-              src={src}
-              alt={label(index)}
-              initial={{ opacity: 0.35 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25, ease: EASE }}
-              className="block h-[360px] w-auto max-w-full rounded-none border-2 border-border-heavy bg-white object-contain sm:h-[460px] lg:h-[540px]"
-              draggable={false}
-              drag={count > 1 ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.15}
-              onDragEnd={handleDragEnd}
-              style={{ cursor: count > 1 ? "grab" : "default" }}
-            />
+            <Expand className="h-4 w-4" />
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setLightbox(true)}
-              aria-label="View full screen"
-              className={`${navBtn} absolute right-3 top-3 h-9 w-9 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100`}
-            >
-              <Expand className="h-4 w-4" />
-            </button>
-
-            {count > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => go(-1)}
-                  aria-label="Previous image"
-                  className={`${navBtn} absolute left-3 top-1/2 h-11 w-11 -translate-y-1/2`}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => go(1)}
-                  aria-label="Next image"
-                  className={`${navBtn} absolute right-3 top-1/2 h-11 w-11 -translate-y-1/2`}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </>
-            )}
-          </div>
+          {count > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label="Previous image"
+                className={`${navBtn} absolute left-3 top-1/2 h-11 w-11 -translate-y-1/2`}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label="Next image"
+                className={`${navBtn} absolute right-3 top-1/2 h-11 w-11 -translate-y-1/2`}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Thumbnail rail */}
