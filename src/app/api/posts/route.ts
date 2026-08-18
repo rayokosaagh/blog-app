@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { verdictFieldsFromBody } from "@/lib/verdict";
 
 // GET all posts (with search + tag filter)
 // Used by the dashboard: admins see every post, everyone else sees only their own.
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
         authorId: session.user.id,
         // Preserve the exact order tags were selected in the picker.
         tagOrder: tagIds ?? [],
+        ...verdictFieldsFromBody(body),
         ...(tagIds && tagIds.length > 0
           ? { tags: { connect: tagIds.map((id: string) => ({ id })) } }
           : {}),

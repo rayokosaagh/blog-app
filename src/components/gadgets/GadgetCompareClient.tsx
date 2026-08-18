@@ -13,6 +13,7 @@ import JumpNav from "./compare/JumpNav";
 import FocusedSpecBar from "./compare/FocusedSpecBar";
 import DesktopTable from "./compare/DesktopTable";
 import MobileTable from "./compare/MobileTable";
+import ComparisonVerdict, { type EditorVerdict } from "./compare/ComparisonVerdict";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];
@@ -20,6 +21,8 @@ interface GadgetCompareClientProps {
   initialCategoryProducts: ProductLite[];
   initialProducts: Product[];
   initialDef?: GadgetCategoryDef;
+  /** Editor-written summary for the initial pair, by product slug. */
+  initialEditorVerdicts?: EditorVerdict;
 }
 
 export default function GadgetCompareClient({
@@ -28,6 +31,7 @@ export default function GadgetCompareClient({
   initialCategoryProducts,
   initialProducts,
   initialDef,
+  initialEditorVerdicts,
 }: GadgetCompareClientProps) {
   const [category, setCategory] = useState(initialCategory);
   const [def, setDef] = useState<GadgetCategoryDef | undefined>(initialDef);
@@ -35,6 +39,9 @@ export default function GadgetCompareClient({
   const [loading, setLoading] = useState(false);
   const [highlightDiff, setHighlightDiff] = useState(true);
   const [onlyDiff, setOnlyDiff] = useState(false);
+  const [editorVerdicts, setEditorVerdicts] = useState<EditorVerdict>(
+    initialEditorVerdicts ?? {}
+  );
 
   const [fieldFilter, setFieldFilter] = useState("");
   const [openMobileGroups, setOpenMobileGroups] = useState<Set<string>>(new Set());
@@ -141,6 +148,10 @@ export default function GadgetCompareClient({
           }
           return updated.map((s) => (s && bySlug[s.slug] ? bySlug[s.slug] : s));
         });
+
+        // Empty for any pairing an editor hasn't written copy for, which is
+        // most of them — the summary card then renders nothing at all.
+        setEditorVerdicts(data.editorVerdicts ?? {});
       }
     } finally {
       if (reqId === requestIdRef.current) setLoading(false);
@@ -153,6 +164,10 @@ export default function GadgetCompareClient({
       updated[slotIndex] = null;
       return updated;
     });
+    // The remaining products are a different comparison, so copy written for
+    // the old pair no longer applies. Cleared rather than refetched: the next
+    // pick re-requests it anyway.
+    setEditorVerdicts({});
   }
 
   function toggleMobileGroup(title: string) {
@@ -357,6 +372,9 @@ function updateActiveGroup() {
             </p>
           ) : (
             <>
+              {/* Renders nothing unless an editor wrote a summary for this
+                  exact pair, which most pairings won't have. */}
+              <ComparisonVerdict products={filledProducts} editorVerdicts={editorVerdicts} />
               <DesktopTable
                 groups={groups}
                 filledProducts={filledProducts}

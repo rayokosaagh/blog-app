@@ -13,13 +13,20 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { active } = body;
+  const { active, verdictA, verdictB } = body;
+
+  // Blank input clears the verdict rather than storing "". /compare reads null
+  // as "no editor copy — derive one from the specs"; an empty string would
+  // suppress that fallback and render nothing at all.
+  const verdict = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 
   try {
     const comparison = await prisma.comparison.update({
       where: { id },
       data: {
         ...(active !== undefined && { active }),
+        ...(verdictA !== undefined && { verdictA: verdict(verdictA) }),
+        ...(verdictB !== undefined && { verdictB: verdict(verdictB) }),
       },
       include: { category: true, productA: true, productB: true },
     });

@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { gifDurationMs } from "@/lib/gifDuration";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 export type SpotlightAd = {
   id: string;
@@ -136,7 +137,10 @@ export default function SpotlightAdRail({
               href={ad.link}
               target="_blank"
               rel="noopener noreferrer sponsored"
-              className="block h-full w-full"
+              /* `relative` so <OptimizedImage fill> anchors here. Same painted
+                 box as the absolute motion.div it would otherwise resolve to,
+                 so the title plate below is unaffected. */
+              className="relative block h-full w-full"
             >
               {isVideo ? (
                 <video
@@ -159,8 +163,18 @@ export default function SpotlightAdRail({
                   }}
                 />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img loading="lazy" decoding="async" src={ad.mediaUrl} alt={ad.title} className="h-full w-full object-cover" />
+                // Rail is 20rem on desktop and full-width below lg.
+                // OptimizedImage deliberately skips the optimizer for .gif so
+                // animated ads keep animating — the optimizer would flatten
+                // them to their first frame, and the GIF-duration timing above
+                // would then sit on a still image.
+                <OptimizedImage
+                  src={ad.mediaUrl}
+                  alt={ad.title}
+                  fill
+                  sizes="(min-width: 1024px) 320px, 100vw"
+                  className="object-cover"
+                />
               )}
 
               {/* Title plate */}

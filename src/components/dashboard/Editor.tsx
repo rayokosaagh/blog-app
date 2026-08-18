@@ -17,13 +17,22 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 
+import { DOMSerializer } from "@tiptap/pm/model";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+
 import { useEffect, useRef, useState } from "react";
 import {
+  Blocks,
+  BookOpen,
+  ChevronDown,
+  Cpu,
+  ListChecks,
+  ThumbsDown,
+  ThumbsUp,
   Bold,
   Italic,
   Underline as UnderlineIcon,
   Strikethrough,
-  Heading1,
   Heading2,
   Heading3,
   AlignLeft,
@@ -49,6 +58,85 @@ interface EditorProps {
   onChange: (content: string) => void;
 }
 
+/**
+ * --- Content blocks ---
+ * These are NOT TipTap nodes. Each one is a plain heading + <ul> that a
+ * server-side cheerio parser recognises on the published post and swaps for an
+ * animated card (see src/components/feeds/, wired up in blog/[slug]/page.tsx):
+ *
+ *   "Key Highlights" + <ul>      -> parseKeyHighlightsBlock
+ *   "Specifications" + <ul>      -> parseSpecificationsBlock  (needs "Label: value")
+ *   "Pros" / "Cons" + <ul>       -> parseProsConsBlock        (adjacent pair = one card)
+ *   "Also Read" + <ul> of links  -> parseAlsoReadBlock        (needs real <a> tags)
+ *
+ * Every parser matches on the heading TEXT and on the list being the very next
+ * sibling, and it fails by silently not matching — the post just renders as a
+ * plain heading and bullets. So the `heading` strings below must stay exactly as
+ * the parsers spell them, and the <ul> must stay glued to the heading.
+ */
+type BlockKind = "highlights" | "specs" | "pros" | "cons" | "alsoRead";
+
+const BLOCKS: Record<
+  BlockKind,
+  {
+    heading: string;
+    label: string;
+    hint: string;
+    icon: React.ComponentType<{ className?: string }>;
+    /** Used when nothing is selected, so the shape the parser wants is obvious. */
+    sample: string[];
+  }
+> = {
+  highlights: {
+    heading: "Key Highlights",
+    label: "Key Highlights",
+    hint: "Bulleted summary card",
+    icon: ListChecks,
+    sample: ["First highlight", "Second highlight", "Third highlight"],
+  },
+  specs: {
+    heading: "Specifications",
+    label: "Specifications",
+    hint: "Spec table — each line needs Label: value",
+    icon: Cpu,
+    sample: ['Display: 6.7" AMOLED, 120Hz', "Chipset: Snapdragon 8 Gen 3", "Battery: 5000 mAh"],
+  },
+  pros: {
+    heading: "Pros",
+    label: "Pros",
+    hint: "Green panel — pair with Cons for one card",
+    icon: ThumbsUp,
+    sample: ["What's good about it"],
+  },
+  cons: {
+    heading: "Cons",
+    label: "Cons",
+    hint: "Red panel — place directly after Pros",
+    icon: ThumbsDown,
+    sample: ["What's not"],
+  },
+  alsoRead: {
+    heading: "Also Read",
+    label: "Also Read",
+    hint: "Related-links card — items must be links",
+    icon: BookOpen,
+    sample: ["Link a related article here"],
+  },
+};
+
+const BLOCK_MENU: BlockKind[] = ["highlights", "specs", "pros", "cons", "alsoRead"];
+
+// Module scope, not inside the component — react-hooks/static-components flags
+// components declared during render.
+const Divider = () => <span className="mx-1 h-6 w-px shrink-0 bg-gray-200" aria-hidden="true" />;
+
+/** Text of an inline-HTML fragment, via the DOM rather than a fourth hand-rolled tag stripper. */
+function textOf(html: string): string {
+  const holder = document.createElement("div");
+  holder.innerHTML = html;
+  return holder.textContent ?? "";
+}
+
 export default function Editor({ content, onChange }: EditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +146,8 @@ export default function Editor({ content, onChange }: EditorProps) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [youtubeError, setYoutubeError] = useState("");
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [showBlockMenu, setShowBlockMenu] = useState(false);
+  const blockMenuRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -158,7 +248,104 @@ export default function Editor({ content, onChange }: EditorProps) {
     };
   }, [showYoutubeModal]);
 
+  // Close the block menu on an outside click or Escape. mousedown (not click) so
+  // it closes before the editor handles the press, but the menu's own buttons
+  // still get their click — they're inside the ref.
+  useEffect(() => {
+    if (!showBlockMenu) return;
+
+    const handlePointerDown = (e: MouseEvent) => {
+      if (!blockMenuRef.current?.contains(e.target as Node)) setShowBlockMenu(false);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowBlockMenu(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showBlockMenu]);
+
   if (!editor) return null;
+
+  /**
+   * The selection as one string of inline HTML per line — paragraphs and list
+   * items alike, so wrapping an existing bullet list behaves the same as
+   * wrapping loose paragraphs. Inline markup (<a>, <strong>) survives, which
+   * Also Read depends on: parseAlsoReadBlock drops any <li> with no <a>.
+   */
+  function selectedLines(): string[] {
+    const { state } = editor;
+    const { from, to, empty } = state.selection;
+    if (empty) return [];
+
+    const serializer = DOMSerializer.fromSchema(state.schema);
+    const lines: string[] = [];
+
+    const push = (node: ProseMirrorNode) => {
+      // Dig past wrapper blocks (listItem > paragraph) to the inline content.
+      let target = node;
+      while (target.childCount === 1 && target.firstChild?.isBlock) {
+        target = target.firstChild;
+      }
+      const holder = document.createElement("div");
+      holder.appendChild(serializer.serializeFragment(target.content));
+      const html = holder.innerHTML.trim();
+      if (html) lines.push(html);
+    };
+
+    state.doc.slice(from, to).content.forEach((node) => {
+      if (node.type.name === "bulletList" || node.type.name === "orderedList") {
+        node.forEach(push);
+      } else {
+        push(node);
+      }
+    });
+
+    return lines;
+  }
+
+  // Replace the selection with heading + <ul>, in the exact shape the matching
+  // cheerio parser looks for. Nothing selected inserts the sample rows instead.
+  function insertBlock(kind: BlockKind) {
+    setShowBlockMenu(false);
+
+    const { heading, sample } = BLOCKS[kind];
+    const lines = selectedLines();
+    const items = lines.length > 0 ? lines : sample;
+
+    // Both parsers below bail silently on malformed input, and the author only
+    // finds out after publishing — so flag it here instead.
+    if (kind === "specs") {
+      const missing = items.filter((item) => !textOf(item).includes(":")).length;
+      if (
+        missing > 0 &&
+        !window.confirm(
+          `${missing} of ${items.length} line(s) have no "Label: value" colon, so they'll be ` +
+            `dropped from the specifications card. Insert anyway and fix them after?`
+        )
+      ) {
+        return;
+      }
+    }
+    if (kind === "alsoRead" && !items.some((item) => /<a[\s>]/i.test(item))) {
+      alert(
+        'The "Also Read" card only shows linked items. Add a link to each bullet after inserting, ' +
+          "or it will render as a plain list."
+      );
+    }
+
+    const html = `<h3>${heading}</h3><ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+
+    // insertContentAt with the selection range replaces it outright — a
+    // deleteSelection + insert leaves an empty <p> wedged before the heading,
+    // and Specifications requires the <ul> to be the heading's next sibling.
+    const { from, to } = editor.state.selection;
+    editor.chain().focus().insertContentAt({ from, to }, html).run();
+  }
 
   // Add link
   function addLink() {
@@ -321,7 +508,6 @@ export default function Editor({ content, onChange }: EditorProps) {
     </button>
   );
 
-  const Divider = () => <span className="mx-1 h-6 w-px shrink-0 bg-gray-200" aria-hidden="true" />;
   const iconClass = "h-[18px] w-[18px]";
 
   return (
@@ -347,14 +533,17 @@ export default function Editor({ content, onChange }: EditorProps) {
 
           <Divider />
 
-          {/* Headings */}
-          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Heading 1">
-            <Heading1 className={iconClass} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Heading 2">
+          {/* Headings — H2 is deliberately the top level. The post title is the
+              page's only <h1>; a body H1 competes with it for the document
+              outline, and h2 is already what the corpus uses for sections (88
+              uses vs 29 h1). Posts that already used H1 are demoted at render
+              by parseContentAndGenerateToc in blog/[slug]/page.tsx.
+              No H4 button: .rich-text-render h4 is an uppercase kicker pill,
+              not a heading level. */}
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Heading">
             <Heading2 className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Heading 3">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Subheading">
             <Heading3 className={iconClass} />
           </ToolbarButton>
 
@@ -396,6 +585,58 @@ export default function Editor({ content, onChange }: EditorProps) {
           >
             <TableIcon className={iconClass} />
           </ToolbarButton>
+
+          <Divider />
+
+          {/* Content blocks — wraps the selection in the heading + list shape the
+              server-side card parsers recognise. See BLOCKS above. */}
+          <div className="relative" ref={blockMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowBlockMenu((open) => !open)}
+              title="Insert content block"
+              aria-label="Insert content block"
+              aria-haspopup="menu"
+              aria-expanded={showBlockMenu}
+              className={`inline-flex h-9 items-center justify-center gap-0.5 rounded-md px-1.5 transition-colors ${
+                showBlockMenu
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+              }`}
+            >
+              <Blocks className={iconClass} />
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+
+            {showBlockMenu && (
+              <div
+                role="menu"
+                className="absolute left-0 top-full z-40 mt-1 w-72 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+              >
+                <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                  {editor.state.selection.empty ? "Insert block" : "Wrap selection as"}
+                </p>
+                {BLOCK_MENU.map((kind) => {
+                  const { label, hint, icon: Icon } = BLOCKS[kind];
+                  return (
+                    <button
+                      key={kind}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => insertBlock(kind)}
+                      className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-gray-100"
+                    >
+                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-gray-900">{label}</span>
+                        <span className="block text-xs text-gray-500">{hint}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <Divider />
 

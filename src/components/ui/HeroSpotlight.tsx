@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
@@ -31,9 +32,18 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
   const [direction, setDirection] = useState(1);
   // A random neon accent applied to the card while hovered (null = theme default).
   const [hoverAccent, setHoverAccent] = useState<string | null>(null);
+  // True until the carousel first moves, and never true again.
+  //
+  // This drives `priority` on the hero <Image>, which has to be a stable
+  // mount-time decision. Keying it off `current === 0` instead looked right
+  // but flipped back to true on every full rotation, so React re-applied
+  // priority to a slide that was no longer the LCP element — and, worse, set
+  // loading="lazy" on the hero that WAS on screen the rest of the time.
+  const [isInitialSlide, setIsInitialSlide] = useState(true);
 
   const go = useCallback(
     (dir: number) => {
+      setIsInitialSlide(false);
       setDirection(dir);
       setCurrent((prev) => (prev + dir + banners.length) % banners.length);
     },
@@ -84,12 +94,36 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
               href={b.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="block h-full w-full"
+              /* `relative` so <Image fill> anchors to the link box rather than
+                 skipping up to the motion.div — same painted box either way,
+                 but it stops the positioning from depending on the animation
+                 wrapper staying absolutely positioned. */
+              className="relative block h-full w-full"
             >
-              <img
+              {/* next/image, not <img>: this is the page's LCP element and the
+                  raw tag shipped whatever the editor uploaded at full size —
+                  one live banner is a 3840x2400 JPEG being painted into a
+                  ~1150px slot. `fill` + `sizes` lets Next serve a resized,
+                  modern-format variant per breakpoint.
+
+                  Banner images always come from /api/upload, which writes to
+                  public/uploads and returns a root-relative "/uploads/..."
+                  path — so no images.remotePatterns config is needed. If the
+                  banners dashboard ever accepts a pasted external URL, that
+                  config has to be added or this will throw at render. */}
+              <Image
                 src={b.image}
                 alt={b.title}
-                className="h-full w-full object-cover"
+                fill
+                /* Below lg the hero is full-bleed; from lg it shares the row
+                   with the 22-26rem text card, and the whole unit is capped at
+                   1600px by the homepage container. */
+                sizes="(min-width: 1600px) 1150px, (min-width: 1024px) calc(100vw - 24rem), 100vw"
+                /* Only the slide painted on first load is LCP-critical.
+                   Later slides are timer- or click-driven and must not compete
+                   with it for bandwidth, so they stay lazy. */
+                priority={isInitialSlide}
+                className="object-cover"
               />
             </Link>
           </motion.div>
@@ -142,7 +176,11 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
                 </h2>
               </Link>
               {b.description && (
-                <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-muted-foreground transition-colors duration-300 group-hover/card:text-black/80 sm:text-base">
+                // line-clamp-2 on phones: at 4 lines this card ran 390px tall
+                // and pushed the first story tiles below the fold entirely on a
+                // 360x740 screen — the homepage opened as pure promo with no
+                // editorial signal. Full 4 lines return from sm up.
+                <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground transition-colors duration-300 group-hover/card:text-black/80 sm:line-clamp-4 sm:text-base">
                   {b.description}
                 </p>
               )}
@@ -173,6 +211,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
                   key={i}
                   type="button"
                   onClick={() => {
+                    setIsInitialSlide(false);
                     setDirection(i > current ? 1 : -1);
                     setCurrent(i);
                   }}

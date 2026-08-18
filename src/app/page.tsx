@@ -14,6 +14,7 @@ import Poll from "@/components/polls/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
 import TopStoryTiles from "@/components/feeds/TopStoryTiles";
 import LatestPostsFeed from "@/components/feeds/LatestPostsFeed";
+import ContinueReading from "@/components/feeds/ContinueReading";
 import LatestComparisons from "@/components/gadgets/LatestComparisons";
 import NewsletterForm from "@/components/newsletter/NewsletterForm";
 import SectionDivider from "@/components/ui/SectionDivider";
@@ -186,7 +187,10 @@ const productsByCategory = Object.fromEntries(
                   left, "All stories" pill on the right, over a divider rule.
                   Uses themeable surfaces so it reads bold/blocky in brutalist
                   and clean/rounded in modern. */}
-              <div className="mt-10 mb-5 flex items-end justify-between gap-4 border-b-2 border-border-heavy pb-3">
+              {/* Tighter above sm — see the line-clamp note in HeroSpotlight;
+                  these margins are the other 20px keeping the top stories off
+                  a small phone's first screen. */}
+              <div className="mt-6 mb-4 sm:mt-10 sm:mb-5 flex items-end justify-between gap-4 border-b-2 border-border-heavy pb-3">
                 <div className="flex items-center gap-3">
                   {/* Icon colour comes from --on-accent-3, not a pinned white.
                       Pinning white assumed accent-3 is always dark enough to
@@ -345,6 +349,16 @@ const productsByCategory = Object.fromEntries(
             </div>
           </div>
         </section>
+
+        {/* Returning readers only — renders nothing until there's local
+            history, so a first visit sees the same page as before.
+
+            Sits AFTER the Latest Posts feed, not above it: this rail is the
+            one homepage section whose content the reader has already seen, so
+            leading with it pushed the newest articles — the reason the page
+            exists — below a list of things they'd half-finished. Editorial
+            leads; the resume rail catches them on the way down. */}
+        <ContinueReading />
 
         {/*
           Latest Comparisons + Newsletter, side by side.

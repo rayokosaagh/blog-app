@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Underline from "../ui/Underline";
+import OptimizedImage from "../ui/OptimizedImage";
 import ProductTagRail from "./ProductTagRail";
 import type { TagColorMode } from "@/lib/sanitizeSvg";
 import SwapDeck, { SWAP_LAYOUT_T } from "./SwapDeck";
@@ -83,11 +84,16 @@ export default function ProductsByCategoryTabs({
               >
                 <div className="aspect-square relative overflow-hidden">
                   {p.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img loading="lazy" decoding="async"
+                    // 3 cols on mobile, 4 from sm, 6 from lg inside the
+                    // ~1180px content column — so ~200px at its widest.
+                    // Product images can be a pasted external URL, which
+                    // OptimizedImage falls back to a plain <img> for.
+                    <OptimizedImage
                       src={p.image}
                       alt={p.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(min-width: 1024px) 200px, (min-width: 640px) 25vw, 33vw"
+                      className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">

@@ -29,6 +29,9 @@ import ArticleImageLightbox from "@/components/blog/ArticleImageLightbox";
 import { auth } from "@/auth";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
 import ShareButtons from "@/components/blog/ShareButtons";
+import VerdictCard from "@/components/blog/VerdictCard";
+import ReadingHistoryTracker from "@/components/blog/ReadingHistoryTracker";
+import { readVerdict, VERDICT_MAX } from "@/lib/verdict";
 import { parseKeyHighlightsBlock } from "@/components/feeds/KeyHighlights";
 import { parseProsConsBlock } from "@/components/feeds/ProsCons";
 import { parseAlsoReadBlock } from "@/components/feeds/AlsoRead";
@@ -79,6 +82,13 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
 
       if (!cleanText) return match;
 
+      // The page title is the h1. Older posts were written with the editor's
+      // H1 button, so their body headings shipped as competing h1s — demote
+      // them here rather than migrating the stored content. Safe at this point
+      // in the pipeline: every block parser that matches on h1-h4 has already
+      // run and consumed its own headings (see the call site).
+      const level = (tag.toLowerCase() === "h1" ? "h2" : tag.toLowerCase()) as TocItem["level"];
+
       const baseId = cleanText
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
@@ -90,13 +100,13 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
       seenIds.set(baseId, seenCount + 1);
       const id = seenCount === 0 ? baseId : `${baseId}-${seenCount + 1}`;
 
-      toc.push({
-        text: cleanText,
-        id,
-        level: tag.toLowerCase() as "h1" | "h2" | "h3" | "h4",
-      });
+      toc.push({ text: cleanText, id, level });
 
-      return `<${tag}${attributes ? " " + attributes.trim() : ""} id="${id}">${content}</${tag}>`;
+      // data-was-h1 carries the original size through the demotion, so the
+      // outline is fixed without every published post's headings shrinking.
+      const demoted = level !== tag.toLowerCase() ? " data-was-h1" : "";
+
+      return `<${level}${attributes ? " " + attributes.trim() : ""} id="${id}"${demoted}>${content}</${level}>`;
     }
   );
 
@@ -194,6 +204,21 @@ function stripWrappingParagraph(html: string): string {
     .trim();
 }
 
+/**
+ * The thing a scored review is about, recovered from its headline.
+ *
+ * Posts aren't linked to a Product row, so the name has to come from the
+ * title: "Xiaomi Redmi Note 17 Pro+ review: the midrange phone to beat" →
+ * "Xiaomi Redmi Note 17 Pro+". Structured data needs an `itemReviewed.name`
+ * and the verdict card needs a label for the overall bar; both would look
+ * absurd with the full headline. Falls back to the title when nothing matches,
+ * which is correct-if-verbose rather than wrong.
+ */
+function reviewedItemName(title: string): string {
+  const cut = title.split(/\s*[:—–|]\s*/)[0];
+  return cut.replace(/\s+review\b.*$/i, "").trim() || title;
+}
+
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await prisma.post.findUnique({
@@ -260,6 +285,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     : false;
 
   const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
+  const verdict = readVerdict(post);
 
   const relatedPosts = await prisma.post.findMany({
     where: {
@@ -362,10 +388,41 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     timeRequired: `PT${getReadingTime(post.content)}M`,
   };
 
+  // A second block rather than a `review` property on the BlogPosting: the
+  // Review rich result is only eligible when Review is the top-level type with
+  // its own itemReviewed. Emitted only for scored posts — a Review without a
+  // reviewRating is invalid and would invalidate the whole block.
+  const reviewJsonLd = verdict && {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    name: post.title,
+    url: `${APP_URL}/blog/${post.slug}`,
+    datePublished: post.createdAt.toISOString(),
+    author: { "@type": "Person", name: post.author?.name ?? "Unknown" },
+    publisher: { "@type": "Organization", name: "Blog" },
+    itemReviewed: { "@type": "Product", name: reviewedItemName(post.title) },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: verdict.score,
+      bestRating: VERDICT_MAX,
+      worstRating: 0,
+    },
+    reviewBody: verdict.summary,
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 scroll-smooth">
       <JsonLd data={articleJsonLd} />
+      {reviewJsonLd && <JsonLd data={reviewJsonLd} />}
       <ViewTracker postId={post.id} />
+      {/* The private, per-device counterpart to ViewTracker — feeds the
+          "Continue reading" rail on the homepage. */}
+      <ReadingHistoryTracker
+        slug={post.slug}
+        title={post.title}
+        image={post.featuredImage}
+        tag={orderedTags[0]?.name ?? null}
+      />
       <ReadingProgressBar />
       <Navbar />
 
@@ -465,16 +522,51 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </div>
 
       {/* Main Content */}
-      <main className="w-full max-w-[1560px] mx-auto px-6 mt-8 relative z-10 pb-8 md:pb-12 flex flex-col 2xl:flex-row justify-center gap-8 items-start">
-        {/* TOC Sidebar */}
+      {/* The rails live in the gutters BESIDE the centred article, not in flow
+          with it.
+
+          Every other block on this page is a viewport-centred container — 896
+          for the article, rating and comments, 1024 for Keep Reading, 1152 for
+          Related. So the article's left edge must stay at (viewport - 896) / 2
+          at every width, or the page visibly steps sideways as you scroll.
+
+          As flex children the rails could not do that: `justify-center` centres
+          rail+article as a group, pushing the article right by (340 + 32) / 2 =
+          186px while its siblings stayed put. Absolute positioning takes the
+          rails out of flow entirely, so the article centres as if they were not
+          there and the ToC is free to appear far earlier than a flex layout
+          could afford.
+
+          `.article-rail` sizes each rail to whatever gutter actually exists,
+          capped at the designed 340px — see the style block below. */}
+      <main className="relative w-full max-w-[1720px] mx-auto px-6 mt-8 z-10 pb-8 md:pb-12">
+        <style>{`
+          /* 944px = 48px of container padding + the 896px article column.
+             Half of what's left is one gutter; reserve 32px of it as the gap.
+             Yields 216px at 1440, 291px at 1600, and the full 340px from 1696
+             up, where it stops growing. */
+          .article-rail {
+            width: min(340px, calc((min(100vw, 1720px) - 944px) / 2 - 32px));
+          }
+        `}</style>
+
+        {/* TOC Sidebar — from 1440, the first width with room for a usable rail */}
         {toc.length > 0 && (
-          <FadeIn className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
-            <TocSidebar toc={toc} title={post.title} />
-          </FadeIn>
+          <div className="article-rail absolute inset-y-0 left-6 hidden min-[1440px]:block z-20">
+            <FadeIn className="sticky top-28">
+              <TocSidebar toc={toc} title={post.title} />
+            </FadeIn>
+          </div>
         )}
 
-        {/* Article Content */}
-        <FadeIn delay={0.1} className="w-full max-w-4xl">
+        {/* Article Content.
+            mx-auto is load-bearing: it is what puts this column at
+            (viewport - 896) / 2, matching the hero, rating and comments. It
+            used to be absent, and `main` was a flex-col whose `items-start`
+            pinned the article hard-left at x=24 with the whole right half of
+            the page empty — that was the "dead right gutter", not a missing
+            sidebar. With the rails now absolute, nothing competes with it. */}
+        <FadeIn delay={0.1} className="w-full max-w-4xl mx-auto">
           <div className="bg-card border-[1.5px] border-border-heavy px-8 md:px-10 pt-12 pb-8">
             <style>{`
             .rich-text-render { color: var(--foreground); }
@@ -526,6 +618,27 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   display: inline-block;
 }
 .rich-text-render h2:first-child {
+  margin-top: 0;
+}
+
+/* Headings authored with the editor's old H1 button. They ship as h2 so the
+   post title keeps the only h1, but they keep h1's appearance — otherwise
+   every published post's opening heading would suddenly shrink. Placed after
+   the plain h2 rule so the resets below actually override it: h1 had no
+   underline and was a block, both of which .rich-text-render h2 adds. */
+.rich-text-render h2[data-was-h1] {
+  font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--foreground);
+  display: block;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.rich-text-render h2[data-was-h1]:first-child {
   margin-top: 0;
 }
 
@@ -771,20 +884,37 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
         </FadeIn>
 
-        {/* Social Sidebar + spotlight ad below it */}
-        <FadeIn delay={0.2} className="hidden 2xl:block w-[340px] shrink-0 sticky top-28 z-20">
-          <SocialSidebar />
-          {spotlightAds.length > 0 && (
-            <div className="mt-8 h-[420px]">
-              <SpotlightAdRail
-                ads={spotlightAds}
-                header={spotlightHeader}
-                title={spotlightTitle}
-              />
-            </div>
-          )}
-        </FadeIn>
+        {/* Social Sidebar + spotlight ad below it. Same min-[1440px] as the ToC
+            so both gutters fill together — with only the left rail on, the page
+            read as lopsided, a filled 216px rail against an empty 272px one.
+            Safe at that width because both components are fluid: the social
+            rows are min-w-0/flex-1 with truncation, and SpotlightAdRail is
+            w-full with only a min-height. */}
+        <div className="article-rail absolute inset-y-0 right-6 hidden min-[1440px]:block z-20">
+          <FadeIn delay={0.2} className="sticky top-28">
+            <SocialSidebar compact />
+            {spotlightAds.length > 0 && (
+              <div className="mt-8 h-[420px]">
+                <SpotlightAdRail
+                  ads={spotlightAds}
+                  header={spotlightHeader}
+                  title={spotlightTitle}
+                />
+              </div>
+            )}
+          </FadeIn>
+        </div>
       </main>
+
+      {/* EDITORIAL VERDICT — only on posts an editor actually scored. Sits
+          above the reader rating so the two read as claim then response. */}
+      {verdict && (
+        <FadeIn>
+          <div className="max-w-4xl mx-auto px-6">
+            <VerdictCard verdict={verdict} productName={reviewedItemName(post.title)} />
+          </div>
+        </FadeIn>
+      )}
 
       {/* POLL */}
       <FadeIn>

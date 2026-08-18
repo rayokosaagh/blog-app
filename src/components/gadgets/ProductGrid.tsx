@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight, Cpu, MemoryStick, HardDrive, Smartphone, BatteryCharging } from "lucide-react";
 import Underline from "@/components/ui/Underline";
+import CompareToggle from "@/components/gadgets/compare/CompareToggle";
 
 export interface ProductCardData {
   id: string;
@@ -11,8 +12,21 @@ export interface ProductCardData {
   image: string | null;
   priceFrom: number | null;
   currency: string;
-  category: { name: string };
+  // `slug` drives the compare tray, which can only hold one category at a time.
+  category: { name: string; slug: string };
   specs?: unknown;
+}
+
+/**
+ * Appends `unit` only when the stored value doesn't already carry it.
+ *
+ * `batteryMah` is a free-text field outside phones, so watches arrive as
+ * "Li-Ion 445 mAh" and earbuds as "57 mAh (buds) / 530 mAh (case)". Blindly
+ * suffixing produced "Li-Ion 445 mAh mAh" on the cards.
+ */
+function withUnit(unit: string) {
+  const has = new RegExp(`\\b${unit}\\b`, "i");
+  return (v: string) => (has.test(v) ? v : `${v} ${unit}`);
 }
 
 // Key specs shown on the card, each with an icon. Only the ones a product
@@ -22,8 +36,19 @@ const SPEC_CHIPS: { key: string; Icon: LucideIcon; fmt?: (v: string) => string }
   { key: "screenSize", Icon: Smartphone },
   { key: "ram", Icon: MemoryStick },
   { key: "storage", Icon: HardDrive },
-  { key: "batteryMah", Icon: BatteryCharging, fmt: (v) => `${v} mAh` },
+  { key: "batteryMah", Icon: BatteryCharging, fmt: withUnit("mAh") },
 ];
+
+// "unspecified" / "n/a" / "—" are how an unfilled field comes back from the
+// dashboard form. They're honest in the full spec table but pure noise on a
+// card that only has room for four chips. The unit is stripped first so
+// "mAh unspecified" (as stored on the AirPods) is caught too.
+const PLACEHOLDER_SPEC = /^(unspecified|unknown|n\/?a|none|tbd|-+|—)$/i;
+const UNIT_WORDS = /\b(mah|gb|tb|mb|inch(es)?|hz|w|mm)\b/gi;
+
+function isPlaceholderSpec(v: string): boolean {
+  return PLACEHOLDER_SPEC.test(v.replace(UNIT_WORDS, "").trim());
+}
 
 function keySpecChips(specs: unknown): { Icon: LucideIcon; value: string }[] {
   const s = (specs ?? {}) as Record<string, unknown>;
@@ -31,7 +56,7 @@ function keySpecChips(specs: unknown): { Icon: LucideIcon; value: string }[] {
   for (const { key, Icon, fmt } of SPEC_CHIPS) {
     const raw = s[key];
     const v = typeof raw === "string" ? raw.trim() : typeof raw === "number" ? String(raw) : "";
-    if (v) chips.push({ Icon, value: fmt ? fmt(v) : v });
+    if (v && !isPlaceholderSpec(v)) chips.push({ Icon, value: fmt ? fmt(v) : v });
     if (chips.length >= 4) break;
   }
   return chips;
@@ -84,6 +109,20 @@ export default function ProductGrid({
               <span className="absolute left-2 top-2 border-2 border-border-heavy bg-accent-3 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-on-accent-3">
                 {p.category.name}
               </span>
+
+              {/* Sits over the image so picking a rival never costs a page
+                  load — the whole point of the tray. */}
+              <div className="absolute right-2 top-2">
+                <CompareToggle
+                  item={{
+                    slug: p.slug,
+                    name: p.name,
+                    brand: p.brand,
+                    image: p.image,
+                    categorySlug: p.category.slug,
+                  }}
+                />
+              </div>
             </div>
 
             {/* Body */}

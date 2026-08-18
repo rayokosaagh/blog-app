@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface ComparisonProduct {
   slug: string;
@@ -63,9 +64,14 @@ function ProductPortrait({ product }: { product: ComparisonProduct }) {
           a --color-product-frame token if this pattern keeps showing up. */}
       <div className="flex h-24 w-24 max-w-full items-center justify-center rounded-none bg-white p-2.5 border-2 border-border-heavy">
         {product.image ? (
-          <img loading="lazy" decoding="async"
+          // Fixed 96px frame with padding, so explicit width/height rather
+          // than `fill` — `fill` is inset-0 and would paint over the p-2.5
+          // that keeps these product shots off the border.
+          <OptimizedImage
             src={product.image}
             alt={product.name}
+            width={96}
+            height={96}
             className="h-full w-full object-contain"
           />
         ) : (
@@ -165,7 +171,7 @@ function ComparisonRow({
         <div className="relative flex shrink-0 items-center">
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
             {item.productA.image ? (
-              <img loading="lazy" decoding="async" src={item.productA.image} alt={item.productA.name} className="h-full w-full object-contain" />
+              <OptimizedImage src={item.productA.image} alt={item.productA.name} width={48} height={48} className="h-full w-full object-contain" />
             ) : (
               <span className="text-[8px] text-muted-foreground">No image</span>
             )}
@@ -177,7 +183,7 @@ function ComparisonRow({
           </span>
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none bg-white border-2 border-border-heavy">
             {item.productB.image ? (
-              <img loading="lazy" decoding="async" src={item.productB.image} alt={item.productB.name} className="h-full w-full object-contain" />
+              <OptimizedImage src={item.productB.image} alt={item.productB.name} width={48} height={48} className="h-full w-full object-contain" />
             ) : (
               <span className="text-[8px] text-muted-foreground">No image</span>
             )}

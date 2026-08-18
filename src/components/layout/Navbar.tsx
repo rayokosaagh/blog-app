@@ -126,11 +126,19 @@ export default function Navbar() {
             </Link>
           </motion.div>
 
-          <div className="flex flex-1 min-w-0 px-2 md:px-4 w-full max-w-2xl">
+          <div className="flex flex-1 min-w-0 px-2 lg:px-4 w-full max-w-2xl">
             <NavbarSearch />
           </div>
 
-          <nav className="hidden md:flex items-center text-sm font-bold">
+          {/* lg, not md: the desktop nav needs ~774px of its own before the
+              search field and logo get any room, so switching it on at md
+              (768px) pushed "Sign in" 6px past the viewport and gave the page
+              a horizontal scrollbar at exactly 768px — iPad Mini portrait.
+              Measured clean from 800px up, so lg (1024px) leaves margin.
+              The four md:/lg: breakpoints in this header (this nav, the
+              hamburger, and the drawer's backdrop + panel) MUST stay in sync;
+              splitting them shows both navs at once or neither. */}
+          <nav className="hidden lg:flex items-center text-sm font-bold">
             <div className="flex items-center gap-1 mr-6">
               <ThemeToggle />
 
@@ -246,7 +254,7 @@ export default function Navbar() {
                nav control with no visible focus state, so a keyboard user
                tabbing the header lost the cursor entirely. Swapped for the
                focus ring used elsewhere in the codebase. */
-            className="md:hidden p-2 surface-border-w border-border-heavy text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="lg:hidden p-2 surface-border-w border-border-heavy text-foreground hover:bg-accent-2 hover:text-on-accent-2 transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             {isOpen ? (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -272,7 +280,7 @@ export default function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="md:hidden fixed inset-0 z-[110] bg-black/50"
+              className="lg:hidden fixed inset-0 z-[110] bg-black/50"
               onClick={() => setIsOpen(false)}
             />
 
@@ -282,7 +290,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
-              className="md:hidden fixed top-0 right-0 z-[111] h-full w-[80%] max-w-[300px]"
+              className="lg:hidden fixed top-0 right-0 z-[111] h-full w-[80%] max-w-[300px]"
             >
               <div className="relative h-full bg-background border-l-4 border-border-heavy flex flex-col overflow-y-auto">
                 <div className="flex items-center justify-between px-4 py-4 border-b-2 border-border">

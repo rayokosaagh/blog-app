@@ -30,7 +30,7 @@ export default async function TagProductsPage({
 
   const tag = await prisma.tag.findUnique({
     where: { slug },
-    select: { slug: true, name: true, icon: true },
+    select: { id: true, slug: true, name: true, icon: true },
   });
   if (!tag) notFound();
 

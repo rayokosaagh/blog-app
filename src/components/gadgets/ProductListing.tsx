@@ -23,6 +23,8 @@ import {
 type SearchParams = { [key: string]: string | string[] | undefined };
 
 interface TagContext {
+  /** Needed for the follow button; optional so existing callers keep working. */
+  id?: string;
   slug: string;
   name: string;
   icon: string;
@@ -64,7 +66,9 @@ export default async function ProductListing({
     }),
     prisma.product.findMany({
       where: { published: true, ...tagScope, ...catScope },
-      select: { specs: true },
+      // Category comes along so computeSpecFacets can tell whether the rows in
+      // scope are all one category — spec facets only make sense if they are.
+      select: { specs: true, category: { select: { slug: true } } },
     }),
   ]);
 
@@ -74,7 +78,7 @@ export default async function ProductListing({
 
   const brands = brandRows.map((b) => b.brand);
   const categories = CATEGORY_LIST.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }));
-  const facets = computeSpecFacets(facetRows);
+  const { facets, needsCategory } = computeSpecFacets(facetRows);
   const filtered = hasProductFilters(sp);
 
   return (
@@ -121,7 +125,7 @@ export default async function ProductListing({
         </p>
 
         {tag && (
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <Link
               href="/products"
               className="brutal-press inline-flex items-center gap-2 rounded-none border-2 border-border-heavy bg-accent-3 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide text-on-accent-3 shadow-brutal-sm"
@@ -150,6 +154,7 @@ export default async function ProductListing({
               categories={categories}
               brands={brands}
               facets={facets}
+              needsCategory={needsCategory}
               hideCategory
             />
           </aside>

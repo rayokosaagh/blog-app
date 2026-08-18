@@ -8,6 +8,12 @@ import TagPicker from "@/components/blog/TagPicker";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
 import BackLink from "@/components/dashboard/BackLink";
 import StickyFormActions from "@/components/dashboard/StickyFormActions";
+import VerdictEditor, {
+  EMPTY_VERDICT,
+  verdictDraftFromPost,
+  verdictPayload,
+  type VerdictDraft,
+} from "@/components/dashboard/VerdictEditor";
 
 
 
@@ -26,6 +32,7 @@ export default function EditPostPage({
   const [published, setPublished] = useState(false);
   const [featuredImage, setFeaturedImage] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [verdict, setVerdict] = useState<VerdictDraft>(EMPTY_VERDICT);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -45,6 +52,7 @@ export default function EditPostPage({
         setPublished(data.published);
         setFeaturedImage(data.featuredImage || "");
         setTagIds(data.tags?.map((t: { id: string }) => t.id) || []);
+        setVerdict(verdictDraftFromPost(data));
       } catch (err) {
         setError("Failed to load post");
       } finally {
@@ -112,6 +120,7 @@ export default function EditPostPage({
           published,
           featuredImage,
           tagIds,
+          ...verdictPayload(verdict),
         }),
       });
 
@@ -271,6 +280,8 @@ export default function EditPostPage({
             </label>
             <Editor content={content} onChange={setContent} />
           </div>
+
+          <VerdictEditor value={verdict} onChange={setVerdict} />
 
           {/* Sticky action bar */}
           <StickyFormActions

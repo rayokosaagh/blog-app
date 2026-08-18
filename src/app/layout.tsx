@@ -55,6 +55,12 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
   robots: { index: true, follow: true },
+  manifest: "/manifest.webmanifest",
+  // NOTE: the RSS <link rel="alternate"> is emitted by hand in <head> below
+  // rather than through `metadata.alternates.types`. Metadata merges shallowly
+  // per top-level field, so every page that sets its own `alternates` (for a
+  // canonical) would replace the parent object and drop the feed link with it.
+  //
   // NOTE: `alternates.canonical` is intentionally NOT set here. Metadata is
   // merged field-by-field from layout down to page, so a canonical declared at
   // the root would be inherited by every page that doesn't override it — and
@@ -104,6 +110,15 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${modernSans.variable} h-full antialiased`}
     >
       <head>
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title={`${SITE_NAME} — all articles`}
+          href="/rss.xml"
+        />
+        {/* iOS ignores the manifest's icon list when adding to the home
+            screen; this is the only one it reads. */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <style id="modern-accents" dangerouslySetInnerHTML={{ __html: accentCss }} />
       </head>
       <body className="min-h-full flex flex-col">

@@ -76,6 +76,49 @@ article footer ended up hard-cornered next to rounded cards. Prefer the
   `/api/polls/active`. It controls whether the poll column is laid out at all —
   `<Poll />` returns null with no polls, but its grid track did not, leaving a
   dead column. Both the 3-column and 2-column layouts are live code paths.
+- **Two different "ratings" exist.** `Rating` rows are readers'; `Post.verdict*`
+  is the editor's. Only the editorial one feeds the Review JSON-LD. Read it
+  through `readVerdict()` in `src/lib/verdict.ts`, never off the columns
+  directly — it requires **both** a written `verdictSummary` and a score before
+  anything renders, so a bare score publishes nothing. A null score means "not
+  a scored review", never zero, and sub-scores average into an absent overall.
+- `Comparison.verdictA/verdictB` is the editor-written summary for one curated
+  pair, shown above the spec table on /compare. `/compare` allows any 2–3
+  products, so most pairings have none and the card renders nothing —
+  **deliberately**. There was a fallback that assembled a summary from spec
+  deltas; it was removed because a sentence generated from a table still reads
+  as the publication's opinion, and attributing an opinion to the publication
+  that nobody there held is worse than showing nothing. Don't reintroduce it.
+  `lookupEditorVerdicts` only matches pairs, so a 3-way comparison never has one.
+
+## Client-side state
+
+Two features are localStorage-backed rather than DB-backed, because they matter
+most to readers who never sign in: the compare tray and reading history.
+
+**Read them through `createLocalStore` + `useSyncExternalStore`, never with a
+`useState` + `useEffect` pair.** The eslint config has
+`react-hooks/set-state-in-effect` on as an *error*, so the "hydrate from
+storage in an effect" pattern will not lint. `getSnapshot` must return a cached
+reference until the value actually changes, and the server snapshot must be a
+shared constant (`EMPTY`), or React loops on "getSnapshot should be cached".
+
+## Spec values are free text
+
+`Product.specs` is hand-entered JSON, and almost nothing in it is clean. The
+helpers that exist because of it:
+
+- `isSpecEmpty` / `groupHasValues` (`formatSpecValue.ts`) — an untouched field
+  arrives as `" "`, not `""`. `raw !== ""` treats that as a real value.
+- `normalizeSpecToken` (`productFilters.ts`) — "12" and "12GB" are the same
+  facet option; without it the dropdown lists both.
+- `computeSpecFacets` returns `needsCategory: true` when the rows in scope span
+  categories, and no facets. `FILTERABLE_SPECS` covers all four categories and
+  the labels repeat (`chipset` and `processorModel` both render as
+  "Processor"), so an unscoped listing showed Processor/RAM/Storage twice.
+The lesson those encode: **don't compute editorial claims from this data.** It
+is inconsistent enough that any sentence derived from it is a guess wearing the
+publication's voice. Filters and facets are fine; opinions are not.
 
 ## Before deploying
 
@@ -87,6 +130,16 @@ article footer ended up hard-cornered next to rounded cards. Prefer the
   production — without it every `/api/auth/session` request 500s with
   `UntrustedHost` under `next start`. It never reproduces under `next dev`.
   Safe only while the callback origin stays pinned by `NEXTAUTH_URL`.
+- The service worker (`public/sw.js`) only registers in production —
+  `ServiceWorkerRegistrar` unregisters any stale one under `next dev`, where a
+  worker intercepts Turbopack's HMR and RSC requests. Bump `CACHE_VERSION` in
+  `sw.js` to evict caches on the next activation.
+- There is **no in-page install prompt** — deliberately removed. The manifest
+  and worker stay, so the browser's own affordance still offers installation;
+  don't re-add a `beforeinstallprompt` banner without asking.
+- `tools/make-icons.js` regenerates `public/icons/*` (committed). Font-free by
+  design: the rasteriser has no guaranteed font stack, and a missing face
+  renders as blank space rather than failing.
 
 ## Auditing
 
@@ -98,6 +151,14 @@ yourself — a `next build` will disrupt a running `next dev`, since they share
 
 ## Known outstanding
 
+- **No product has a `priceFrom`**, so every card reads "See price" and the
+  "Under Rs 25K/50K/100K" quick filters can never match. The rendering is
+  correct; the data is missing.
+- Junk spec data on "Iphone 18" (`chipset: "5345"`, `storage: "asdfsa"`,
+  `screenSize: "3354"`) leaks into the /products facet dropdowns. Normalizing
+  can't fix a value that isn't a value — fix it in the dashboard.
+- Footer `About` / `Advertise with us` / `Privacy Policy` / `Contact` are still
+  `href="#"`, and `Newsletter` points at `/newsletter`, which 404s.
 - Author display names are placeholders (`Hello`, `Hello0`, `hello`).
 - ~137 eslint errors in `src/` (mostly `no-explicit-any`, unused vars).
 - Debug `console.log`s left in `src/app/blog/[slug]/page.tsx`.

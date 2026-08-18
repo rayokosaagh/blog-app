@@ -7,6 +7,7 @@ import { Bookmark } from "lucide-react";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import { formatRelativeTime } from "@/lib/postUtils";
 import TagIcon from "@/components/blog/TagIcon";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import type { TagColorMode } from "@/lib/sanitizeSvg";
 import Underline from "@/components/ui/Underline";
 
@@ -142,7 +143,16 @@ function Tile({
         <Link href={href} className="absolute inset-0 block bg-muted">
           <div className="relative w-full h-full overflow-hidden">
             {post.featuredImage ? (
-              <img loading="lazy" decoding="async" src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
+              // Bento tiles span 1-2 columns of a 4-column grid inside a
+              // ~900px feed column, so the widest tile is ~450px. Small tiles
+              // over-fetch slightly rather than carry a second sizes branch.
+              <OptimizedImage
+                src={post.featuredImage}
+                alt={post.title}
+                fill
+                sizes="(min-width: 768px) 450px, 50vw"
+                className="object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-accent-tint" />
             )}

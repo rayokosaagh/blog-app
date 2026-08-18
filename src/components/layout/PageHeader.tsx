@@ -20,7 +20,10 @@ interface PageHeaderProps {
  */
 export default function PageHeader({ crumbs, title, subtitle, children }: PageHeaderProps) {
   return (
-    <header className="relative mx-auto max-w-[1600px] px-6 pt-14 pb-8">
+    // overflow-x-clip: the glow below is 520px wide and centred with
+    // -translate-x-1/2, so on a phone it hangs 65px past the viewport and the
+    // whole page scrolls sideways. blog/page.tsx clips it the same way.
+    <header className="relative mx-auto max-w-[1600px] overflow-x-clip px-6 pt-14 pb-8">
       {/* Soft ambient glow behind the headline — the one signature touch. */}
       <div
         aria-hidden

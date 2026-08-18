@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { verdictFieldsFromBody } from "@/lib/verdict";
 
 export async function GET(
   _: Request,
@@ -38,7 +39,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { title, slug, content, published, featuredImage, tagIds } = await req.json();
+    const body = await req.json();
+    const { title, slug, content, published, featuredImage, tagIds } = body;
 
     const updated = await prisma.post.update({
       where: { id },
@@ -48,6 +50,9 @@ export async function PATCH(
         content,
         published,
         featuredImage,
+        // Omitted entirely when the request carries no verdict keys, so a
+        // partial update can't silently drop an existing score.
+        ...verdictFieldsFromBody(body),
         // Preserve the exact order tags were selected in the picker.
         ...(tagIds !== undefined ? { tagOrder: tagIds } : {}),
         ...(tagIds !== undefined

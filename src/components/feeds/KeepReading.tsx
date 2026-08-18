@@ -127,17 +127,29 @@ export default function KeepReading({ relatedPosts = [] }: KeepReadingProps) {
         </AnimatePresence>
       </div>
 
+      {/* gap-0.5, not gap-2: each dot now carries its own 24px hit area, so
+          the old 8px gap would push them visibly further apart. */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-10">
+        <div className="flex justify-center gap-0.5 mt-10">
           {Array.from({ length: totalPages }).map((_, idx) => (
+            // The dot stays 12px; the button around it is padded out to the
+            // 24x24 WCAG 2.2 minimum target size. Growing the dot instead would
+            // wreck the visual rhythm — pad the hit area, not the mark.
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Go to page ${idx + 1}`}
-              className={`w-3 h-3 rounded-none border-2 border-border-heavy transition-all duration-200 ${FOCUS_RING} ${
-                idx === currentIndex ? "bg-accent-2 scale-125" : "bg-card hover:bg-accent-2"
-              }`}
-            />
+              aria-current={idx === currentIndex ? "true" : undefined}
+              className={`group inline-flex h-6 w-6 items-center justify-center ${FOCUS_RING}`}
+            >
+              <span
+                className={`h-3 w-3 rounded-none border-2 border-border-heavy transition-all duration-200 ${
+                  idx === currentIndex
+                    ? "bg-accent-2 scale-125"
+                    : "bg-card group-hover:bg-accent-2"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

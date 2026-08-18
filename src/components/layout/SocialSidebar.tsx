@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AtSign, ArrowUpRight } from "lucide-react";
 
-export default async function SocialSidebar() {
+/** `compact` tightens the card padding for the narrow, fluid article rail. */
+export default async function SocialSidebar({ compact = false }: { compact?: boolean }) {
   const socials = await prisma.socialLink.findMany({
     where: { isActive: true },
     orderBy: { order: "asc" },
@@ -11,7 +12,19 @@ export default async function SocialSidebar() {
   return (
     // Same shell as the Poll card it sits beside — themeable surface
     // utilities so it reads blocky in brutalist and soft/rounded in modern.
-    <div className="bg-card surface-border shadow-brutal px-4 py-6 sm:px-6 sm:py-8 md:px-8">
+    <div
+      className={
+        "bg-card surface-border shadow-brutal " +
+        (compact
+          ? // The article rail is fluid — 216px at 1440 — and md:px-8 spent 64
+            // of those on padding, squeezing the row text back down to "You…"
+            // and "SUBS…" (the same failure the comment on the name/action
+            // stack below describes). Full padding returns at 1700, where the
+            // rail reaches its designed 340px.
+            "px-4 py-5 min-[1700px]:px-8 min-[1700px]:py-8"
+          : "px-4 py-6 sm:px-6 sm:py-8 md:px-8")
+      }
+    >
       {/* Header — "@" is the mark people actually associate with social
           accounts (it's how every handle is written), so it leads rather than
           sitting in a side chip. A share-graph or people icon reads as

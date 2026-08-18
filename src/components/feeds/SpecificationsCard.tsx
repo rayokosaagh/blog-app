@@ -31,7 +31,10 @@ export default function SpecificationsCard({
 }) {
   return (
     <div className="not-prose">
-      <h1>{title}</h1>
+      {/* h2, not h1 — the post title owns the page's only h1. data-was-h1 keeps
+          the original type scale (see .rich-text-render h2[data-was-h1] in
+          blog/[slug]/page.tsx), so this is a semantics-only change. */}
+      <h2 data-was-h1>{title}</h2>
 
       <motion.div
         className="flex flex-col rounded-none border-2 border-border-heavy overflow-hidden"

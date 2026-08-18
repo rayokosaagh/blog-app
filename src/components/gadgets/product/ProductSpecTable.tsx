@@ -1,6 +1,12 @@
 import { getSpecIcon, getGroupIcon, getSpecAccent } from "@/components/feeds/specIcons";
 import { SpecGroup } from "@/lib/gadgets/types";
-import { formatSpecValue, splitMultiline, slugifyTitle } from "@/lib/gadgets/formatSpecValue";
+import {
+  formatSpecValue,
+  splitMultiline,
+  slugifyTitle,
+  isSpecEmpty,
+  groupHasValues,
+} from "@/lib/gadgets/formatSpecValue";
 
 interface ProductSpecTableProps {
   group: SpecGroup;
@@ -8,10 +14,7 @@ interface ProductSpecTableProps {
 }
 
 export default function ProductSpecTable({ group, specs }: ProductSpecTableProps) {
-  const hasAnyValue = group.fields.some(
-    (f) => specs[f.key] !== null && specs[f.key] !== undefined && specs[f.key] !== ""
-  );
-  if (!hasAnyValue) return null;
+  if (!groupHasValues(group, specs)) return null;
 
   const GroupIcon = getGroupIcon(group.title);
 
@@ -32,7 +35,7 @@ export default function ProductSpecTable({ group, specs }: ProductSpecTableProps
         <dl className="divide-y-2 divide-border">
           {group.fields.map((field) => {
             const raw = specs[field.key];
-            const isEmpty = raw === null || raw === undefined || raw === "";
+            const isEmpty = isSpecEmpty(raw);
             const FieldIcon = getSpecIcon(field.label);
             const accent = getSpecAccent(field.label);
 

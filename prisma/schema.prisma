@@ -37,6 +37,15 @@ model Post {
   featuredImage String?
   views         Int       @default(0)
   tagOrder      String[]  @default([])
+
+  // ── Editorial verdict ──────────────────────────────────────────
+  // The reviewer's own score, as opposed to `ratings`, which are readers'.
+  // Null on anything that isn't a scored review (news, launch coverage), and
+  // every consumer must treat null as "no verdict" rather than zero.
+  verdictScore     Float?   // out of 10, one decimal
+  verdictSummary   String?  // the bottom line, 1–2 sentences
+  verdictSubScores Json     @default("[]") // [{ label: "Camera", score: 8.5 }]
+
   author        User      @relation(fields: [authorId], references: [id])
   comments      Comment[]
   ratings       Rating[]
@@ -45,6 +54,7 @@ model Post {
 
   @@index([views])
   @@index([createdAt])
+  @@index([verdictScore])
 }
 
 model Bookmark {
@@ -288,7 +298,14 @@ model Comparison {
   active     Boolean        @default(true)
   order      Int            @default(0)
   createdAt  DateTime       @default(now())
- 
+
+  // One-line summary per side, shown above the spec table on /compare. A
+  // table states every difference with equal weight; these two lines are what
+  // a reader came for. Optional — /compare falls back to a summary derived
+  // from the spec deltas when either is null.
+  verdictA   String?
+  verdictB   String?
+
   @@index([categoryId])
   @@index([createdAt])
   @@index([order])

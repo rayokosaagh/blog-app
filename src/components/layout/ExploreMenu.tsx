@@ -347,6 +347,17 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
                         <motion.span
                           layoutId="explore-browse-pill"
                           className="absolute inset-0 bg-accent"
+                          /*
+                            The track picks up the theme radius from
+                            `border-[1.5px]`, but this pill carries no border
+                            class, so the modern compat layer never reaches it
+                            and it stayed hard-cornered inside a rounded frame.
+                            One notch tighter than the track's radius so the
+                            curves stay concentric across the 4px of padding;
+                            max() keeps it at 0 in brutalist, where --radius is
+                            0 and a bare subtraction would go negative.
+                          */
+                          style={{ borderRadius: "max(0px, calc(var(--radius) - 4px))" }}
                           transition={{ type: "spring", stiffness: 500, damping: 35 }}
                         />
                       )}

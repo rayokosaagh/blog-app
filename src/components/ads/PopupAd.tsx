@@ -176,6 +176,7 @@ export default function PopupAd() {
   // handleClose is re-created every render; depending on it directly would
   // re-run this effect (and re-lock the body) on every render.
   const closeRef = useRef(handleClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
   // Synced in an effect, not during render: writing to a ref while rendering is
   // unsafe under concurrent rendering (and react-hooks/refs flags it).
   useEffect(() => {
@@ -188,14 +189,60 @@ export default function PopupAd() {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    /* --- Focus management ---
+     * The dialog had aria-modal and a scroll lock but never took focus, so it
+     * opened "behind" the keyboard: focus stayed on the page underneath, Tab
+     * walked through content the modal was covering, and a screen reader was
+     * never moved into the dialog it had just been told was modal. aria-modal
+     * is a promise to assistive tech, not a mechanism — the trap below is what
+     * actually keeps it.
+     *
+     * getClientRects(), not offsetParent, for the visibility filter: the modal
+     * is position:fixed, and offsetParent is null for fixed subtrees. */
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const focusables = () =>
+      Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.getClientRects().length > 0);
+
+    // The close button is first in the DOM, so this lands on "dismiss" —
+    // the right default for something the user did not ask for.
+    focusables()[0]?.focus();
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeRef.current();
+      if (e.key === "Escape") {
+        closeRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const items = focusables();
+      if (items.length === 0) return;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const inside = !!dialogRef.current?.contains(active);
+
+      // Wrap at both ends, and pull focus back in if it escaped the dialog.
+      if (e.shiftKey && (active === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
+      // Put the user back where they were, not at the top of the document.
+      previouslyFocused?.focus?.();
     };
   }, [mounted, visible, ad]);
 
@@ -216,6 +263,7 @@ export default function PopupAd() {
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="popup-ad-title"

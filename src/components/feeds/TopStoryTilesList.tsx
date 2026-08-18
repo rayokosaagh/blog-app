@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface Tile {
   id: string;
@@ -56,10 +57,14 @@ function StoryTile({ t }: { t: Tile }) {
     >
       {/* Image */}
       {t.featuredImage ? (
-        <img loading="lazy" decoding="async"
+        // The tile is a 4:3 cell: two-up on mobile, four across the 1600px
+        // container from lg, so it never needs more than ~380px.
+        <OptimizedImage
           src={t.featuredImage}
           alt={t.title}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+          fill
+          sizes="(min-width: 1024px) 380px, 50vw"
+          className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-accent-tint text-3xl">

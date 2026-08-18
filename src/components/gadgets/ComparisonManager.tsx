@@ -10,6 +10,7 @@ import {
   EyeOff,
   Plus,
   Layers,
+  ListChecks,
 } from "lucide-react";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 import Modal from "@/components/dashboard/Modal";
@@ -24,6 +25,9 @@ interface ComparisonItem {
   productB: { id: string; name: string; image?: string | null };
   active: boolean;
   order: number;
+  /** Editor-written summary shown on /compare for this exact pair. */
+  verdictA?: string | null;
+  verdictB?: string | null;
 }
 
 // ─── Diagonal split product thumbnail ─────────────────────────
@@ -100,13 +104,31 @@ function ComparisonRow({
   onDragEnd,
   onToggle,
   onDelete,
+  onSaveVerdicts,
 }: {
   item: ComparisonItem;
   onDragEnd: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onSaveVerdicts: (verdictA: string, verdictB: string) => Promise<void>;
 }) {
   const controls = useDragControls();
+  const [editing, setEditing] = useState(false);
+  const [verdictA, setVerdictA] = useState(item.verdictA ?? "");
+  const [verdictB, setVerdictB] = useState(item.verdictB ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const hasVerdict = Boolean(item.verdictA || item.verdictB);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await onSaveVerdicts(verdictA, verdictB);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <Reorder.Item
@@ -119,45 +141,111 @@ function ComparisonRow({
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ type: "spring", stiffness: 550, damping: 42, mass: 0.7 }}
       whileDrag={{ scale: 1.02, boxShadow: "0 14px 30px -10px rgba(0,0,0,0.3)", zIndex: 40 }}
-      className="relative flex items-center gap-4 p-3 bg-zinc-50/60 dark:bg-zinc-800/40 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-colors"
+      className="relative p-3 bg-zinc-50/60 dark:bg-zinc-800/40 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-colors"
     >
-      <button
-        type="button"
-        onPointerDown={(e) => controls.start(e)}
-        aria-label="Drag to reorder"
-        className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
-      >
-        <GripVertical size={18} />
-      </button>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onPointerDown={(e) => controls.start(e)}
+          aria-label="Drag to reorder"
+          className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0 text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+        >
+          <GripVertical size={18} />
+        </button>
 
-      <DiagonalThumb item={item} />
+        <DiagonalThumb item={item} />
 
-      <div className="flex-1 min-w-0">
-        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-          {item.category.name}
-        </span>
-        <p className="font-medium text-sm text-zinc-900 dark:text-zinc-50 truncate">
-          {item.productA.name} <span className="text-zinc-400 font-normal">vs</span>{" "}
-          {item.productB.name}
-        </p>
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+            {item.category.name}
+          </span>
+          <p className="font-medium text-sm text-zinc-900 dark:text-zinc-50 truncate">
+            {item.productA.name} <span className="text-zinc-400 font-normal">vs</span>{" "}
+            {item.productB.name}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setEditing((v) => !v)}
+          title={hasVerdict ? "Edit summary" : "Write a summary"}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors flex-shrink-0 ${
+            hasVerdict
+              ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10"
+              : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          <ListChecks size={15} />
+          <span className="hidden sm:inline">{hasVerdict ? "Summary" : "Add summary"}</span>
+        </button>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {item.active ? (
+            <Eye size={16} className="text-green-500" />
+          ) : (
+            <EyeOff size={16} className="text-zinc-400" />
+          )}
+          <ActiveToggle active={item.active} onToggle={onToggle} />
+        </div>
+
+        <button
+          onClick={onDelete}
+          className="p-2 rounded-xl text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-zinc-800 transition-colors flex-shrink-0"
+          title="Remove"
+        >
+          <Trash2 size={18} />
+        </button>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {item.active ? (
-          <Eye size={16} className="text-green-500" />
-        ) : (
-          <EyeOff size={16} className="text-zinc-400" />
-        )}
-        <ActiveToggle active={item.active} onToggle={onToggle} />
-      </div>
+      {editing && (
+        <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 space-y-3">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Shown as the summary above the spec table on /compare, for this
+            exact pair. Leave a box empty and that side falls back to a summary
+            derived from the specs.
+          </p>
 
-      <button
-        onClick={onDelete}
-        className="p-2 rounded-xl text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-zinc-800 transition-colors flex-shrink-0"
-        title="Remove"
-      >
-        <Trash2 size={18} />
-      </button>
+          {[
+            { label: item.productA.name, value: verdictA, set: setVerdictA },
+            { label: item.productB.name, value: verdictB, set: setVerdictB },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
+                Summary — {f.label}
+              </label>
+              <textarea
+                rows={2}
+                value={f.value}
+                onChange={(e) => f.set(e.target.value)}
+                placeholder="Leads on battery life and charging speed, but gives up ground on the camera."
+                className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-xl px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-y"
+              />
+            </div>
+          ))}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"
+            >
+              {saving ? "Saving…" : "Save summary"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setVerdictA(item.verdictA ?? "");
+                setVerdictB(item.verdictB ?? "");
+                setEditing(false);
+              }}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </Reorder.Item>
   );
 }
@@ -260,6 +348,42 @@ export default function ComparisonManager({
 
   function handleDragEnd() {
     persistOrder(comparisonsRef.current);
+  }
+
+  /**
+   * Not optimistic, unlike the active toggle: the server trims and nulls
+   * blank input, so the row has to reflect what was actually stored or the
+   * next open would show whitespace the DB doesn't have.
+   */
+  async function handleSaveVerdicts(
+    item: ComparisonItem,
+    verdictA: string,
+    verdictB: string
+  ) {
+    try {
+      const res = await fetch(`/api/gadgets/comparisons/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verdictA, verdictB }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setErrorModalMessage(data?.error ?? "Failed to save the summary");
+        return;
+      }
+
+      const { comparison } = await res.json();
+      setComparisons((prev) =>
+        prev.map((c) =>
+          c.id === item.id
+            ? { ...c, verdictA: comparison.verdictA, verdictB: comparison.verdictB }
+            : c
+        )
+      );
+    } catch {
+      setErrorModalMessage("Failed to save the summary. Please try again.");
+    }
   }
 
   async function handleToggleActive(item: ComparisonItem) {
@@ -441,6 +565,9 @@ export default function ComparisonManager({
                   onDragEnd={handleDragEnd}
                   onToggle={() => handleToggleActive(c)}
                   onDelete={() => openDeleteModal(c)}
+                  onSaveVerdicts={(verdictA, verdictB) =>
+                    handleSaveVerdicts(c, verdictA, verdictB)
+                  }
                 />
               ))}
             </AnimatePresence>

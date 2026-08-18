@@ -209,15 +209,22 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
         </nav>
       </div>
 
-      <div className="shrink-0 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <List size={22} className="text-accent shrink-0" />
-          <h2 className="text-2xl font-extrabold text-foreground truncate">Contents</h2>
+      {/* gap-2 and a smaller heading below 1600: this rail is now fluid-width
+          (216px at 1440, see .article-rail in blog/[slug]/page.tsx), and at
+          text-2xl + gap-4 the heading truncated to "C…" — the one thing in a
+          table of contents that must never be abbreviated. */}
+      <div className="shrink-0 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <List size={18} className="text-accent shrink-0" />
+          <h2 className="text-xl min-[1600px]:text-2xl font-extrabold text-foreground truncate">Contents</h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {/* Position in the article — turns a long list into "where am I" */}
+          {/* Hidden on the narrow rail: the progress bar directly below already
+              says where you are, and this counter was the last 32px standing
+              between the heading and being clipped to "C…". */}
           {toc.length > 0 && activeIndex >= 0 && (
-            <span className="text-[11px] font-extrabold tabular-nums text-muted-foreground">
+            <span className="hidden min-[1520px]:inline text-[11px] font-extrabold tabular-nums text-muted-foreground">
               {activeIndex + 1}/{toc.length}
             </span>
           )}

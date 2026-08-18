@@ -12,6 +12,11 @@ interface Props {
   brands: string[];
   /** Spec facets (Processor / RAM / Storage / …) for the current category. */
   facets: SpecFacet[];
+  /**
+   * Set when the listing spans several gadget categories, so no spec facets
+   * were computed — a phone's "Processor" and a laptop's are different fields.
+   */
+  needsCategory?: boolean;
   hideCategory?: boolean;
 }
 
@@ -32,6 +37,7 @@ export default function ProductFilterSidebar({
   categories,
   brands,
   facets,
+  needsCategory,
   hideCategory,
 }: Props) {
   const router = useRouter();
@@ -212,6 +218,13 @@ export default function ProductFilterSidebar({
             </select>
           </div>
         ))}
+
+        {needsCategory && (
+          <p className="col-span-2 border-2 border-dashed border-border px-2.5 py-2 text-[11px] font-bold leading-snug text-muted-foreground">
+            Pick a category above to filter by specs — processor, RAM, storage
+            and the rest differ per gadget type.
+          </p>
+        )}
 
         <div>
           <label className={labelClass}>Sort by</label>

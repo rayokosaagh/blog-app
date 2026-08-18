@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
 import GadgetCompareClient from "@/components/gadgets/GadgetCompareClient";
+import { lookupEditorVerdicts } from "@/lib/gadgets/editorVerdicts";
 
 interface GadgetCompareProps {
   defaultCategory?: string;
@@ -36,6 +37,13 @@ export default async function GadgetCompare({
     .map((s) => initialProducts.find((p) => p.slug === s))
     .filter(Boolean) as typeof initialProducts;
 
+  // Server-rendered for the pair the URL arrived with, so a shared /compare
+  // link shows the editor's verdict on first paint rather than after a
+  // round-trip. Subsequent picks refetch it via /api/gadgets/compare.
+  const editorVerdicts = await lookupEditorVerdicts(
+    orderedInitialProducts.map((p) => p.slug)
+  );
+
   return (
     <GadgetCompareClient
       key={`${category}-${initialSlugs.join(",")}`}
@@ -44,6 +52,7 @@ export default async function GadgetCompare({
       initialCategoryProducts={categoryProducts}
       initialProducts={orderedInitialProducts as any}
       initialDef={def}
+      initialEditorVerdicts={editorVerdicts}
     />
   );
 }

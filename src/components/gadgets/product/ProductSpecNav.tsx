@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { List } from "lucide-react";
 import { SpecGroup } from "@/lib/gadgets/types";
-import { slugifyTitle } from "@/lib/gadgets/formatSpecValue";
+import { slugifyTitle, groupHasValues } from "@/lib/gadgets/formatSpecValue";
 
 interface ProductSpecNavProps {
   groups: SpecGroup[];
@@ -11,9 +11,9 @@ interface ProductSpecNavProps {
 }
 
 export default function ProductSpecNav({ groups, specs }: ProductSpecNavProps) {
-  const visibleGroups = groups.filter((g) =>
-    g.fields.some((f) => specs[f.key] !== null && specs[f.key] !== undefined && specs[f.key] !== "")
-  );
+  // Must stay in lockstep with ProductSpecTable's own guard, or the "Jump to"
+  // rail lists anchors for sections that never render.
+  const visibleGroups = groups.filter((g) => groupHasValues(g, specs));
 
   const sectionIds = visibleGroups.map((g) => slugifyTitle(g.title));
 

@@ -13,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/dashboard", "/dashboard/", "/account", "/bookmarks", "/api/", "/search"],
       },
     ],
-    sitemap: `${APP_URL}/sitemap.xml`,
+    sitemap: [`${APP_URL}/sitemap.xml`, `${APP_URL}/rss.xml`],
     host: APP_URL,
   };
 }

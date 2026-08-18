@@ -7,6 +7,11 @@ import { FilePlus2, ImageIcon, X, CheckCircle2 } from "lucide-react";
 import TagPicker from "@/components/blog/TagPicker";
 import BackLink from "@/components/dashboard/BackLink";
 import StickyFormActions from "@/components/dashboard/StickyFormActions";
+import VerdictEditor, {
+  EMPTY_VERDICT,
+  verdictPayload,
+  type VerdictDraft,
+} from "@/components/dashboard/VerdictEditor";
 
 const Editor = dynamic(() => import("@/components/dashboard/Editor"), { ssr: false });
 
@@ -18,6 +23,7 @@ export default function NewPostPage() {
   const [published, setPublished] = useState(false);
   const [featuredImage, setFeaturedImage] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [verdict, setVerdict] = useState<VerdictDraft>(EMPTY_VERDICT);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -78,6 +84,7 @@ export default function NewPostPage() {
           published,
           featuredImage,
           tagIds,
+          ...verdictPayload(verdict),
         }),
       });
 
@@ -261,6 +268,8 @@ export default function NewPostPage() {
             </label>
             <Editor content={content} onChange={setContent} />
           </div>
+
+          <VerdictEditor value={verdict} onChange={setVerdict} />
 
           {/* Sticky action bar */}
           <StickyFormActions

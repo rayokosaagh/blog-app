@@ -2,6 +2,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
+import { lookupEditorVerdicts } from "@/lib/gadgets/editorVerdicts";
 
 // Hard ceiling just to stop someone from passing p1..p999 in the query string.
 // Bump this if you ever add a category with more compare slots than this.
@@ -77,6 +78,7 @@ export async function GET(req: NextRequest) {
 
   return Response.json({
     products: ordered,
+    editorVerdicts: await lookupEditorVerdicts(ordered.map((p) => p!.slug)),
     ...(missingSlugs.length > 0 ? { missingSlugs } : {}),
   });
 }

@@ -9,6 +9,7 @@ import { parseColors } from "@/lib/gadgets/colors";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/BackToTop";
+import CompareToggle from "@/components/gadgets/compare/CompareToggle";
 import ProductHero from "@/components/gadgets/product/ProductHero";
 import type {
   HeroIconKey,
@@ -217,13 +218,28 @@ export default async function ProductPage({ params }: ProductPageProps) {
           quickSpecs={quickSpecs}
         />
 
-        <div className="mt-6">
-          <OwnershipWidget
-            productId={product.id}
-            initialCounts={counts}
-            initialUserStatus={userOwnership?.status ?? null}
-            isSignedIn={!!session?.user?.id}
-          />
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <OwnershipWidget
+              productId={product.id}
+              initialCounts={counts}
+              initialUserStatus={userOwnership?.status ?? null}
+              isSignedIn={!!session?.user?.id}
+            />
+          </div>
+
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <CompareToggle
+              variant="wide"
+              item={{
+                slug: product.slug,
+                name: product.name,
+                brand: product.brand,
+                image: product.image,
+                categorySlug: product.category.slug,
+              }}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 mt-10">

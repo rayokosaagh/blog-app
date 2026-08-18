@@ -158,7 +158,11 @@ export default function MobileNav({ toc }: MobileNavProps) {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#0a1322]/95 backdrop-blur-3xl backdrop-saturate-150 border-t border-white/40 dark:border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)] 2xl:hidden">
+      {/* Hidden at min-[1440px], matching the ToC rail's breakpoint in
+          blog/[slug]/page.tsx — above it the rail is on screen and this bar
+          would be a second, redundant table of contents. Below it, this bar is
+          the only table of contents, so the two must stay in lockstep. */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#0a1322]/95 backdrop-blur-3xl backdrop-saturate-150 border-t border-white/40 dark:border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)] min-[1440px]:hidden">
         <div className="absolute top-0 left-0 h-[3px] bg-gray-100/60 dark:bg-white/10 w-full">
           <div className="h-full bg-blue-600 transition-all duration-150 ease-out" style={{ width: `${progress}%` }} />
         </div>
