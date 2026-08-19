@@ -4,6 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BenchmarkFieldIcon, GroupIcon } from "./icons";
 import { Product, SpecGroupLike } from "./types";
+import { isSpecEmpty } from "@/lib/gadgets/formatSpecValue";
 
 export default function DesktopTable({
   groups,
@@ -98,7 +99,7 @@ export default function DesktopTable({
                         </td>
                         {filledProducts.map((p, i) => {
                           const v = vals[i];
-                          const empty = v === undefined || v === null || v === "";
+                          const empty = isSpecEmpty(v);
                           return (
                             <td key={p.id} className="p-3 whitespace-pre-line">
                               {/*

@@ -4,8 +4,7 @@ import {
   formatSpecValue,
   splitMultiline,
   slugifyTitle,
-  isSpecEmpty,
-  groupHasValues,
+  visibleFields,
 } from "@/lib/gadgets/formatSpecValue";
 
 interface ProductSpecTableProps {
@@ -14,7 +13,10 @@ interface ProductSpecTableProps {
 }
 
 export default function ProductSpecTable({ group, specs }: ProductSpecTableProps) {
-  if (!groupHasValues(group, specs)) return null;
+  // Unlabelled and unfilled rows are dropped rather than printed as a dash, so
+  // a group that has none of either disappears with them.
+  const fields = visibleFields(group, specs);
+  if (fields.length === 0) return null;
 
   const GroupIcon = getGroupIcon(group.title);
 
@@ -33,9 +35,8 @@ export default function ProductSpecTable({ group, specs }: ProductSpecTableProps
         </h2>
 
         <dl className="divide-y-2 divide-border">
-          {group.fields.map((field) => {
+          {fields.map((field) => {
             const raw = specs[field.key];
-            const isEmpty = isSpecEmpty(raw);
             const FieldIcon = getSpecIcon(field.label);
             const accent = getSpecAccent(field.label);
 
@@ -51,9 +52,7 @@ export default function ProductSpecTable({ group, specs }: ProductSpecTableProps
                   {field.label}
                 </dt>
                 <dd className="text-sm font-bold text-foreground">
-                  {isEmpty ? (
-                    <span className="text-muted-foreground font-medium">—</span>
-                  ) : field.type === "multiline" ? (
+                  {field.type === "multiline" ? (
                     <ul className="space-y-1">
                       {splitMultiline(raw).map((line, idx) => (
                         <li key={idx} className="flex items-start gap-2">

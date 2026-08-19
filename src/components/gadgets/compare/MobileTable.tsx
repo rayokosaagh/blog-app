@@ -4,6 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BenchmarkFieldIcon, GroupIcon } from "./icons";
 import { Product, SpecGroupLike } from "./types";
+import { isSpecEmpty } from "@/lib/gadgets/formatSpecValue";
 
 export default function MobileTable({
   groups,
@@ -103,7 +104,7 @@ export default function MobileTable({
                         </td>
                         {filledProducts.map((p, i) => {
                           const v = vals[i];
-                          const empty = v === undefined || v === null || v === "";
+                          const empty = isSpecEmpty(v);
                           return (
                             <td key={p.id} className="p-2 whitespace-pre-line min-w-[100px] max-w-[110px]">
                               {/* Constant box metrics, colours only — see the

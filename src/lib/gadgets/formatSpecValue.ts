@@ -17,9 +17,46 @@ export function isSpecEmpty(raw: unknown): boolean {
   return false;
 }
 
-/** A group is worth rendering only when at least one of its fields has a value. */
+/**
+ * A field with no label has nothing to render in the left-hand column, so the
+ * row would come out as a value floating beside blank space. Treated the same
+ * as an unfilled value: not shown.
+ */
+export function hasLabel(field: SpecField): boolean {
+  return typeof field.label === "string" && field.label.trim() !== "";
+}
+
+/** Whether a single spec row should appear for one product. */
+export function isFieldVisible(field: SpecField, specs: Record<string, unknown>): boolean {
+  return hasLabel(field) && !isSpecEmpty(specs[field.key]);
+}
+
+/**
+ * The fields of a group that are worth rendering for one product — labelled,
+ * and actually filled in. Callers render this instead of `group.fields` so an
+ * unfilled row disappears rather than printing a dash.
+ */
+export function visibleFields(group: SpecGroup, specs: Record<string, unknown>): SpecField[] {
+  return group.fields.filter((f) => isFieldVisible(f, specs));
+}
+
+/**
+ * The comparison equivalent: a row survives when at least *one* of the products
+ * on screen has a value for it. Requiring all of them would delete exactly the
+ * rows a reader is comparing — "A has it, B doesn't" is the answer, not noise.
+ */
+export function visibleFieldsAcross(
+  group: SpecGroup,
+  specsList: Record<string, unknown>[]
+): SpecField[] {
+  return group.fields.filter(
+    (f) => hasLabel(f) && specsList.some((specs) => !isSpecEmpty(specs?.[f.key]))
+  );
+}
+
+/** A group is worth rendering only when at least one of its fields is visible. */
 export function groupHasValues(group: SpecGroup, specs: Record<string, unknown>): boolean {
-  return group.fields.some((f) => !isSpecEmpty(specs[f.key]));
+  return group.fields.some((f) => isFieldVisible(f, specs));
 }
 
 // Formats a raw spec value (stored as flat JSON on Product.specs) according

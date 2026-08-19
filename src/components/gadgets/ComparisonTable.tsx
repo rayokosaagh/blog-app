@@ -2,6 +2,7 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import { GadgetCategoryDef } from "@/lib/gadgets/types";
+import { isSpecEmpty, visibleFieldsAcross } from "@/lib/gadgets/formatSpecValue";
 
 interface Product { id: string; slug: string; name: string; brand: string; image?: string | null; priceFrom?: number | null; specs: Record<string, any>; }
 
@@ -14,11 +15,13 @@ export default function ComparisonTable({
   const [onlyDiff, setOnlyDiff] = useState(false);
 
   const groups = useMemo(() => {
-    if (!onlyDiff) return def.groups;
+    const specsList = products.map((p) => p.specs ?? {});
     return def.groups
       .map((g) => ({
         ...g,
-        fields: g.fields.filter((f) => {
+        // Unlabelled rows, and rows blank for every product here, never render.
+        fields: visibleFieldsAcross(g, specsList).filter((f) => {
+          if (!onlyDiff) return true;
           const vals = products.map((p) => JSON.stringify(p.specs?.[f.key] ?? null));
           return new Set(vals).size > 1; // keep only fields that differ
         }),
@@ -42,9 +45,6 @@ export default function ComparisonTable({
                 </span>
               )}
             </div>
-            {p.priceFrom && (
-              <p className="text-xs font-bold text-muted-foreground">Starting from {p.priceFrom}</p>
-            )}
             <p className="font-extrabold text-foreground">{p.name}</p>
           </div>
         ))}
@@ -103,7 +103,7 @@ export default function ComparisonTable({
                     <tr key={f.key} className="border-b-2 border-border">
                       <td className="p-2 font-bold text-muted-foreground">{f.label}</td>
                       {vals.map((v, i) => {
-                        const empty = v === undefined || v === null || v === "";
+                        const empty = isSpecEmpty(v);
                         return (
                           <td
                             key={i}

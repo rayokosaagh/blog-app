@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { BenchmarkFieldIcon, ChevronIcon, GroupIcon } from "./icons";
 import { Product, SpecGroupLike } from "./types";
+import { isSpecEmpty } from "@/lib/gadgets/formatSpecValue";
 
 export default function MobileGroups({
   groups,
@@ -103,7 +104,7 @@ export default function MobileGroups({
                                       : "text-foreground"
                                   }`}
                                 >
-                                  {v === undefined || v === null || v === "" ? "—" : String(v)}
+                                  {isSpecEmpty(v) ? "—" : String(v)}
                                 </span>
                               </div>
                             );

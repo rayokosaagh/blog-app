@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { SpecField } from "@/lib/gadgets/types";
 import { Product } from "./types";
+import { isSpecEmpty } from "@/lib/gadgets/formatSpecValue";
 
 export default function FocusedSpecBar({
   focusedField,
@@ -62,7 +63,7 @@ export default function FocusedSpecBar({
                       >
                         <p className="text-xs text-muted-foreground truncate mb-1">{p.name}</p>
                         <p className="text-xl font-extrabold text-foreground">
-                          {v === undefined || v === null || v === "" ? "—" : String(v)}
+                          {isSpecEmpty(v) ? "—" : String(v)}
                         </p>
                       </motion.div>
                     );

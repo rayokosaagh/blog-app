@@ -14,6 +14,7 @@ import FocusedSpecBar from "./compare/FocusedSpecBar";
 import DesktopTable from "./compare/DesktopTable";
 import MobileTable from "./compare/MobileTable";
 import ComparisonVerdict, { type EditorVerdict } from "./compare/ComparisonVerdict";
+import { visibleFieldsAcross } from "@/lib/gadgets/formatSpecValue";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];
@@ -230,10 +231,14 @@ function jumpToGroup(title: string) {
   const groups = useMemo(() => {
     if (!def) return [];
     const q = fieldFilter.trim().toLowerCase();
+    const specsList = filledProducts.map((p) => p.specs ?? {});
     return def.groups
       .map((g) => ({
         ...g,
-        fields: g.fields.filter((f) => {
+        // Rows nobody on screen has a value for are dropped first — a table of
+        // dashes says nothing. A row only one product fills is kept: that gap
+        // is the comparison.
+        fields: visibleFieldsAcross(g, specsList).filter((f) => {
           if (q && !f.label.toLowerCase().includes(q) && !g.title.toLowerCase().includes(q)) return false;
           if (onlyDiff) {
             const vals = filledProducts.map((p) => JSON.stringify(p.specs?.[f.key] ?? null));
