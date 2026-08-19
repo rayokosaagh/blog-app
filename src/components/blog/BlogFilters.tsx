@@ -32,6 +32,8 @@ interface BlogFiltersProps {
   tags: Tag[];
   authors: Author[];
   years: number[];
+  /** Listing URL the form submits to — /blog, or a category page like /reviews. */
+  basePath?: string;
 }
 
 const fieldsContainerVariants = {
@@ -69,7 +71,7 @@ function parseTags(value: string | null) {
   return value ? value.split(",").filter(Boolean) : [];
 }
 
-export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) {
+export default function BlogFilters({ tags, authors, years, basePath = "/blog" }: BlogFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -132,7 +134,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
   function applyFilters(e?: React.FormEvent) {
     e?.preventDefault();
     const qs = buildQuery();
-    router.push(qs ? `/blog?${qs}` : "/blog");
+    router.push(qs ? `${basePath}?${qs}` : basePath);
 
     if (appliedTimeout.current) clearTimeout(appliedTimeout.current);
     setApplied(true);
@@ -154,7 +156,7 @@ export default function BlogFilters({ tags, authors, years }: BlogFiltersProps) 
     setSelectedTags([]);
     // "Clear all" clears filters; the chosen ordering is not one of them.
     const sort = searchParams.get("sort");
-    router.push(sort ? `/blog?sort=${sort}` : "/blog");
+    router.push(sort ? `${basePath}?sort=${sort}` : basePath);
   }
 
   return (

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { verdictFieldsFromBody } from "@/lib/verdict";
+import { isPostCategory } from "@/lib/blog/categories";
 
 export async function GET(
   _: Request,
@@ -40,7 +41,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { title, slug, content, published, featuredImage, tagIds } = body;
+    const { title, slug, content, published, featuredImage, tagIds, category } = body;
 
     const updated = await prisma.post.update({
       where: { id },
@@ -50,6 +51,8 @@ export async function PATCH(
         content,
         published,
         featuredImage,
+        // Only when a valid value is sent; a partial update leaves it alone.
+        ...(isPostCategory(category) ? { category } : {}),
         // Omitted entirely when the request carries no verdict keys, so a
         // partial update can't silently drop an existing score.
         ...verdictFieldsFromBody(body),

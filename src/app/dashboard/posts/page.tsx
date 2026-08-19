@@ -8,6 +8,7 @@ import DeleteButton from "@/components/dashboard/DeleteButton";
 import AnimatedPostCard from "@/components/blog/AnimatedPostCard";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
 import { SuccessToast } from "@/components/dashboard/DashboardUI";
+import { POST_CATEGORIES, getPostCategory } from "@/lib/blog/categories";
 
 interface Post {
   id: string;
@@ -21,6 +22,7 @@ interface Post {
     name: string;
   };
   tags?: { id: string; name: string; slug: string }[];
+  category?: string;
 }
 
 export default function PostsPage() {
@@ -29,6 +31,7 @@ export default function PostsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT">("ALL");
   const [tagFilter, setTagFilter] = useState("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [deletedTitle, setDeletedTitle] = useState<string | null>(null);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -83,9 +86,12 @@ export default function PostsPage() {
       const matchesTag =
         tagFilter === "ALL" || (post.tags ?? []).some((t) => t.slug === tagFilter);
 
-      return matchesSearch && matchesStatus && matchesTag;
+      const matchesCategory =
+        categoryFilter === "ALL" || getPostCategory(post.category).key === categoryFilter;
+
+      return matchesSearch && matchesStatus && matchesTag && matchesCategory;
     });
-  }, [posts, searchTerm, statusFilter, tagFilter]);
+  }, [posts, searchTerm, statusFilter, tagFilter, categoryFilter]);
 
   if (loading) {
     return (
@@ -139,6 +145,21 @@ export default function PostsPage() {
             className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
           />
         </div>
+
+        {/* Category filter */}
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          aria-label="Filter by category"
+          className="border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all sm:w-44"
+        >
+          <option value="ALL">All categories</option>
+          {POST_CATEGORIES.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.label}
+            </option>
+          ))}
+        </select>
 
         {/* Tag filter */}
         {availableTags.length > 0 && (
@@ -242,6 +263,10 @@ export default function PostsPage() {
                           {post.title}
                         </h2>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                          <span className="font-semibold text-zinc-600 dark:text-zinc-300">
+                            {getPostCategory(post.category).label}
+                          </span>
+                          <span className="mx-1.5 text-zinc-300 dark:text-zinc-600">·</span>
                           /{post.slug}
                         </p>
                       </div>

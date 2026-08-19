@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { verdictFieldsFromBody } from "@/lib/verdict";
+import { DEFAULT_POST_CATEGORY, isPostCategory } from "@/lib/blog/categories";
 
 // GET all posts (with search + tag filter)
 // Used by the dashboard: admins see every post, everyone else sees only their own.
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { title, slug, content, published, featuredImage, tagIds } = body;
+    const { title, slug, content, published, featuredImage, tagIds, category } = body;
 
     if (!title || !slug || !content) {
       return NextResponse.json(
@@ -83,6 +84,9 @@ export async function POST(req: Request) {
         content,
         published: published ?? false,
         featuredImage: featuredImage || null,
+        // Unknown or missing category falls back to the default rather than
+        // 400ing — an older client that never sends one must still publish.
+        category: isPostCategory(category) ? category : DEFAULT_POST_CATEGORY,
         authorId: session.user.id,
         // Preserve the exact order tags were selected in the picker.
         tagOrder: tagIds ?? [],

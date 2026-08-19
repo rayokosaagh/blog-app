@@ -24,7 +24,14 @@ const SORT_OPTIONS: {
  * Changing the sort drops `page` — page 4 of "Newest" has no meaningful
  * counterpart in "Most read", so we send the reader back to the first page.
  */
-export default function BlogSort({ total }: { total: number }) {
+export default function BlogSort({
+  total,
+  basePath = "/blog",
+}: {
+  total: number;
+  /** Listing URL the sort links point at — /blog, or a category page like /reviews. */
+  basePath?: string;
+}) {
   const searchParams = useSearchParams();
   const active = parseSort(searchParams.get("sort"));
 
@@ -34,7 +41,7 @@ export default function BlogSort({ total }: { total: number }) {
     else params.set("sort", key);
     params.delete("page");
     const qs = params.toString();
-    return qs ? `/blog?${qs}` : "/blog";
+    return qs ? `${basePath}?${qs}` : basePath;
   }
 
   return (

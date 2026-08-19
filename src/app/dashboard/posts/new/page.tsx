@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FilePlus2, ImageIcon, X, CheckCircle2 } from "lucide-react";
 import TagPicker from "@/components/blog/TagPicker";
+import { useFileDrop, DROP_ACTIVE_CLASS } from "@/components/dashboard/useFileDrop";
 import BackLink from "@/components/dashboard/BackLink";
 import StickyFormActions from "@/components/dashboard/StickyFormActions";
 import VerdictEditor, {
@@ -12,6 +13,9 @@ import VerdictEditor, {
   verdictPayload,
   type VerdictDraft,
 } from "@/components/dashboard/VerdictEditor";
+import CategorySelect from "@/components/dashboard/CategorySelect";
+import { DEFAULT_POST_CATEGORY } from "@/lib/blog/categories";
+import type { PostCategory } from "@/generated/prisma";
 
 const Editor = dynamic(() => import("@/components/dashboard/Editor"), { ssr: false });
 
@@ -21,6 +25,7 @@ export default function NewPostPage() {
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
+  const [category, setCategory] = useState<PostCategory>(DEFAULT_POST_CATEGORY);
   const [featuredImage, setFeaturedImage] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [verdict, setVerdict] = useState<VerdictDraft>(EMPTY_VERDICT);
@@ -44,8 +49,11 @@ export default function NewPostPage() {
     e: React.ChangeEvent<HTMLInputElement>
   ) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadFeaturedImage(file);
+    e.target.value = "";
+  }
 
+  async function uploadFeaturedImage(file: File) {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -68,6 +76,12 @@ export default function NewPostPage() {
     }
   }
 
+  const featuredDrop = useFileDrop({
+    onFiles: (files) => uploadFeaturedImage(files[0]),
+    disabled: uploading,
+    onReject: (msg) => alert(msg),
+  });
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -84,6 +98,7 @@ export default function NewPostPage() {
           published,
           featuredImage,
           tagIds,
+          category,
           ...verdictPayload(verdict),
         }),
       });
@@ -199,6 +214,11 @@ export default function NewPostPage() {
             </p>
           </div>
 
+          {/* Category — what kind of article this is; tags below say what
+              it is about. Drives the /news, /reviews… pages and the badge on
+              every card. */}
+          <CategorySelect value={category} onChange={setCategory} />
+
           {/* Featured Image */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
@@ -221,13 +241,24 @@ export default function NewPostPage() {
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
-                <div className="text-center">
+              <label
+                {...featuredDrop.dropProps}
+                className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                  featuredDrop.isDragging
+                    ? DROP_ACTIVE_CLASS
+                    : "border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
+                }`}
+              >
+                <div className="text-center pointer-events-none">
                   <div className="h-12 w-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
                     <ImageIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    {uploading ? "Uploading..." : "Click to upload featured image"}
+                    {uploading
+                      ? "Uploading..."
+                      : featuredDrop.isDragging
+                        ? "Drop to upload"
+                        : "Drag a featured image here, or click to browse"}
                   </p>
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                     PNG, JPG, GIF, WEBP up to 5MB
