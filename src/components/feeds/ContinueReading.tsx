@@ -17,9 +17,17 @@ import { historyStore, resumable, clearHistory } from "@/lib/readingHistory";
 export default function ContinueReading({
   limit = 4,
   className = "",
+  excludeSlug,
 }: {
   limit?: number;
   className?: string;
+  /**
+   * Drop one article from the rail — the one the reader is currently on.
+   * Without it an article page ends with a rail inviting you to continue
+   * the piece you just finished, marked "Finished". Optional, so the
+   * homepage is unaffected.
+   */
+  excludeSlug?: string;
 }) {
   const all = useSyncExternalStore(
     historyStore.subscribe,
@@ -28,11 +36,12 @@ export default function ContinueReading({
   );
 
   const entries = useMemo(() => {
+    const pool = excludeSlug ? all.filter((e) => e.slug !== excludeSlug) : all;
     // Prefer articles still in progress; fall back to recently read so the
     // rail stays useful for someone who finishes everything they open.
-    const unfinished = resumable(all);
-    return (unfinished.length > 0 ? unfinished : all).slice(0, limit);
-  }, [all, limit]);
+    const unfinished = resumable(pool);
+    return (unfinished.length > 0 ? unfinished : pool).slice(0, limit);
+  }, [all, limit, excludeSlug]);
 
   // Empty on the server and on a first visit — the rail simply isn't there.
   if (entries.length === 0) return null;

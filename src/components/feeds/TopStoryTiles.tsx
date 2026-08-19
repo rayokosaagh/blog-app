@@ -7,6 +7,7 @@ export interface TopStoryPost {
   featuredImage: string | null;
   createdAt: Date;
   views: number;
+  category?: string | null;
 }
 
 /**

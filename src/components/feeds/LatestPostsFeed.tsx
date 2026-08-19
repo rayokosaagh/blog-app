@@ -7,6 +7,7 @@ import { Bookmark } from "lucide-react";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import { formatRelativeTime } from "@/lib/postUtils";
 import TagIcon from "@/components/blog/TagIcon";
+import CategoryBadge from "@/components/blog/CategoryBadge";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import type { TagColorMode } from "@/lib/sanitizeSvg";
 import Underline from "@/components/ui/Underline";
@@ -29,6 +30,7 @@ export interface FeedPost {
   content?: string | null;
   tags?: FeedTag[];
   tagOrder?: string[] | null;
+  category?: string | null;
   author: { name: string | null; image?: string | null };
 }
 
@@ -66,10 +68,11 @@ const TILE_SPANS = [
   "md:col-span-2 md:row-span-1", // 4 — wide
 ];
 
-// Alternates the tile's top accent bar / tag color between the two brand
-// accents, same as the mock's LAPTOPS/MOBILES pill alternation.
+// Alternates the tile's top accent bar between the two brand accents. The
+// tag pill used to alternate with it, but its colour was decided by index
+// parity rather than by anything about the tag, so it now takes the flat
+// caption-plate treatment and only the bar still cycles.
 const ACCENT_CYCLE = ["bg-accent", "bg-accent-2"] as const;
-const ACCENT_TEXT_CYCLE = ["text-on-accent", "text-on-accent-2"] as const;
 
 function isBig(index: number) {
   return index % 5 === 0;
@@ -92,7 +95,6 @@ function Tile({
   const primaryTag = orderedTags[0];
   const big = isBig(index);
   const accentBg = ACCENT_CYCLE[index % 2];
-  const accentText = ACCENT_TEXT_CYCLE[index % 2];
 
   // Entrance-only variants. Deliberately no whileHover/press logic here —
   // per guide §3, an element can't carry both a Framer scroll-entrance
@@ -181,10 +183,19 @@ function Tile({
         </Link>
 
         <div className="absolute top-2.5 left-2.5 right-2.5 md:top-4 md:left-4 md:right-4 flex items-start justify-between gap-2 z-10 pointer-events-none">
+          {/* Category chip, then the primary tag: kind → subject, same order
+              as the article header. Both are real links over the tile's own
+              link, hence pointer-events-auto. */}
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          <CategoryBadge
+            category={post.category}
+            size="sm"
+            className="pointer-events-auto shadow-brutal-sm min-h-6"
+          />
           {primaryTag ? (
             <Link
               href={`/blog?tag=${primaryTag.slug}`}
-              className={`pointer-events-auto inline-flex min-h-6 items-center gap-1 border-2 border-border-heavy font-extrabold uppercase tracking-wide rounded-none shadow-brutal-sm brutal-press ${accentBg} ${accentText} ${
+              className={`pointer-events-auto inline-flex min-h-6 items-center gap-1 border-2 border-border-heavy font-extrabold uppercase tracking-wide rounded-none shadow-brutal-sm brutal-press bg-photo-overlay/70 text-on-photo ${
                 mobileHero ? "text-[10px] px-2.5 py-0.5" : "text-[9px] px-2 py-0.5"
               } ${big ? "md:text-[11px] md:px-3 md:py-1" : "md:text-[10px] md:px-2.5 md:py-0.5"}`}
             >
@@ -196,9 +207,8 @@ function Tile({
               />
               <span>{primaryTag.name}</span>
             </Link>
-          ) : (
-            <span />
-          )}
+          ) : null}
+          </div>
 
           {showBookmark && (
             <button

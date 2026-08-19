@@ -2,25 +2,31 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Newspaper } from "lucide-react";
+import { Newspaper, Sparkles, Smartphone } from "lucide-react";
+import SectionHeader from "@/components/ui/SectionHeader";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PopupAd from "@/components/ads/PopupAd";
 import BackToTop from "@/components/ui/BackToTop";
 import { FadeIn } from "@/components/ui/AnimatedSection";
-import HeroSpotlight from "@/components/ui/HeroSpotlight";
+import HeroBanner from "@/components/home/HeroBanner";
+import AdCarousel from "@/components/ads/AdCarousel";
+import ValueProps from "@/components/home/ValueProps";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import Poll from "@/components/polls/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
-import TopStoryTiles from "@/components/feeds/TopStoryTiles";
+import TopStoriesMosaic from "@/components/feeds/TopStoriesMosaic";
+import { readVerdict } from "@/lib/verdict";
 import LatestPostsFeed from "@/components/feeds/LatestPostsFeed";
 import ContinueReading from "@/components/feeds/ContinueReading";
+import Newsroom, { getNewsroom } from "@/components/feeds/Newsroom";
 import LatestComparisons from "@/components/gadgets/LatestComparisons";
 import NewsletterForm from "@/components/newsletter/NewsletterForm";
 import SectionDivider from "@/components/ui/SectionDivider";
 import { CATEGORY_LIST } from "@/lib/gadgets/categories";
 import ProductsByCategoryTabs from "@/components/gadgets/ProductsByCategoryTabs";
 import FeaturedSwapCard from "@/components/gadgets/FeaturedSwapCard";
+import VerdictScoreboard, { getScoredProducts } from "@/components/gadgets/VerdictScoreboard";
 import SpotlightAdRail from "@/components/ads/SpotlightAdRail";
 import {
   getHomepageAnimatedBackground,
@@ -52,17 +58,6 @@ const SECTION_GAP = "gap-10 sm:gap-14 lg:gap-16";
 const SECTION_TOP_PADDING = "pt-4 sm:pt-6 lg:pt-8";
 const SECTION_BOTTOM_PADDING = "pb-10 sm:pb-14 lg:pb-16";
 
-// Category chips shown under the hero — mirrors the gadget categories
-// already modeled in src/lib/gadgets/categories. Kept as a small static
-// list here rather than importing the category config, since only the
-// slug + label are needed for a homepage nav chip.
-const HERO_CATEGORIES = [
-  { label: "Laptops", href: "/compare?category=laptops" },
-  { label: "Mobiles", href: "/compare?category=mobiles" },
-  { label: "Earbuds", href: "/compare?category=earbuds" },
-  { label: "Smartwatches", href: "/compare?category=smartwatches" },
-];
-
 export default async function HomePage() {
   const session = await auth();
   const [animatedBackground, spotlightHeader, spotlightTitle] = await Promise.all([
@@ -71,7 +66,7 @@ export default async function HomePage() {
     getSpotlightAdsTitle(),
   ]);
 
-const [recentPostsPool, banners, productsByCategoryArrays, topTags, spotlightAds, activePollCount, topStories] = await Promise.all([
+const [recentPostsPool, banners, productsByCategoryArrays, topTags, spotlightAds, activePollCount, topStories, scoredProducts, ads] = await Promise.all([
   // Over-fetched (11, not 7) because the most-read posts are filtered out of
   // this list below — see the dedupe under this Promise.all.
   prisma.post.findMany({
@@ -136,7 +131,29 @@ const [recentPostsPool, banners, productsByCategoryArrays, topTags, spotlightAds
     where: { published: true },
     orderBy: { views: "desc" },
     take: 4,
-    select: { id: true, slug: true, title: true, featuredImage: true, createdAt: true, views: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      featuredImage: true,
+      createdAt: true,
+      views: true,
+      category: true,
+      verdictScore: true,
+      verdictSummary: true,
+      verdictSubScores: true,
+    },
+  }),
+  // Editor's verdicts scoreboard — products with a written, scored verdict.
+  // Empty until an editor scores a product, and the section hides itself.
+  getScoredProducts(),
+  // Ad rail beside the hero — every active HeroAd (Dashboard → Ads → Hero
+  // rail ads), in position order. Not `Ad`: those are the in-article
+  // shortcode banners.
+  prisma.heroAd.findMany({
+    where: { active: true },
+    orderBy: { position: "asc" },
+    select: { id: true, title: true, image: true, link: true },
   }),
 ]);
 
@@ -149,9 +166,29 @@ const hasActivePoll = activePollCount > 0;
 const topStoryIds = new Set(topStories.map((p) => p.id));
 const recentPosts = recentPostsPool.filter((p) => !topStoryIds.has(p.id)).slice(0, 7);
 
+// Newsroom (news river + reviews rail) runs after the mosaic and knows what
+// it showed, so it can avoid repeating it when the corpus is big enough —
+// see the dedupe note in Newsroom.tsx.
+const newsroom = await getNewsroom({
+  topStoryIds: [...topStoryIds],
+  mosaicIds: recentPosts.map((p) => p.id),
+});
+
 const productsByCategory = Object.fromEntries(
   CATEGORY_LIST.map((c, i) => [c.slug, productsByCategoryArrays[i]])
 );
+
+// Top stories carry their verdict score into the mosaic — through readVerdict,
+// so a bare number with no written bottom line publishes nothing (AGENTS.md).
+const mosaicStories = topStories.map((p) => ({
+  id: p.id,
+  slug: p.slug,
+  title: p.title,
+  featuredImage: p.featuredImage,
+  createdAt: p.createdAt,
+  category: p.category,
+  score: readVerdict(p)?.score ?? null,
+}));
 
   return (
     <div className="relative min-h-screen">
@@ -172,61 +209,47 @@ const productsByCategory = Object.fromEntries(
           Blog — tech news, gadget reviews and spec comparisons
         </h1>
         {/*
-          CNET-style hero: a large featured carousel image joined to a
-          title/description card that changes in lockstep with the banner,
-          followed by a row of four secondary story tiles (2 trending + 2 new).
+          Above the fold: banner hero (copy over artwork) with the
+          auto-cycling ad rail beside it, then Top Stories as
+          a ranked mosaic, then the value-props band. The hero and the mosaic
+          each hide themselves when they have nothing to show; the ad rail
+          collapses and the hero takes the full width when no ad is active.
         */}
-        {banners.length > 0 && (
+        {(banners.length > 0 || mosaicStories.length > 0) && (
           <section className="max-w-[1600px] mx-auto px-6 w-full">
-            <div className="pt-6 border-t border-border-heavy">
+            {banners.length > 0 && (
               <FadeIn>
-                <HeroSpotlight banners={banners} />
-              </FadeIn>
-
-              {/* Secondary stories header — icon chip + title/subtitle on the
-                  left, "All stories" pill on the right, over a divider rule.
-                  Uses themeable surfaces so it reads bold/blocky in brutalist
-                  and clean/rounded in modern. */}
-              {/* Tighter above sm — see the line-clamp note in HeroSpotlight;
-                  these margins are the other 20px keeping the top stories off
-                  a small phone's first screen. */}
-              <div className="mt-6 mb-4 sm:mt-10 sm:mb-5 flex items-end justify-between gap-4 border-b-2 border-border-heavy pb-3">
-                <div className="flex items-center gap-3">
-                  {/* Icon colour comes from --on-accent-3, not a pinned white.
-                      Pinning white assumed accent-3 is always dark enough to
-                      carry it, which holds for both brutalist schemes and
-                      modern light — but modern dark derives accent-3 as a pale
-                      lilac (#bfa5fa), where white drops to 2.1:1 and the mark
-                      all but disappears. The token already solves this: it
-                      resolves to white on dark fills and to dark ink on light
-                      ones, so the chip reads as a solid colour block with a
-                      legible mark in every theme, which was the intent. */}
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center surface-border border-border-heavy bg-accent-3 text-on-accent-3 shadow-brutal-sm">
-                    <Newspaper className="h-5 w-5" />
-                  </span>
-                  <div className="min-w-0">
-                    {/* h2, not h3: this is a top-level section of the page and
-                        sat below the article cards' own h3s, which scrambled
-                        the outline. Renamed too — "More top stories" was the
-                        FIRST content section, so "more" referred to nothing. */}
-                    <h2 className="text-lg font-extrabold uppercase tracking-tight leading-none text-foreground">
-                      Top stories
-                    </h2>
-                    <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                      The most-read articles right now
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href="/blog"
-                  className="group inline-flex shrink-0 items-center gap-1.5 surface-pill border-border-heavy bg-card px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-foreground shadow-brutal-sm brutal-press hover:bg-accent-3 hover:text-on-accent-3"
+                <div
+                  className={`grid gap-4 lg:items-stretch ${
+                    ads.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""
+                  }`}
                 >
-                  All stories
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </Link>
+                  <HeroBanner banners={banners} />
+                  {ads.length > 0 && <AdCarousel ads={ads} interval={5000} />}
+                </div>
+              </FadeIn>
+            )}
+
+            {mosaicStories.length > 0 && (
+              <>
+                <div className="mt-8 sm:mt-10">
+                  <SectionHeader
+                    Icon={Newspaper}
+                    eyebrow="Most read"
+                    title="Top Stories"
+                    subtitle="The most-read articles right now"
+                    action={{ href: "/blog", label: "All stories" }}
+                  />
+                </div>
+                <TopStoriesMosaic stories={mosaicStories} />
+              </>
+            )}
+
+            <FadeIn>
+              <div className="mt-6">
+                <ValueProps />
               </div>
-              <TopStoryTiles posts={topStories} />
-            </div>
+            </FadeIn>
           </section>
         )}
 
@@ -234,7 +257,7 @@ const productsByCategory = Object.fromEntries(
           Main Content - Posts centered / Poll + Social right
 
         */}
-        {banners.length > 0 && <SectionDivider />}
+        {banners.length > 0}
 
 
         <section className="max-w-[1600px] mx-auto px-6 w-full">
@@ -286,20 +309,14 @@ const productsByCategory = Object.fromEntries(
               }`}
             >
               <FadeIn>
-                <div className="mb-10 text-center lg:text-left pb-4 border-b-4 border-border-heavy">
-                  <div className="inline-flex items-center gap-2 mb-3 justify-center lg:justify-start w-full lg:w-auto bg-accent-2 text-on-accent-2 border-2 border-border-heavy px-3 py-1 w-fit">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-xs font-extrabold tracking-[0.14em] uppercase">
-                      Fresh off the press
-                    </span>
-                  </div>
-                  <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-2 tracking-tight">
-                    Latest Posts
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Check out recent articles
-                  </p>
-                </div>
+                <SectionHeader
+                  Icon={Sparkles}
+                  eyebrow="Fresh off the press"
+                  title="Latest Posts"
+                  subtitle="The newest articles across every category"
+                  action={{ href: "/blog", label: "View all posts" }}
+                  accent="accent-2"
+                />
               </FadeIn>
 
               {recentPosts.length === 0 ? (
@@ -312,25 +329,6 @@ const productsByCategory = Object.fromEntries(
                 <LatestPostsFeed posts={recentPosts} />
               )}
 
-              {recentPosts.length > 0 && (
-                <FadeIn delay={0.4}>
-                  <div className="flex justify-center lg:justify-start mt-12">
-                    <Link
-                      href="/blog"
-                      className="
-                        cta-primary
-                        group inline-flex items-center gap-2 px-5 py-2.5
-                        rounded-none border-2 border-border-heavy bg-accent-3
-                        text-xs font-extrabold uppercase tracking-wide text-on-accent-3
-                        shadow-brutal-sm brutal-press
-                      "
-                    >
-                      View all posts
-                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </Link>
-                  </div>
-                </FadeIn>
-              )}
             </div>
 
             {/* Right Sidebar - Poll (+ Social Sidebar stacked below it, mobile only).
@@ -350,14 +348,28 @@ const productsByCategory = Object.fromEntries(
           </div>
         </section>
 
+
+        {/*
+          Newsroom — Verge-style split: timestamped news river left, reviews
+          rail with scores right. Placed after the mosaic so it is not
+          shoulder-to-shoulder with the feed that shows the newest posts of
+          every kind; together with the resume rail below it, it closes the
+          editorial half of the page before the gadget sections start. Hides
+          itself (divider too) until there are at least two news posts and
+          one review.
+        */}
+        {newsroom.news.length >= 2 && newsroom.reviews.length > 0 && <SectionDivider />}
+        <Newsroom data={newsroom} />
+
         {/* Returning readers only — renders nothing until there's local
             history, so a first visit sees the same page as before.
 
-            Sits AFTER the Latest Posts feed, not above it: this rail is the
-            one homepage section whose content the reader has already seen, so
-            leading with it pushed the newest articles — the reason the page
-            exists — below a list of things they'd half-finished. Editorial
-            leads; the resume rail catches them on the way down. */}
+            Sits at the end of the editorial run, after the Newsroom: this is
+            the one homepage section whose content the reader has already
+            seen, so it should not come before any of the new material. Every
+            fresh feed — the mosaic, the news river, the reviews rail — gets
+            its turn first, then the resume rail catches them on the way down
+            into the gadget sections. */}
         <ContinueReading />
 
         {/*
@@ -374,20 +386,13 @@ const productsByCategory = Object.fromEntries(
   <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12 lg:items-stretch">
     <div className="min-w-0">
       <FadeIn>
-        <div className="mb-8 text-center lg:text-left pb-4 border-b-4 border-border-heavy">
-          <div className="inline-flex items-center gap-2 mb-3 justify-center lg:justify-start w-full lg:w-auto bg-accent text-on-accent border-2 border-border-heavy px-3 py-1 w-fit">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-xs font-extrabold tracking-[0.14em] uppercase">
-              Explore by category/brand
-            </span>
-          </div>
-          <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-2 tracking-tight">
-            Explore Gadgets
-          </h3>
-          <p className="text-muted-foreground">
-            Browse the latest phones, laptops, earbuds and smartwatches
-          </p>
-        </div>
+        <SectionHeader
+          Icon={Smartphone}
+          eyebrow="Explore by category / brand"
+          title="Explore Gadgets"
+          subtitle="Browse the latest phones, laptops, earbuds and smartwatches"
+          action={{ href: "/products", label: "All gadgets" }}
+        />
       </FadeIn>
 
       <ProductsByCategoryTabs
@@ -421,6 +426,17 @@ const productsByCategory = Object.fromEntries(
     </div>
   </div>
 </section>
+
+        {/*
+          Editor's verdicts — scored gadgets with their bottom line. Sits with
+          the other two gadget sections (browse the catalogue -> what we scored
+          -> head-to-head) rather than between Top Stories and Latest Posts,
+          where it split the editorial run in half and put the page's tallest
+          cards directly under its shortest ones. Renders nothing (and neither
+          does its divider) until a product has been scored in the dashboard.
+        */}
+        {scoredProducts.length > 0 && <SectionDivider />}
+        <VerdictScoreboard products={scoredProducts} />
 
         {/* Comparisons run full width now. There used to be a NewsletterForm in
             a right-hand column here, which put two different signup forms on

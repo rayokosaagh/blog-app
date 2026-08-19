@@ -55,7 +55,7 @@ export default function LatestNewsList({ posts }: LatestNewsListProps) {
         <div className="w-6 h-6 flex items-center justify-center bg-accent-2 border-2 border-border-heavy shrink-0">
           <Clock className="w-3.5 h-3.5 text-on-accent-2" />
         </div>
-        <h3 className="text-xs font-extrabold uppercase tracking-wide text-accent">
+        <h3 className="h-eyebrow text-accent">
           Latest News
         </h3>
       </div>

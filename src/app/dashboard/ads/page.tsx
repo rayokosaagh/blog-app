@@ -18,8 +18,10 @@ import {
   Pencil,
   ArrowLeft,
   MonitorPlay,
+  PanelRight,
 } from "lucide-react";
 import { mediaTypeFromUrl } from "@/lib/mediaType";
+import { useFileDrop, DROP_ACTIVE_CLASS, MEDIA_TYPES } from "@/components/dashboard/useFileDrop";
 import {
   inputClass,
   labelClass,
@@ -61,7 +63,7 @@ type ActionType = "added" | "updated" | "deleted" | null;
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdsPage() {
-  const [activeTab, setActiveTab] = useState<"inline" | "popup" | "spotlight">("inline");
+  const [activeTab, setActiveTab] = useState<"inline" | "hero" | "popup" | "spotlight">("inline");
 
   return (
     <div className="space-y-6">
@@ -100,6 +102,17 @@ export default function AdsPage() {
           Inline ads
         </button>
         <button
+          onClick={() => setActiveTab("hero")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            activeTab === "hero"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
+              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+          }`}
+        >
+          <PanelRight className="h-4 w-4" />
+          Hero rail ads
+        </button>
+        <button
           onClick={() => setActiveTab("popup")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             activeTab === "popup"
@@ -123,7 +136,24 @@ export default function AdsPage() {
         </button>
       </div>
 
-      {activeTab === "inline" && <InlineAdsTab />}
+      {activeTab === "inline" && (
+        <AdsCrudTab
+          endpoint="/api/ads"
+          noun="inline ad"
+          pluralLabel="Inline ads"
+          positionHint="Ad appears where the [Ads N] shortcode with this number sits in the article."
+          sizeHint="Wide banner, article width: upload 1600 × 256 px (shown ~800 × 128, cropped to fill)."
+        />
+      )}
+      {activeTab === "hero" && (
+        <AdsCrudTab
+          endpoint="/api/hero-ads"
+          noun="hero rail ad"
+          pluralLabel="Hero rail ads"
+          positionHint="Display order in the homepage rail (lowest first). The rail cycles every 5 seconds."
+          sizeHint="Portrait 2:3, fills the rail (centre-cropped if the ratio differs): upload 640 × 960 px."
+        />
+      )}
       {activeTab === "popup" && <PopupAdsTab />}
       {activeTab === "spotlight" && <SpotlightAdsTab />}
     </div>
@@ -132,7 +162,24 @@ export default function AdsPage() {
 
 // ─── Inline Ads Tab ───────────────────────────────────────────────────────────
 
-function InlineAdsTab() {
+/**
+ * Generic list/create/edit/delete tab for the simple image-ad tables (`Ad`
+ * and `HeroAd` share a shape). `endpoint` is the REST base; the labels and
+ * the position/image hints are what differ per placement.
+ */
+function AdsCrudTab({
+  endpoint,
+  noun,
+  pluralLabel,
+  positionHint,
+  sizeHint,
+}: {
+  endpoint: string;
+  noun: string;
+  pluralLabel: string;
+  positionHint: string;
+  sizeHint: string;
+}) {
   const [ads, setAds] = useState<Ad[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("list");
@@ -157,7 +204,7 @@ function InlineAdsTab() {
 
   async function loadAds() {
     try {
-      const res = await fetch("/api/ads");
+      const res = await fetch(endpoint);
       const data = await res.json();
       setAds(Array.isArray(data) ? data : []);
     } catch {
@@ -212,7 +259,11 @@ function InlineAdsTab() {
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadAdImage(file);
+    e.target.value = "";
+  }
+
+  async function uploadAdImage(file: File) {
     setUploading(true);
     setError("");
     const formData = new FormData();
@@ -229,16 +280,21 @@ function InlineAdsTab() {
       setError("Upload failed");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
+
+  const adImageDrop = useFileDrop({
+    onFiles: (files) => uploadAdImage(files[0]),
+    disabled: uploading,
+    onReject: setError,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError("");
     try {
-      const url = editingAd ? `/api/ads/${editingAd.id}` : "/api/ads";
+      const url = editingAd ? `${endpoint}/${editingAd.id}` : endpoint;
       const method = editingAd ? "PATCH" : "POST";
       const res = await fetch(url, {
         method,
@@ -266,7 +322,7 @@ function InlineAdsTab() {
     if (!adToDelete) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/ads/${adToDelete.id}`, { method: "DELETE" });
+      const res = await fetch(`${endpoint}/${adToDelete.id}`, { method: "DELETE" });
       if (!res.ok) {
         setError("Failed to delete ad");
         setAdToDelete(null);
@@ -288,7 +344,7 @@ function InlineAdsTab() {
   async function toggleActive(ad: Ad) {
     setAds((prev) => prev.map((a) => (a.id === ad.id ? { ...a, active: !a.active } : a)));
     try {
-      await fetch(`/api/ads/${ad.id}`, {
+      await fetch(`${endpoint}/${ad.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...ad, active: !ad.active }),
@@ -308,7 +364,7 @@ function InlineAdsTab() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Inline ads
+          {pluralLabel}
         </button>
 
         <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
@@ -317,7 +373,7 @@ function InlineAdsTab() {
               className="text-sm font-bold text-zinc-900 dark:text-zinc-50"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              {view === "edit" ? "Edit inline ad" : "New inline ad"}
+              {view === "edit" ? `Edit ${noun}` : `New ${noun}`}
             </h2>
           </div>
 
@@ -371,12 +427,13 @@ function InlineAdsTab() {
                   min={0}
                 />
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
-                  Ad appears after this paragraph number.
+                  {positionHint}
                 </p>
               </div>
 
               <div>
                 <label className={labelClass}>Ad image</label>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 -mt-0.5 mb-2">{sizeHint}</p>
                 {form.image ? (
                   <div className="relative w-full h-32 rounded-xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-700">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -390,14 +447,29 @@ function InlineAdsTab() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+                  <label
+                    {...adImageDrop.dropProps}
+                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      adImageDrop.isDragging
+                        ? DROP_ACTIVE_CLASS
+                        : "border-zinc-200 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5"
+                    }`}
+                  >
                     {uploading ? (
                       <Loader2 className="h-5 w-5 text-blue-500 animate-spin mb-1.5" />
                     ) : (
-                      <ImagePlus className="h-5 w-5 text-zinc-400 mb-1.5" />
+                      <ImagePlus
+                        className={`h-5 w-5 mb-1.5 ${
+                          adImageDrop.isDragging ? "text-blue-500" : "text-zinc-400"
+                        }`}
+                      />
                     )}
-                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                      {uploading ? "Uploading…" : "Click to upload ad image"}
+                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 pointer-events-none">
+                      {uploading
+                        ? "Uploading…"
+                        : adImageDrop.isDragging
+                          ? "Drop to upload"
+                          : "Drag an ad image here, or click to browse"}
                     </p>
                     <input
                       type="file"
@@ -457,7 +529,7 @@ function InlineAdsTab() {
           className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
-          Add inline ad
+          Add {noun}
         </button>
       </div>
 
@@ -535,7 +607,7 @@ function InlineAdsTab() {
           <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No inline ads found</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No {pluralLabel.toLowerCase()} found</p>
           <button
             onClick={openAdd}
             className="text-blue-500 hover:text-blue-600 text-sm font-semibold mt-2"
@@ -735,7 +807,11 @@ function PopupAdsTab() {
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadPopupImage(file);
+    e.target.value = "";
+  }
+
+  async function uploadPopupImage(file: File) {
     setUploading(true);
     setError("");
     const formData = new FormData();
@@ -752,9 +828,14 @@ function PopupAdsTab() {
       setError("Upload failed");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
+
+  const popupImageDrop = useFileDrop({
+    onFiles: (files) => uploadPopupImage(files[0]),
+    disabled: uploading,
+    onReject: setError,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -927,14 +1008,29 @@ function PopupAdsTab() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex items-center justify-center gap-2 w-full h-[42px] border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+                    <label
+                      {...popupImageDrop.dropProps}
+                      className={`flex items-center justify-center gap-2 w-full h-[42px] border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                        popupImageDrop.isDragging
+                          ? DROP_ACTIVE_CLASS
+                          : "border-zinc-200 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5"
+                      }`}
+                    >
                       {uploading ? (
                         <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
                       ) : (
-                        <ImagePlus className="h-4 w-4 text-zinc-400" />
+                        <ImagePlus
+                          className={`h-4 w-4 ${
+                            popupImageDrop.isDragging ? "text-blue-500" : "text-zinc-400"
+                          }`}
+                        />
                       )}
-                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                        {uploading ? "Uploading…" : "Upload image"}
+                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 pointer-events-none">
+                        {uploading
+                          ? "Uploading…"
+                          : popupImageDrop.isDragging
+                            ? "Drop to upload"
+                            : "Drop or click to upload"}
                       </span>
                       <input
                         type="file"
@@ -1306,7 +1402,11 @@ function SpotlightAdsTab() {
 
   async function handleMediaUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadSpotlightMedia(file);
+    e.target.value = "";
+  }
+
+  async function uploadSpotlightMedia(file: File) {
     setUploading(true);
     setError("");
     const formData = new FormData();
@@ -1323,9 +1423,16 @@ function SpotlightAdsTab() {
       setError("Upload failed");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
+
+  // The only field that also takes video, so it opts into the wider type list.
+  const spotlightDrop = useFileDrop({
+    onFiles: (files) => uploadSpotlightMedia(files[0]),
+    disabled: uploading,
+    accept: MEDIA_TYPES,
+    onReject: setError,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -1495,16 +1602,31 @@ function SpotlightAdsTab() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+                  <label
+                    {...spotlightDrop.dropProps}
+                    className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      spotlightDrop.isDragging
+                        ? DROP_ACTIVE_CLASS
+                        : "border-zinc-200 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5"
+                    }`}
+                  >
                     {uploading ? (
                       <Loader2 className="h-5 w-5 text-blue-500 animate-spin mb-1.5" />
                     ) : (
-                      <ImagePlus className="h-5 w-5 text-zinc-400 mb-1.5" />
+                      <ImagePlus
+                        className={`h-5 w-5 mb-1.5 ${
+                          spotlightDrop.isDragging ? "text-blue-500" : "text-zinc-400"
+                        }`}
+                      />
                     )}
-                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                      {uploading ? "Uploading…" : "Click to upload media"}
+                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 pointer-events-none">
+                      {uploading
+                        ? "Uploading…"
+                        : spotlightDrop.isDragging
+                          ? "Drop to upload"
+                          : "Drag media here, or click to browse"}
                     </p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 pointer-events-none">
                       Image/GIF up to 5MB · MP4/WebM up to 20MB
                     </p>
                     <input

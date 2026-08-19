@@ -54,7 +54,7 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
         <div className="w-6 h-6 flex items-center justify-center bg-accent-2 border-2 border-border-heavy shrink-0">
           <Flame className="w-3.5 h-3.5 text-on-accent-2" fill="currentColor" />
         </div>
-        <h3 className="text-xs font-extrabold uppercase tracking-wide text-accent">
+        <h3 className="h-eyebrow text-accent">
           Trending Now
         </h3>
       </div>

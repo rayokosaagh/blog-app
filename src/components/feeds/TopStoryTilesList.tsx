@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+import { getPostCategory } from "@/lib/blog/categories";
 
 interface Tile {
   id: string;
@@ -11,6 +12,7 @@ interface Tile {
   title: string;
   featuredImage: string | null;
   createdAt: Date;
+  category?: string | null;
   /** 1-based position in the most-read ranking. */
   rank: number;
 }
@@ -90,6 +92,8 @@ function StoryTile({ t }: { t: Tile }) {
           {t.title}
         </p>
         <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+          <span className="text-white">{getPostCategory(t.category).singular}</span>
+          <span className="mx-1.5 text-white/40">·</span>
           {formatDate(t.createdAt)}
         </p>
       </div>

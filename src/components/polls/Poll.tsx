@@ -172,7 +172,7 @@ export default function Poll() {
       <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-4 py-6 sm:px-6 sm:py-8 md:px-8">
         <div className="flex items-center gap-2">
           <BarChart3 size={20} className="text-accent" />
-          <h2 className="text-xl font-extrabold text-foreground tracking-tight">Polls</h2>
+          <h3 className="h-section h-section--sm text-foreground">Polls</h3>
         </div>
         <div className="border-t-2 border-border mt-4 mb-6" />
         <div className="space-y-3">
@@ -208,7 +208,7 @@ export default function Poll() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <BarChart3 size={20} className="text-accent" />
-          <h2 className="text-xl font-extrabold text-foreground tracking-tight">Polls</h2>
+          <h3 className="h-section h-section--sm text-foreground">Polls</h3>
         </div>
 
         {hasMultiple && (
@@ -266,9 +266,9 @@ export default function Poll() {
                   <path d="M7 20V10M12 20V4M17 20v-6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h3 className="text-lg font-extrabold text-foreground leading-tight tracking-tight">
+              <h4 className="h-card text-foreground leading-tight">
                 {currentPoll.question}
-              </h3>
+              </h4>
             </div>
 
             <div className="space-y-3">
