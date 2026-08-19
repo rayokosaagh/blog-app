@@ -38,6 +38,13 @@ model Post {
   views         Int       @default(0)
   tagOrder      String[]  @default([])
 
+  // ── Category ───────────────────────────────────────────────────
+  // What KIND of article this is (news, review, versus…), exactly one per
+  // post. Distinct from `tags`, which say what it is ABOUT (brand, platform,
+  // device type). The set is fixed in code — see src/lib/blog/categories.ts
+  // for slugs, labels and the /news, /reviews… landing routes built on it.
+  category      PostCategory @default(NEWS)
+
   // ── Editorial verdict ──────────────────────────────────────────
   // The reviewer's own score, as opposed to `ratings`, which are readers'.
   // Null on anything that isn't a scored review (news, launch coverage), and
@@ -55,6 +62,7 @@ model Post {
   @@index([views])
   @@index([createdAt])
   @@index([verdictScore])
+  @@index([category, createdAt])
 }
 
 model Bookmark {
@@ -115,6 +123,24 @@ model Ad {
   position  Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Ads for the homepage hero rail (AdCarousel beside the banner). Separate from
+// `Ad`, whose rows are placed INSIDE article bodies by [Ads N] shortcodes —
+// mixing the two would put shortcode-positioned banners in the rail and vice
+// versa. `position` here is plain display order. Slot is 320×~480 css px
+// (portrait 2:3, object-cover); upload 640×960 for crisp 2× rendering.
+model HeroAd {
+  id        String   @id @default(cuid())
+  title     String
+  image     String
+  link      String
+  active    Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hero_ads")
 }
 
 model SocialLink {
@@ -215,6 +241,17 @@ model Comment {
   @@index([status])
 }
 
+// Editorial type of a Post. Adding a value here means adding its entry to
+// src/lib/blog/categories.ts too — the registry is what gives it a slug, a
+// label and a landing page; the enum alone renders nothing.
+enum PostCategory {
+  NEWS
+  REVIEW
+  VERSUS
+  DEAL
+  GUIDE
+}
+
 enum CommentStatus {
   PENDING
   APPROVED
@@ -277,14 +314,23 @@ model Product {
                                         // Shape varies per category — flat key/value, e.g.
                                         // { "ram": "12GB", "batteryMah": 5000, "os": "Android" }
 
+  // Editorial verdict — same shape and rules as Post.verdict*, read through
+  // readVerdict() in src/lib/verdict.ts. Written in the gadget dashboard;
+  // feeds the homepage scoreboard and the product page's verdict card. A null
+  // score means "not reviewed", never zero.
+  verdictScore     Float?
+  verdictSummary   String?
+  verdictSubScores Json     @default("[]") // [{ label: "Camera", score: 8.5 }]
+
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   comparisonsAsA Comparison[] @relation("ComparisonProductA")
   comparisonsAsB Comparison[] @relation("ComparisonProductB")
-  productOwnerships ProductOwnership[] 
+  productOwnerships ProductOwnership[]
 
   @@index([categoryId])
   @@index([slug])
+  @@index([verdictScore])
   @@map("products")
 }
 model Comparison {
