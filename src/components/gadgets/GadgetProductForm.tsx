@@ -16,7 +16,14 @@ import { CATEGORY_LIST, getCategoryDef } from "@/lib/gadgets/categories";
 import TagPicker from "@/components/blog/TagPicker";
 import ColorVariantsEditor from "@/components/gadgets/ColorVariantsEditor";
 import StickyFormActions from "@/components/dashboard/StickyFormActions";
+import VerdictEditor, {
+  EMPTY_VERDICT,
+  verdictDraftFromPost,
+  verdictPayload,
+  type VerdictDraft,
+} from "@/components/dashboard/VerdictEditor";
 import type { ProductColor } from "@/lib/gadgets/colors";
+import { useFileDrop, DROP_ACTIVE_CLASS } from "@/components/dashboard/useFileDrop";
 
 interface GadgetProductFormProps {
   mode: "create" | "edit";
@@ -32,7 +39,10 @@ interface GadgetProductFormProps {
     published: boolean;
     categorySlug: string;
     specs: Record<string, any>;
-    tagIds?: string[];   // ← add this
+    tagIds?: string[];
+    verdictScore?: number | null;
+    verdictSummary?: string | null;
+    verdictSubScores?: unknown;
   };
 }
 
@@ -75,7 +85,11 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
+  const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
+  // Same draft/payload helpers as the post forms — the column shape is identical.
+  const [verdict, setVerdict] = useState<VerdictDraft>(() =>
+    initial ? verdictDraftFromPost(initial) : EMPTY_VERDICT
+  );
   const def = getCategoryDef(category);
 
   function updateSpec(key: string, value: any) {
@@ -84,8 +98,11 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadMainImage(file);
+    e.target.value = "";
+  }
 
+  async function uploadMainImage(file: File) {
     setUploading(true);
     setError("");
     const formData = new FormData();
@@ -111,12 +128,15 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
       setError("Image upload failed. Please try again.");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
 
   async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+    await uploadGalleryFiles(Array.from(e.target.files ?? []));
+    e.target.value = "";
+  }
+
+  async function uploadGalleryFiles(files: File[]) {
     if (files.length === 0) return;
 
     setGalleryUploading(true);
@@ -144,7 +164,6 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
       setError("Image upload failed. Please try again.");
     } finally {
       setGalleryUploading(false);
-      e.target.value = "";
     }
   }
 
@@ -161,6 +180,19 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
       return next;
     });
   }
+
+  const mainDrop = useFileDrop({
+    onFiles: (files) => uploadMainImage(files[0]),
+    disabled: uploading,
+    onReject: setError,
+  });
+
+  const galleryDrop = useFileDrop({
+    onFiles: uploadGalleryFiles,
+    disabled: galleryUploading,
+    multiple: true,
+    onReject: setError,
+  });
 
   function handleNameChange(value: string) {
     setName(value);
@@ -191,7 +223,8 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
   category,
   specs,
   published,
-  tagIds,   // ← add this
+  tagIds,
+  ...verdictPayload(verdict),
 };
 
     try {
@@ -313,9 +346,21 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
             <label className={labelClass}>Product image</label>
 
             {image ? (
-              <div className="relative w-full h-48 rounded-xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-700">
+              <div
+                {...mainDrop.dropProps}
+                className={`relative w-full h-48 rounded-xl overflow-hidden ring-1 transition-colors ${
+                  mainDrop.isDragging
+                    ? "ring-2 ring-blue-500/60"
+                    : "ring-zinc-200 dark:ring-zinc-700"
+                }`}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                {mainDrop.isDragging && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-500/70 text-white text-sm font-semibold pointer-events-none">
+                    Drop to replace
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => setImage("")}
@@ -326,18 +371,33 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
-                <div className="text-center">
+              <label
+                {...mainDrop.dropProps}
+                className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                  mainDrop.isDragging
+                    ? DROP_ACTIVE_CLASS
+                    : "border-zinc-200 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5"
+                }`}
+              >
+                <div className="text-center pointer-events-none">
                   {uploading ? (
                     <Loader2 className="h-6 w-6 text-blue-500 mx-auto mb-2 animate-spin" />
                   ) : (
-                    <ImagePlus className="h-6 w-6 text-zinc-400 mx-auto mb-2" />
+                    <ImagePlus
+                      className={`h-6 w-6 mx-auto mb-2 ${
+                        mainDrop.isDragging ? "text-blue-500" : "text-zinc-400"
+                      }`}
+                    />
                   )}
                   <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                    {uploading ? "Uploading…" : "Click to upload an image"}
+                    {uploading
+                      ? "Uploading…"
+                      : mainDrop.isDragging
+                        ? "Drop to upload"
+                        : "Drag an image here, or click to browse"}
                   </p>
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                    PNG or JPG, up to a few MB
+                    PNG, JPG, GIF or WebP — up to 5MB
                   </p>
                 </div>
                 <input
@@ -447,18 +507,33 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
             </div>
           )}
 
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
-            <div className="text-center">
+          <label
+            {...galleryDrop.dropProps}
+            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+              galleryDrop.isDragging
+                ? DROP_ACTIVE_CLASS
+                : "border-zinc-200 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5"
+            }`}
+          >
+            <div className="text-center pointer-events-none">
               {galleryUploading ? (
                 <Loader2 className="h-6 w-6 text-blue-500 mx-auto mb-2 animate-spin" />
               ) : (
-                <ImagePlus className="h-6 w-6 text-zinc-400 mx-auto mb-2" />
+                <ImagePlus
+                  className={`h-6 w-6 mx-auto mb-2 ${
+                    galleryDrop.isDragging ? "text-blue-500" : "text-zinc-400"
+                  }`}
+                />
               )}
               <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                {galleryUploading ? "Uploading…" : "Click to add gallery images"}
+                {galleryUploading
+                  ? "Uploading…"
+                  : galleryDrop.isDragging
+                    ? "Drop to add"
+                    : "Drag images here, or click to browse"}
               </p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                You can select multiple files
+                You can drop or select several at once
               </p>
             </div>
             <input
@@ -483,8 +558,13 @@ const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? []);
         </FormCard>
 
         <FormCard title="Tags">
-  <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
-</FormCard>
+          <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
+        </FormCard>
+
+        {/* Editorial verdict — optional. Scored products appear in the
+            homepage "Editor's Verdicts" scoreboard and get a verdict card on
+            their product page. Same component as the post editor. */}
+        <VerdictEditor value={verdict} onChange={setVerdict} />
 
         {/* Dynamic spec groups */}
         {def?.groups.map((group) => (

@@ -57,7 +57,10 @@ export default async function EditGadgetPage({
           published: product.published,
           categorySlug: product.category.slug,
           specs: (product.specs as Record<string, any>) ?? {},
-          tagIds: product.tags.map((t) => t.id), // ← added
+          tagIds: product.tags.map((t) => t.id),
+          verdictScore: product.verdictScore,
+          verdictSummary: product.verdictSummary,
+          verdictSubScores: product.verdictSubScores,
         }}
       />
     </div>

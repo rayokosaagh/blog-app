@@ -18,6 +18,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Toggle, StatusPill, DeleteModal, SuccessToast, inputClass, labelClass } from "@/components/dashboard/DashboardUI";
+import { useFileDrop, DROP_ACTIVE_CLASS } from "@/components/dashboard/useFileDrop";
 
 interface Banner {
   id: string;
@@ -115,7 +116,11 @@ export default function BannersPage() {
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadBannerImage(file);
+    e.target.value = "";
+  }
+
+  async function uploadBannerImage(file: File) {
     setUploading(true);
     setError("");
     const formData = new FormData();
@@ -132,9 +137,14 @@ export default function BannersPage() {
       setError("Upload failed");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
+
+  const bannerDrop = useFileDrop({
+    onFiles: (files) => uploadBannerImage(files[0]),
+    disabled: uploading,
+    onReject: setError,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -352,14 +362,29 @@ export default function BannersPage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-colors">
+                  <label
+                    {...bannerDrop.dropProps}
+                    className={`flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      bannerDrop.isDragging
+                        ? DROP_ACTIVE_CLASS
+                        : "border-zinc-200 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-blue-500/5"
+                    }`}
+                  >
                     {uploading ? (
                       <Loader2 className="h-6 w-6 text-blue-500 animate-spin mb-2" />
                     ) : (
-                      <ImagePlus className="h-6 w-6 text-zinc-400 mb-2" />
+                      <ImagePlus
+                        className={`h-6 w-6 mb-2 ${
+                          bannerDrop.isDragging ? "text-blue-500" : "text-zinc-400"
+                        }`}
+                      />
                     )}
-                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                      {uploading ? "Uploading…" : "Click to upload banner image"}
+                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 pointer-events-none">
+                      {uploading
+                        ? "Uploading…"
+                        : bannerDrop.isDragging
+                          ? "Drop to upload"
+                          : "Drag a banner image here, or click to browse"}
                     </p>
                     <input
                       type="file"

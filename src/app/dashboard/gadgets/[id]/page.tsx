@@ -32,6 +32,9 @@ export default async function EditGadgetPage({
           published: product.published,
           categorySlug: product.category.slug,
           specs: product.specs as Record<string, any>,
+          verdictScore: product.verdictScore,
+          verdictSummary: product.verdictSummary,
+          verdictSubScores: product.verdictSubScores,
         }}
       />
     </div>

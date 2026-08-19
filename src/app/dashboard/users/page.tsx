@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Users as UsersIcon, Search, ChevronDown, CheckCircle2, Plus } from "lucide-react";
 import Modal from "@/components/dashboard/Modal";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
+import { useFileDrop } from "@/components/dashboard/useFileDrop";
 
 type Role = "ADMIN" | "EDITOR";
 type ActionType = "added" | "updated" | "deleted" | null;
@@ -115,7 +116,11 @@ export default function UsersPage() {
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadAvatar(file);
+    e.target.value = "";
+  }
+
+  async function uploadAvatar(file: File) {
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -133,6 +138,12 @@ export default function UsersPage() {
       setUploading(false);
     }
   }
+
+  const avatarDrop = useFileDrop({
+    onFiles: (files) => uploadAvatar(files[0]),
+    disabled: uploading,
+    onReject: setError,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -443,7 +454,15 @@ export default function UsersPage() {
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Profile photo</label>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <div
+                      {...avatarDrop.dropProps}
+                      title="Drop an image here to set the photo"
+                      className={`w-16 h-16 rounded-full overflow-hidden bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0 transition-all ${
+                        avatarDrop.isDragging
+                          ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-zinc-900"
+                          : ""
+                      }`}
+                    >
                       {form.image ? (
                         <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
                       ) : (

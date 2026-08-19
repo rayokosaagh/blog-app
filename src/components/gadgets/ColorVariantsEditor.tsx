@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pipette, Plus, X, ImagePlus, Loader2, GripVertical } from "lucide-react";
 import type { ProductColor } from "@/lib/gadgets/colors";
 import { normalizeHex } from "@/lib/gadgets/colors";
+import { useFileDrop, DROP_ACTIVE_CLASS } from "@/components/dashboard/useFileDrop";
 
 interface Props {
   value: ProductColor[];
@@ -87,7 +88,8 @@ export default function ColorVariantsEditor({ value, onChange, onBusyChange, onE
     <div className="space-y-3">
       <p className="text-xs text-zinc-400 dark:text-zinc-500 -mt-1">
         Color variants shown as swatches on the product page. Add a photo of the device in each
-        color — it previews when a shopper hovers the swatch.
+        color — it previews when a shopper hovers the swatch. Drop an image anywhere on a row to
+        attach it to that color.
       </p>
 
       {value.length > 0 && (
@@ -106,6 +108,7 @@ export default function ColorVariantsEditor({ value, onChange, onBusyChange, onE
               onMove={move}
               onPick={pickWithEyeDropper}
               onUpload={uploadImage}
+              onReject={onError}
             />
           ))}
         </div>
@@ -135,6 +138,7 @@ function ColorRow({
   onMove,
   onPick,
   onUpload,
+  onReject,
 }: {
   color: ProductColor;
   idx: number;
@@ -147,11 +151,32 @@ function ColorRow({
   onMove: (idx: number, dir: -1 | 1) => void;
   onPick: (idx: number) => void;
   onUpload: (idx: number, file: File) => void;
+  onReject?: (msg: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // The 40px thumbnail is far too small to aim a dragged file at, so the whole
+  // row accepts the drop and routes it to this color's image.
+  const drop = useFileDrop({
+    onFiles: (files) => onUpload(idx, files[0]),
+    disabled: uploading,
+    onReject,
+  });
+
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 p-3">
+    <div
+      {...drop.dropProps}
+      className={`relative flex flex-wrap items-center gap-3 rounded-xl ring-1 p-3 transition-colors ${
+        drop.isDragging
+          ? DROP_ACTIVE_CLASS
+          : "ring-zinc-200/70 dark:ring-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30"
+      }`}
+    >
+      {drop.isDragging && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-blue-500/80 text-xs font-semibold text-white pointer-events-none">
+          Drop photo for {color.name?.trim() || "this color"}
+        </div>
+      )}
       {/* Reorder handle */}
       <div className="flex flex-col text-zinc-300 dark:text-zinc-600">
         <button

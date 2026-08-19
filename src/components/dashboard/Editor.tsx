@@ -1,6 +1,7 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, useEditorState, EditorContent } from "@tiptap/react";
+import { useFileDrop } from "@/components/dashboard/useFileDrop";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -33,6 +34,7 @@ import {
   Italic,
   Underline as UnderlineIcon,
   Strikethrough,
+  Heading1,
   Heading2,
   Heading3,
   AlignLeft,
@@ -140,6 +142,10 @@ function textOf(html: string): string {
 export default function Editor({ content, onChange }: EditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [bodyUploading, setBodyUploading] = useState(false);
+  // Where the pointer was when the files were released, so a dropped image is
+  // inserted there instead of at the caret. Captured before the await.
+  const dropPosRef = useRef<number | null>(null);
   const youtubeInputRef = useRef<HTMLInputElement>(null);
 
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
@@ -169,7 +175,7 @@ export default function Editor({ content, onChange }: EditorProps) {
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: "text-blue-600 underline cursor-pointer" },
+        HTMLAttributes: { class: "text-blue-600 dark:text-blue-400 underline cursor-pointer" },
       }),
       Youtube.configure({
         controls: true,
@@ -182,10 +188,10 @@ export default function Editor({ content, onChange }: EditorProps) {
       }),
       TableRow,
       TableHeader.configure({
-        HTMLAttributes: { class: "bg-gray-100 font-medium border border-gray-300 px-4 py-3 text-left" },
+        HTMLAttributes: { class: "bg-gray-100 dark:bg-zinc-800 font-medium border border-gray-300 dark:border-zinc-700 px-4 py-3 text-left" },
       }),
       TableCell.configure({
-        HTMLAttributes: { class: "border border-gray-300 px-4 py-3 align-top" },
+        HTMLAttributes: { class: "border border-gray-300 dark:border-zinc-700 px-4 py-3 align-top" },
       }),
     ],
     content,
@@ -195,7 +201,9 @@ export default function Editor({ content, onChange }: EditorProps) {
     editorProps: {
       attributes: {
         class:
-          "min-h-[400px] px-8 py-6 focus:outline-none prose prose-lg max-w-none text-gray-900 " +
+          // dark:prose-invert + explicit ink: the surface goes zinc-900 in
+          // dark mode and text-gray-900 alone rendered black-on-black.
+          "min-h-[400px] px-8 py-6 focus:outline-none prose prose-lg max-w-none text-gray-900 dark:prose-invert dark:text-zinc-100 " +
           // Fixed List Formatting
           "[&_ul]:list-disc [&_ol]:list-decimal " +
           "[&_li]:ml-6 [&_li]:pl-2 [&_li_p]:my-0 " +
@@ -204,8 +212,8 @@ export default function Editor({ content, onChange }: EditorProps) {
           "prose-ul:ml-0 prose-ol:ml-0 " +
           // Table Formatting
           "prose-table:w-full prose-table:border-collapse " +
-          "prose-th:border prose-th:border-gray-300 prose-td:border prose-td:border-gray-300 " +
-          "prose-th:bg-gray-100 prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3",
+          "prose-th:border prose-th:border-gray-300 prose-td:border prose-td:border-gray-300 dark:prose-th:border-zinc-700 dark:prose-td:border-zinc-700 " +
+          "prose-th:bg-gray-100 dark:prose-th:bg-zinc-800 prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3",
       },
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items;
@@ -227,6 +235,36 @@ export default function Editor({ content, onChange }: EditorProps) {
         return false;
       },
     },
+  });
+
+  // Toolbar state. Tiptap v3's useEditor does NOT re-render the component on
+  // every transaction (shouldRerenderOnTransaction defaults to false), so
+  // reading editor.isActive(...) straight in JSX only refreshed when something
+  // else happened to re-render — move the caret into a heading and the H1
+  // button stayed unlit. useEditorState subscribes to transactions and
+  // re-renders exactly when one of these flags changes.
+  const ui = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      bold: !!e?.isActive("bold"),
+      italic: !!e?.isActive("italic"),
+      underline: !!e?.isActive("underline"),
+      strike: !!e?.isActive("strike"),
+      h1: !!e?.isActive("heading", { level: 1 }),
+      h2: !!e?.isActive("heading", { level: 2 }),
+      h3: !!e?.isActive("heading", { level: 3 }),
+      alignLeft: !!e?.isActive({ textAlign: "left" }),
+      alignCenter: !!e?.isActive({ textAlign: "center" }),
+      alignRight: !!e?.isActive({ textAlign: "right" }),
+      bulletList: !!e?.isActive("bulletList"),
+      orderedList: !!e?.isActive("orderedList"),
+      blockquote: !!e?.isActive("blockquote"),
+      codeBlock: !!e?.isActive("codeBlock"),
+      link: !!e?.isActive("link"),
+      selectionEmpty: e ? e.state.selection.empty : true,
+      canUndo: !!e?.can().undo(),
+      canRedo: !!e?.can().redo(),
+    }),
   });
 
   // Escape-to-close, focus the input, and lock background scroll while the modal is open
@@ -268,6 +306,26 @@ export default function Editor({ content, onChange }: EditorProps) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [showBlockMenu]);
+
+  // Declared above the bail-out below: hooks must run on every render. The
+  // handlers it references are function declarations, so they are hoisted.
+  const bodyDrop = useFileDrop({
+    onFiles: handleBodyDrop,
+    disabled: bodyUploading,
+    multiple: true,
+    onReject: (msg) => alert(msg),
+  });
+
+  // Record where the pointer was before the shared handler consumes the event,
+  // so the image lands at the drop point rather than at the caret.
+  const bodyDropProps = {
+    ...bodyDrop.dropProps,
+    onDrop: (e: React.DragEvent) => {
+      const hit = editor?.view.posAtCoords({ left: e.clientX, top: e.clientY });
+      dropPosRef.current = hit?.pos ?? null;
+      bodyDrop.dropProps.onDrop(e);
+    },
+  };
 
   if (!editor) return null;
 
@@ -364,11 +422,35 @@ export default function Editor({ content, onChange }: EditorProps) {
     editor?.chain().focus().unsetLink().run();
   }
 
+  /**
+   * Files dropped onto the document body. One image is inserted inline; several
+   * become a [gallery] block, matching what the two toolbar buttons produce.
+   */
+  async function handleBodyDrop(files: File[]) {
+    const at = dropPosRef.current;
+    dropPosRef.current = null;
+    setBodyUploading(true);
+    try {
+      if (files.length === 1) await uploadInlineImage(files[0], at ?? undefined);
+      else await insertGallery(files);
+    } finally {
+      setBodyUploading(false);
+    }
+  }
+
   // Upload image
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadInlineImage(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
+  /**
+   * Uploads one image and drops it into the document. `at` is a ProseMirror
+   * position — set when the image arrived by drag, so it lands where it was
+   * dropped rather than wherever the caret happened to be.
+   */
+  async function uploadInlineImage(file: File, at?: number) {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -385,19 +467,23 @@ export default function Editor({ content, onChange }: EditorProps) {
         return;
       }
 
-      editor?.chain().focus().setImage({ src: data.url }).run();
+      const chain = editor?.chain().focus();
+      if (at != null) chain?.setTextSelection(at);
+      chain?.setImage({ src: data.url }).run();
     } catch (error) {
       alert("Image upload failed");
     }
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   // Upload multiple images and insert a [gallery] shortcode block. The block is
   // rendered as a real carousel on the published post by parseGalleryBlock +
   // <GalleryMount />. Inserted as plain text so URLs aren't auto-linked.
   async function handleGalleryInsert(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+    await insertGallery(Array.from(e.target.files ?? []));
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
+  }
+
+  async function insertGallery(files: File[]) {
     if (files.length === 0) return;
 
     setGalleryUploading(true);
@@ -518,65 +604,71 @@ export default function Editor({ content, onChange }: EditorProps) {
             overflow ancestor silently breaks `position: sticky`. */}
         <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-gray-200 bg-gray-50/95 backdrop-blur-sm sticky top-0 z-30 rounded-t-xl">
           {/* Text formatting */}
-          <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={ui.bold} title="Bold">
             <Bold className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Italic">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={ui.italic} title="Italic">
             <Italic className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Underline">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={ui.underline} title="Underline">
             <UnderlineIcon className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive("strike")} title="Strikethrough">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={ui.strike} title="Strikethrough">
             <Strikethrough className={iconClass} />
           </ToolbarButton>
 
           <Divider />
 
-          {/* Headings — H2 is deliberately the top level. The post title is the
-              page's only <h1>; a body H1 competes with it for the document
-              outline, and h2 is already what the corpus uses for sections (88
-              uses vs 29 h1). Posts that already used H1 are demoted at render
-              by parseContentAndGenerateToc in blog/[slug]/page.tsx.
-              No H4 button: .rich-text-render h4 is an uppercase kicker pill,
-              not a heading level. */}
-          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Heading">
+          {/* Headings, as the article renders them (see .rich-text-render in
+              blog/[slug]/page.tsx):
+                H1  numbered section kicker: "[01] OVERVIEW ────". A short
+                    label. Never a real <h1> on the page: the post title owns
+                    that, so it ships as h2[data-was-h1] — the attribute is
+                    what selects the kicker style (parseContentAndGenerateToc
+                    does the demotion).
+                H2  big display title, usually right under a kicker.
+                H3  sub-heading with a "1.2" sub-number.
+              No H4 button: h4 is a quiet small-caps label, not a level. */}
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={ui.h1} title="Section kicker (numbered label)">
+            <Heading1 className={iconClass} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={ui.h2} title="Title (big display heading)">
             <Heading2 className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Subheading">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={ui.h3} title="Sub-heading">
             <Heading3 className={iconClass} />
           </ToolbarButton>
 
           <Divider />
 
           {/* Alignment */}
-          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Align left">
+          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("left").run()} active={ui.alignLeft} title="Align left">
             <AlignLeft className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Align center">
+          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("center").run()} active={ui.alignCenter} title="Align center">
             <AlignCenter className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Align right">
+          <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("right").run()} active={ui.alignRight} title="Align right">
             <AlignRight className={iconClass} />
           </ToolbarButton>
 
           <Divider />
 
           {/* Lists */}
-          <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Bullet list">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={ui.bulletList} title="Bullet list">
             <List className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Numbered list">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={ui.orderedList} title="Numbered list">
             <ListOrdered className={iconClass} />
           </ToolbarButton>
 
           <Divider />
 
           {/* Blocks */}
-          <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Quote">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={ui.blockquote} title="Quote">
             <Quote className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive("codeBlock")} title="Code block">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={ui.codeBlock} title="Code block">
             <Code className={iconClass} />
           </ToolbarButton>
           <ToolbarButton
@@ -614,7 +706,7 @@ export default function Editor({ content, onChange }: EditorProps) {
                 className="absolute left-0 top-full z-40 mt-1 w-72 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
               >
                 <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                  {editor.state.selection.empty ? "Insert block" : "Wrap selection as"}
+                  {ui.selectionEmpty ? "Insert block" : "Wrap selection as"}
                 </p>
                 {BLOCK_MENU.map((kind) => {
                   const { label, hint, icon: Icon } = BLOCKS[kind];
@@ -641,10 +733,10 @@ export default function Editor({ content, onChange }: EditorProps) {
           <Divider />
 
           {/* Link */}
-          <ToolbarButton onClick={addLink} active={editor.isActive("link")} title="Add link">
+          <ToolbarButton onClick={addLink} active={ui.link} title="Add link">
             <LinkIcon className={iconClass} />
           </ToolbarButton>
-          {editor.isActive("link") && (
+          {ui.link && (
             <ToolbarButton onClick={removeLink} title="Remove link">
               <Unlink className={iconClass} />
             </ToolbarButton>
@@ -678,17 +770,29 @@ export default function Editor({ content, onChange }: EditorProps) {
           <Divider />
 
           {/* History */}
-          <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo" disabled={!editor.can().undo()}>
+          <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo" disabled={!ui.canUndo}>
             <Undo2 className={iconClass} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo" disabled={!editor.can().redo()}>
+          <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo" disabled={!ui.canRedo}>
             <Redo2 className={iconClass} />
           </ToolbarButton>
         </div>
 
         {/* Editor Content */}
-        <div className="rounded-b-lg overflow-hidden">
+        <div
+          {...bodyDropProps}
+          className={`relative rounded-b-lg overflow-hidden transition-colors ${
+            bodyDrop.isDragging ? "ring-2 ring-inset ring-blue-500/50 bg-blue-50/40 dark:bg-blue-500/5" : ""
+          }`}
+        >
           <EditorContent editor={editor} />
+          {bodyDrop.isDragging && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-blue-500 px-3 py-1.5 text-center text-xs font-semibold text-white">
+              {bodyUploading
+                ? "Uploading…"
+                : "Drop to insert — several at once become a gallery"}
+            </div>
+          )}
         </div>
       </div>
 
