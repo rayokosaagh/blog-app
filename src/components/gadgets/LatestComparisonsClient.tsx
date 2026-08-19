@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+import SectionHeader from "@/components/ui/SectionHeader";
+import { Scale } from "lucide-react";
 
 interface ComparisonProduct {
   slug: string;
@@ -110,7 +112,7 @@ function ComparisonCard({
 
         {/* self-start: as a flex child this would otherwise stretch to the
             full card width instead of hugging its label. */}
-        <span className="tag-pill mb-4 inline-flex self-start bg-accent text-on-accent">
+        <span className="tag-pill tag-pill-quiet mb-4 inline-flex self-start">
           {item.category.name}
         </span>
 
@@ -225,24 +227,13 @@ export default function LatestComparisonsClient({
 
   return (
     <section className="w-full">
-      <div className="mb-6 flex items-center gap-3 pb-4 border-b-2 border-border-heavy">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-accent shadow-brutal-sm">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-on-accent">
-            <path d="M8 7l4-4 4 4M8 17l4 4 4-4M12 3v18" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.14em] text-accent">
-            {/* Static square indicator — a looping ping animation is exactly
-                the kind of continuous idle-loop motion the system removes. */}
-            <span className="inline-flex h-1.5 w-1.5 rounded-none bg-accent" />
-            Head-to-Head
-          </span>
-          <h2 className="text-lg font-extrabold leading-tight text-foreground">
-            Latest Comparisons
-          </h2>
-        </div>
-      </div>
+      <SectionHeader
+        Icon={Scale}
+        eyebrow="Head-to-head"
+        title="Latest Comparisons"
+        subtitle="Two gadgets, every spec side by side"
+        action={{ href: "/compare", label: "Compare gadgets" }}
+      />
 
       {/* Mobile: compact row list inside a single card */}
       <motion.div
@@ -263,7 +254,11 @@ export default function LatestComparisonsClient({
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-60px" }}
-        className="hidden sm:grid grid-cols-2 gap-6 lg:grid-cols-4"
+        // gap-3 sm:gap-4 (not gap-6) so this 4-up grid lands on the same
+        // column edges as the Top Stories tiles and the Latest Posts bento
+        // above it — at gap-6 its columns sat 2-6px off theirs all the way
+        // across, which read as the page being slightly out of true.
+        className="hidden sm:grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
       >
         {comparisons.map((c) => (
           <ComparisonCard key={c.id} item={c} reduceMotion={reduceMotion} />

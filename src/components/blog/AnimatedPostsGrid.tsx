@@ -9,6 +9,8 @@ import type { TagColorMode } from "@/lib/sanitizeSvg";
 import { sortTagsByOrder } from "@/lib/sortTags";
 // remove the local `function Underline(...)` block entirely, add:
 import Underline from "@/components/ui/Underline";
+import CategoryBadge from "./CategoryBadge";
+import { getPostCategory } from "@/lib/blog/categories";
 
 interface PostItem {
   id: string;
@@ -18,6 +20,8 @@ interface PostItem {
   featuredImage: string | null;
   createdAt: Date;
   tagOrder: string[];
+  /** Post.category enum value; missing/unknown falls back to the default label. */
+  category?: string | null;
   author: { name: string | null; image: string | null };
   tags: { id: string; slug: string; name: string; icon: string; colorMode?: TagColorMode | null; color?: string | null }[];
 }
@@ -204,6 +208,8 @@ export default function AnimatedPostsGrid({
                     <span className="bg-accent-2 text-on-accent-2 border-2 border-border-heavy px-2 py-0.5 font-extrabold uppercase tracking-wide">
                       Featured
                     </span>
+                    {/* asSpan: we're already inside the card's <Link>. */}
+                    <CategoryBadge category={lead.category} size="sm" asSpan />
                     <time className="text-muted-foreground">{formatDate(lead.createdAt)}</time>
                   </div>
                   <h2 className="text-2xl font-extrabold text-foreground leading-snug mb-3">
@@ -283,6 +289,10 @@ export default function AnimatedPostsGrid({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-muted-foreground mb-1">
+                          <span className="font-extrabold uppercase tracking-wide text-accent">
+                            {getPostCategory(post.category).singular}
+                          </span>
+                          <span className="mx-1.5">·</span>
                           {formatDate(post.createdAt)}
                         </p>
                         <p className="text-sm font-bold text-foreground leading-snug line-clamp-2">
@@ -314,6 +324,7 @@ export default function AnimatedPostsGrid({
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <div className="flex items-center gap-2 mb-2.5 text-xs text-muted-foreground">
+                          <CategoryBadge category={post.category} size="sm" asSpan />
                           <time>{formatDate(post.createdAt)}</time>
                           {tags[0] && (
                             <>
@@ -363,6 +374,10 @@ export default function AnimatedPostsGrid({
                           <Underline>{post.title}</Underline>
                         </p>
                         <p className="text-xs sm:text-sm text-muted-foreground">
+                          <span className="font-extrabold uppercase tracking-wide text-accent">
+                            {getPostCategory(post.category).singular}
+                          </span>
+                          <span className="mx-1.5">·</span>
                           {post.author.name}
                           <span className="mx-1.5">·</span>
                           <span className="text-accent">

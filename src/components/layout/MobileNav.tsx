@@ -115,7 +115,7 @@ export default function MobileNav({ toc }: MobileNavProps) {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/50 via-white/5 to-transparent opacity-80 dark:from-white/10 dark:via-white/0" />
 
           <div className="relative flex items-center justify-between px-5 py-4 border-b border-white/40 dark:border-white/10">
-            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <h2 className="h-eyebrow text-gray-500 dark:text-gray-400">
               In this article
             </h2>
             <button

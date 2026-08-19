@@ -63,15 +63,49 @@ rounded in modern theme until it is added to that selector**, which is how the
 article footer ended up hard-cornered next to rounded cards. Prefer the
 `surface-*` utilities over raw brutalist atoms in new code.
 
+**Section headers use `<SectionHeader>`** (`src/components/ui/SectionHeader.tsx`)
+— icon chip · eyebrow · title · subtitle · optional "see all" pill — and
+nothing else. Every homepage section (Top Stories, Latest Posts, the two
+Newsroom columns, Explore Gadgets, Editor's Verdicts, Latest Comparisons) is
+that component; don't hand-roll a header with its own `text-3xl`/font. Its
+type comes from the heading-role tokens (`.h-section`, `.h-eyebrow`,
+`src/lib/typography.ts`), which the admin retunes per theme in Dashboard → UI
+settings → Heading typography — a Tailwind size class on a heading would
+silently opt it out of that. `as` sets the outline level only: top-level
+sections are `h2`, columns/rails inside one are `h3` (`h-section h-section--sm`
+for rail card titles), card titles `h-card`.
+
 ## Data model notes
 
+- **Posts have one `category` (what kind of article) and many `tags` (what
+  it's about).** `Post.category` is the `PostCategory` enum (NEWS, REVIEW,
+  VERSUS, DEAL, GUIDE); the display registry is `src/lib/blog/categories.ts`
+  — slug, label, icon, description — and it is the *only* place those live.
+  Adding a category = enum value in `schema.prisma` + an entry there; the
+  landing page (`src/app/[category]`), its RSS feed
+  (`src/app/[category]/rss.xml`), the navbar, the `/blog` tabs, sitemap,
+  dashboard select and card badges all read the registry. Category slugs are
+  **root routes** (`/news`, `/reviews`, `/versus`, `/deals`, `/guides`) — a
+  new `src/app/<segment>` must not collide with `POST_CATEGORY_SLUGS`. The
+  registry imports only *types* from the generated client on purpose (it's
+  used by Client Components). `/blog` and the category pages share
+  `BlogListing`, exactly like `/products` and `/tag/[slug]` share
+  `ProductListing`; filters/sort/pager take a `basePath` so they stay on the
+  category URL. `tools/backfill-post-categories.cjs` is the title-heuristic
+  backfill used for the initial split — safe to re-run, it only touches
+  posts still on NEWS.
 - `Post.views` is incremented by `/api/posts/[id]/view` and **indexed** — it is
   the only engagement signal with real spread. Comments, ratings and bookmarks
   are all ~0 across the corpus, so "most discussed"/"top rated" features will
   render arbitrary results. Rank by `views`.
 - The homepage dedupes its two feeds: `topStories` (4 by views) is fetched in
   `src/app/page.tsx` and its ids are filtered out of `recentPosts`, which is why
-  that query takes 11 and slices to 7.
+  that query takes 11 and slices to 7. The `Newsroom` section (news river +
+  reviews rail, `src/components/feeds/Newsroom.tsx`) gets both id lists: it
+  never repeats a top story, and skips the mosaic's posts only when ≥ 4 news
+  posts remain — on a small corpus it accepts the overlap rather than render
+  a two-item river. Its reviews rail is deliberately not deduped (it's the
+  "our reviews, with scores" lens, not a feed).
 - `hasActivePoll` in `page.tsx` mirrors the `isActive` + `endsAt` condition in
   `/api/polls/active`. It controls whether the poll column is laid out at all —
   `<Poll />` returns null with no polls, but its grid track did not, leaving a
@@ -82,6 +116,13 @@ article footer ended up hard-cornered next to rounded cards. Prefer the
   directly — it requires **both** a written `verdictSummary` and a score before
   anything renders, so a bare score publishes nothing. A null score means "not
   a scored review", never zero, and sub-scores average into an absent overall.
+- `Product.verdict*` is the same three columns with the same rules, written in
+  the gadget dashboard via the shared `VerdictEditor`. It feeds the homepage
+  "Editor's verdicts" scoreboard (`getScoredProducts` in
+  `src/components/gadgets/VerdictScoreboard.tsx`), the `VerdictCard` on
+  `/product/[slug]`, and a nested `review` in that page's Product JSON-LD. The
+  scoreboard hides itself until at least one published product passes
+  `readVerdict`. Never fill it from specs — see "Spec values are free text".
 - `Comparison.verdictA/verdictB` is the editor-written summary for one curated
   pair, shown above the spec table on /compare. `/compare` allows any 2–3
   products, so most pairings have none and the card renders nothing —
@@ -164,5 +205,11 @@ yourself — a `next build` will disrupt a running `next dev`, since they share
 - Debug `console.log`s left in `src/app/blog/[slug]/page.tsx`.
 - Article-body images have no `alt` — the editor should require it.
 - No default OG image; only posts and products have one.
-- Homepage above-the-fold is entirely the promo carousel; the popup
-  interstitial fires at ~22s (Google penalises intrusive interstitials).
+- Homepage above-the-fold: `HeroBanner` (copy over the banner artwork, a
+  live-count "Top Categories" glass panel from `CATEGORY_LIST` + gadget counts,
+  a proof line built only from real numbers) beside `AdCarousel` (every active
+  `Ad`, cycling every 5s; pauses on hover/focus, no autoplay under
+  reduced-motion), then `TopStoriesMosaic` (rank numerals, category · date,
+  score badge via `readVerdict`) and the static `ValueProps` band. The old
+  `HeroSpotlight` / `TopStoryTiles` are no longer mounted. The popup
+  interstitial still fires at ~22s (Google penalises intrusive interstitials).

@@ -120,8 +120,8 @@ export default async function ProductListing({
       >
         <p className="max-w-3xl text-sm font-medium leading-relaxed text-muted-foreground">
           {tag
-            ? `Browse ${tag.name} gadgets — filter by brand, price, processor and more, or use a quick pick below.`
-            : "Explore, filter and compare the latest gadgets — smartphones, laptops, smartwatches and earbuds. Narrow it down by brand, price, processor and more, or jump in with a quick pick."}
+            ? `Browse ${tag.name} gadgets — filter by brand, processor and more, or use a quick pick below.`
+            : "Explore, filter and compare the latest gadgets — smartphones, laptops, smartwatches and earbuds. Narrow it down by brand, processor and more, or jump in with a quick pick."}
         </p>
 
         {tag && (

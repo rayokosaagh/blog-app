@@ -105,11 +105,11 @@ interface ProductHeroProps {
   colors?: ProductColor[];
   /** Bullet list under the brand — release date, storage, OS, colors, dimensions, etc. */
   meta?: HeroMetaItem[];
-  /** Extra highlight blocks (e.g. views/fans once you track them). Price is added automatically. */
+  /** Extra highlight blocks (e.g. views/fans once you track them). */
   stats?: HeroStat[];
   /** The 4-across quick-glance strip — screen size, camera, RAM, battery. */
   quickSpecs?: HeroQuickSpec[];
-  /** Bottom tab row — Review / Opinions / Compare / Pictures / Prices. */
+  /** Bottom tab row — Review / Opinions / Compare / Pictures. */
   tabs?: HeroTab[];
 }
 
@@ -122,17 +122,9 @@ export default function ProductHero({
   quickSpecs = [],
   tabs = [],
 }: ProductHeroProps) {
-  const priceStat: HeroStat[] =
-    product.priceFrom != null
-      ? [
-          {
-            icon: "dollarSign",
-            value: `${product.currency} ${product.priceFrom.toLocaleString()}`,
-            label: "Starting At",
-          },
-        ]
-      : [];
-  const allStats = [...priceStat, ...stats];
+  // No price stat: pricing is not surfaced anywhere public yet.
+  // product.priceFrom / currency stay on the model for a future feature.
+  const allStats = stats;
 
   // Main image + any extra gallery images, primary first, de-duplicated.
   const galleryImages = Array.from(

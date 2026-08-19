@@ -137,11 +137,12 @@ Standard clickable content card (e.g. product tile):
     {/* image, object-contain, group-hover:scale-105 for subtle zoom */}
   </div>
   <div className="p-2.5">
-    {/* eyebrow row: brand (muted) + category (accent), both uppercase/extrabold/tiny */}
+    {/* eyebrow row: brand (muted) + category (quiet tier, see §7), both
+        uppercase/extrabold/tiny. No price row — Product.priceFrom exists on
+        the model but nothing public renders it yet. */}
     <h4 className="text-xl font-extrabold line-clamp-2 leading-snug">
       <Underline>{name}</Underline>
     </h4>
-    {/* price: font-bold text-accent */}
   </div>
 </Link>
 ```
@@ -152,6 +153,11 @@ Standard clickable content card (e.g. product tile):
 
 - **Photo overlays** (captions/labels on top of arbitrary images): use `--photo-overlay` / `--on-photo`, never `--border-heavy` derivatives — these must look identical regardless of site theme.
 - **Bookmark UI**: use `--accent-bookmark` / `--on-accent-bookmark`, not `--accent` — kept separate so bookmark state can have its own visual identity independent of the primary accent.
+- **Badges come in two tiers.** They previously shared one filled-accent look, so a product's category shouted as loudly as "Featured" and nothing ranked.
+  - *Promo / status* — `Featured`, `Newly released`, `Most read`, `#2`, sale flags. Keep the filled `bg-accent` / `bg-accent-2` treatment; these should be the loudest thing on a card.
+  - *Taxonomy* — a post's tag, a product's category, a comparison's category. Off a photo use `.tag-pill .tag-pill-quiet` (accent hue, tint background). On a photo use `bg-photo-overlay/70 text-on-photo`, the same caption-plate treatment as §7's photo overlays.
+
+  Do not pick a badge colour by list index — the bento feed used `index % 2`, which made the colour look meaningful when it encoded nothing.
 
 ---
 

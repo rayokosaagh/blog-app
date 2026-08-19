@@ -116,11 +116,6 @@ export default function ProductsByCategoryTabs({
                   <h4 className="text-base font-extrabold text-foreground mt-0.5 line-clamp-2 break-words">
                     <Underline>{p.name}</Underline>
                   </h4>
-                  {p.priceFrom != null && (
-                    <p className="text-[11px] font-bold text-accent mt-1">
-                      {p.currency} {p.priceFrom.toLocaleString()}
-                    </p>
-                  )}
                 </div>
               </Link>
             ))

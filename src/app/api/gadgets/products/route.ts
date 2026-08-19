@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCategoryDef } from "@/lib/gadgets/categories";
 import { parseColors } from "@/lib/gadgets/colors";
+import { verdictFieldsFromBody } from "@/lib/verdict";
 import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
         published: published ?? true,
         categoryId: categoryRow.id,
         specs: specs ?? {},
+        ...verdictFieldsFromBody(body),
         ...(Array.isArray(tagIds) && tagIds.length > 0 && {
           tags: { connect: tagIds.map((id: string) => ({ id })) },
         }),

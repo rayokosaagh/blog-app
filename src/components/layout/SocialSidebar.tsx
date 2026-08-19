@@ -31,7 +31,7 @@ export default async function SocialSidebar({ compact = false }: { compact?: boo
           "share" / "community" instead. */}
       <div className="flex items-center gap-2">
         <AtSign size={22} strokeWidth={2.75} className="text-accent" />
-        <h2 className="text-xl font-extrabold text-foreground tracking-tight">Socials</h2>
+        <h3 className="h-section h-section--sm text-foreground">Socials</h3>
       </div>
 
       {/* Internal divider — thin, not the heavy structural border */}

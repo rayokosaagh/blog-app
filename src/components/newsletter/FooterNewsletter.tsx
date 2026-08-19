@@ -16,7 +16,15 @@ export default function FooterNewsletter() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!agreed) return;
+    // The terms box used to gate the button via `disabled`, which rendered
+    // the CTA at 50% opacity on first paint — it read as a broken/disabled
+    // form rather than a step the reader had not done yet. The button now
+    // always looks live and explains what is missing when clicked.
+    if (!agreed) {
+      setStatus("error");
+      setMessage("Please accept the terms & conditions to subscribe.");
+      return;
+    }
     setStatus("loading");
     setMessage(null);
 
@@ -72,7 +80,7 @@ export default function FooterNewsletter() {
             placeholder="you@example.com"
             disabled={status === "loading"}
             aria-label="Email address"
-            className="w-full border-0 border-b-2 border-border-heavy bg-transparent pb-2 text-base text-foreground placeholder-muted-foreground outline-none transition-colors duration-100 focus:border-accent disabled:opacity-60"
+            className="w-full rounded-none border-2 border-border-heavy bg-background px-4 py-3 text-base text-foreground placeholder-muted-foreground outline-none transition-colors duration-100 focus:border-accent disabled:opacity-60"
           />
 
           <label className="mt-4 flex cursor-pointer items-center gap-2.5 text-sm text-muted-foreground">
@@ -94,7 +102,7 @@ export default function FooterNewsletter() {
 
           <button
             type="submit"
-            disabled={status === "loading" || !agreed}
+            disabled={status === "loading"}
             className="mt-6 rounded-none border-2 border-border-heavy bg-accent px-8 py-3 text-sm font-bold uppercase tracking-wide text-on-accent shadow-brutal-sm brutal-press disabled:cursor-not-allowed disabled:opacity-50"
           >
             {status === "loading" ? "Subscribing…" : "Subscribe"}

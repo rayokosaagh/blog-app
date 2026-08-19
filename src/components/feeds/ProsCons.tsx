@@ -148,26 +148,32 @@ export function parseProsConsBlock(html: string): string {
 const PROS_COLOR = "#22c55e";
 const CONS_COLOR = "#f43f5e";
 
-// Mirrors <ProsConsCard>'s tinted panel so the swap at hydration is invisible:
-// same padding, same tint, same row rhythm, so nothing reflows.
+// Mirrors <ProsConsCard> so the swap at hydration is invisible: same token-
+// driven chrome (--border-width / --border-heavy / --radius / --shadow-md),
+// same header band, same row rhythm, so nothing reflows. Written out longhand
+// because this HTML is injected into `post.content` and can't use the
+// `surface-*` utility classes the React card gets. The tick and cross glyphs
+// are the one thing it can't reproduce (they're lucide icons), so it draws the
+// tinted chip they sit in and leaves it empty.
 function fallbackPanel(title: string, items: string[], color: string): string {
   if (items.length === 0) return "";
   const rows = items
     .map(
       (item) => `
-      <li style="display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;">
-        <span style="flex:none;width:9px;height:9px;margin-top:6px;background:${color};border-radius:var(--radius-pill,0);"></span>
-        <span style="font-size:14px;line-height:1.625;color:var(--foreground);">${escapeHtml(item)}</span>
+      <li style="display:flex;gap:12px;align-items:flex-start;margin:0 0 12px;">
+        <span style="flex:none;width:20px;height:20px;margin-top:3px;background:color-mix(in srgb, ${color} 16%, transparent);border-radius:var(--radius-pill,0);"></span>
+        <span style="font-size:15px;line-height:1.65;color:var(--foreground);">${escapeHtml(item)}</span>
       </li>`
     )
     .join("");
 
   return `
-    <div style="flex:1 1 240px;min-width:0;padding:20px;border-width:var(--border-width);border-style:solid;border-radius:var(--radius);border-color:color-mix(in srgb, ${color} 30%, transparent);background-color:color-mix(in srgb, ${color} 7%, transparent);">
-      <p style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:${color};margin:0 0 16px;">
-        <span style="display:inline-block;width:28px;height:28px;background:${color};border-radius:var(--radius-pill,0);"></span>${escapeHtml(title)}
-      </p>
-      <ul style="list-style:none;padding:0;margin:0;">${rows}</ul>
+    <div style="min-width:0;overflow:hidden;background-color:var(--card);border-width:var(--border-width);border-style:solid;border-color:var(--border-heavy);border-radius:var(--radius);box-shadow:var(--shadow-md);">
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 20px;background-color:color-mix(in srgb, ${color} 9%, transparent);border-bottom-width:var(--border-width);border-bottom-style:solid;border-bottom-color:color-mix(in srgb, ${color} 24%, transparent);">
+        <span style="flex:none;width:28px;height:28px;background:${color};border-radius:var(--radius-pill,0);"></span>
+        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:${color};">${escapeHtml(title)}</span>
+      </div>
+      <ul style="list-style:none;padding:16px 20px 4px;margin:0;">${rows}</ul>
     </div>`;
 }
 
@@ -181,7 +187,7 @@ function buildPlaceholder(pros: string[], cons: string[], index: number): string
   // chrome must live on the fallback below.
   return `
     <div class="pros-cons-placeholder not-prose" data-pros-cons-mount data-pros-cons-index="${index}" style="margin:2rem 0;">
-      <div class="pros-cons-fallback-card" style="display:flex;flex-wrap:wrap;gap:16px;">
+      <div class="pros-cons-fallback-card${pros.length > 0 && cons.length > 0 ? " pros-cons-fallback-split" : ""}">
         ${fallbackPanel("Pros", pros, PROS_COLOR)}
         ${fallbackPanel("Cons", cons, CONS_COLOR)}
       </div>

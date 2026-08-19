@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Blog — tech news, gadget reviews and spec comparisons",
     short_name: "Blog",
     description:
-      "Reviews, comparisons and news on the gadgets you care about — with prices for Nepal.",
+      "Reviews, comparisons and news on the gadgets you care about, for Nepal.",
     start_url: "/?source=pwa",
     scope: "/",
     display: "standalone",

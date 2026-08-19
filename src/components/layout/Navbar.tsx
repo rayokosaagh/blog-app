@@ -10,15 +10,17 @@ import SignOutButton from "@/components/layout/SignOutButton";
 import NavbarSearch from "@/components/layout/NavbarSearch";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ExploreMenu from "@/components/layout/ExploreMenu";
-import { Newspaper, Smartphone, Scale, Gauge, LogOut, X, Bookmark, User } from "lucide-react";
+import { Newspaper, Award, LayoutGrid, Smartphone, Scale, Gauge, LogOut, X, Bookmark, User } from "lucide-react";
 
-// "Blog" and "Gadgets" are the two things this site actually is — leading
-// with both, as equal-weight nouns, is what tells a first-time visitor
-// there are two separate experiences here instead of one blended feed.
-// "Compare" stays as a secondary tool link since it's a specific utility
-// (the multi-way spec comparison), not another top-level content type.
+// The two article categories with the most traffic get their own links, so a
+// first-time visitor sees "News" and "Reviews" and immediately knows what the
+// site publishes. "Blog" stays as the everything-listing (with tabs for the
+// remaining categories — Versus, Deals, Guides), then the gadget side:
+// "Gadgets" is the catalogue and "Compare" its specific utility.
 const NAV_LINKS = [
-  { href: "/blog", label: "Blog", authOnly: false, Icon: Newspaper },
+  { href: "/news", label: "News", authOnly: false, Icon: Newspaper },
+  { href: "/reviews", label: "Reviews", authOnly: false, Icon: Award },
+  { href: "/blog", label: "Blog", authOnly: false, Icon: LayoutGrid },
   { href: "/products", label: "Gadgets", authOnly: false, Icon: Smartphone },
   { href: "/compare", label: "Compare", authOnly: false, Icon: Scale },
   { href: "/dashboard", label: "Dashboard", authOnly: true, Icon: Gauge },
@@ -148,9 +150,20 @@ export default function Navbar() {
                   const active = isActiveLink(link.href);
                   const Icon = link.Icon;
                   return (
-                    <Link key={link.href} href={link.href} className={navLinkClass(active)}>
+                    // Icon-only between lg and xl. With News and Reviews added
+                    // the labelled row is ~275px wider, and at 1024px that
+                    // squeezed the search field down to its icon. Labels come
+                    // back at xl (1280px); the title/aria-label keep the
+                    // icon-only state discoverable and accessible.
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={navLinkClass(active)}
+                      title={link.label}
+                      aria-label={link.label}
+                    >
                       <Icon className="h-4 w-4" strokeWidth={2.25} />
-                      <span>{link.label}</span>
+                      <span className="hidden xl:inline">{link.label}</span>
                     </Link>
                   );
                 })}

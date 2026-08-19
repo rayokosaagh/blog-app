@@ -19,6 +19,8 @@ import type {
 import OwnershipWidget from "@/components/gadgets/product/OwnershipWidget";
 import ProductSpecNav from "@/components/gadgets/product/ProductSpecNav";
 import ProductSpecTable from "@/components/gadgets/product/ProductSpecTable";
+import VerdictCard from "@/components/blog/VerdictCard";
+import { readVerdict, VERDICT_MAX } from "@/lib/verdict";
 
 export const revalidate = 60;
 
@@ -40,7 +42,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   if (!product) return { title: "Product not found" };
 
   const title = `${product.name} — Full Specifications`;
-  const description = `${product.name} by ${product.brand} — detailed specifications, price and features.`;
+  const description = `${product.name} by ${product.brand} — detailed specifications and features.`;
   const url = `/product/${product.slug}`;
 
   return {
@@ -73,6 +75,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!categoryDef) notFound(); // category exists in DB but has no spec-group definition
 
   const specs = (product.specs as Record<string, unknown>) ?? {};
+  // Editorial verdict, if the product has been scored in the dashboard. Same
+  // gate as articles: needs both a bottom line and a score, or nothing shows.
+  const verdict = readVerdict(product);
 
   // ── Ownership widget data ──
   const session = await auth();
@@ -186,7 +191,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     name: product.name,
     brand: { "@type": "Brand", name: product.brand },
     url: `${APP_URL}/product/${product.slug}`,
-    description: `${product.name} by ${product.brand} — detailed specifications, price and features.`,
+    description: `${product.name} by ${product.brand} — detailed specifications and features.`,
     category: product.category.name,
     ...(product.image && {
       image: [product.image, ...product.images]
@@ -200,6 +205,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
         priceCurrency: product.currency,
         availability: "https://schema.org/InStock",
         url: `${APP_URL}/product/${product.slug}`,
+      },
+    }),
+    // Editorial verdict as a nested Review — the same score/summary the
+    // article page emits, so a scored product is eligible for a review
+    // snippet too. Only when readVerdict passes; a Review without a
+    // reviewBody or a rating is invalid and would taint the whole block.
+    ...(verdict && {
+      review: {
+        "@type": "Review",
+        author: { "@type": "Organization", name: "Blog" },
+        reviewBody: verdict.summary,
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: verdict.score,
+          bestRating: VERDICT_MAX,
+          worstRating: 0,
+        },
       },
     }),
   };
@@ -241,6 +263,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
             />
           </div>
         </div>
+
+        {/* Editorial verdict — above the spec tables rather than after them.
+            On an article the verdict is the payoff at the end; on a product
+            page the specs are reference material, and a reader who arrived
+            from the homepage scoreboard came for the opinion first. The
+            card carries its own vertical margin (my-10). */}
+        {verdict && <VerdictCard verdict={verdict} productName={product.name} />}
 
         <div className="flex flex-col lg:flex-row gap-8 mt-10">
           <ProductSpecNav groups={categoryDef.groups} specs={specs} />

@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Underline from "@/components/ui/Underline";
+import CategoryBadge from "./CategoryBadge";
 
 type SearchPost = {
   id: string;
@@ -11,6 +12,7 @@ type SearchPost = {
   slug: string;
   featuredImage: string | null;
   createdAt: Date;
+  category?: string | null;
   author: { name: string | null } | null;
 };
 
@@ -81,6 +83,9 @@ export default function SearchResultsGrid({
                   )}
                 </div>
                 <div className="p-4 flex flex-col flex-1">
+                  <div className="mb-2">
+                    <CategoryBadge category={post.category} size="sm" asSpan />
+                  </div>
 <h2 className="text-sm font-bold text-foreground line-clamp-2 mb-2">
   <Underline>{post.title}</Underline>
 </h2>

@@ -261,7 +261,7 @@ export default function AccountClient() {
 
       {/* Activity */}
       <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-6 md:px-8">
-        <h2 className="text-sm font-extrabold uppercase tracking-wide text-muted-foreground mb-4">
+        <h2 className="h-eyebrow text-muted-foreground mb-4">
           Your activity
         </h2>
         <div className="grid grid-cols-2 gap-4">

@@ -12,6 +12,8 @@ const nodeRoots = new WeakMap<HTMLElement, Root>();
 
 interface SpecificationsPayload {
   title: string;
+  /** Heading tag as authored (h1|h2|h3|h4); older payloads omit it. */
+  level?: string;
   items: { label: string; value: string }[];
 }
 
@@ -39,7 +41,7 @@ export default function SpecificationsMount() {
         const root = createRoot(node);
         nodeRoots.set(node, root);
         root.render(
-          <SpecificationsCard title={payload.title} items={payload.items} />
+          <SpecificationsCard title={payload.title} level={payload.level} items={payload.items} />
         );
       });
     };

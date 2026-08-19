@@ -25,16 +25,22 @@ const itemVariants: Variants = {
 export default function SpecificationsCard({
   items,
   title = "Specifications",
+  level = "h1",
 }: {
   items: SpecItem[];
   title?: string;
+  /** Heading tag as authored in the editor; the card renders it exactly as the article body would. */
+  level?: string;
 }) {
+  // The post title owns the page's only h1, so an authored H1 ships as
+  // h2[data-was-h1] (the numbered kicker style, same as the body); H2 is the
+  // title style; H3/H4 keep their own tag. Older payloads without a level are
+  // treated as H1 — what the card always rendered before.
+  const Heading = (level === "h3" || level === "h4" ? level : "h2") as "h2" | "h3" | "h4";
+  const wasH1 = level === "h1";
   return (
     <div className="not-prose">
-      {/* h2, not h1 — the post title owns the page's only h1. data-was-h1 keeps
-          the original type scale (see .rich-text-render h2[data-was-h1] in
-          blog/[slug]/page.tsx), so this is a semantics-only change. */}
-      <h2 data-was-h1>{title}</h2>
+      <Heading {...(wasH1 ? { "data-was-h1": "" } : {})}>{title}</Heading>
 
       <motion.div
         className="flex flex-col rounded-none border-2 border-border-heavy overflow-hidden"

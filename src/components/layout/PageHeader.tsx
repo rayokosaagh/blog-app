@@ -48,7 +48,7 @@ export default function PageHeader({ crumbs, title, subtitle, children }: PageHe
           ))}
         </nav>
 
-        <h1 className="flex flex-wrap items-center gap-3 text-4xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl">
+        <h1 className="h-display flex flex-wrap items-center gap-3 text-foreground">
           {title}
         </h1>
 

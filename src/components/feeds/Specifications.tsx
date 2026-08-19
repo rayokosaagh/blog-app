@@ -43,15 +43,17 @@ export function parseSpecificationsBlock(html: string): string {
     if (items.length === 0) return;
 
     counter += 1;
-    $next.replaceWith(buildPlaceholder(items, counter, headingText));
+    // Carry the authored level so the card renders the heading the editor
+    // chose (H1 = kicker, H2 = title, H3 = sub-heading) instead of one fixed style.
+    $next.replaceWith(buildPlaceholder(items, counter, headingText, (el.tagName || "h2").toLowerCase()));
     $heading.remove();
   });
 
   return $.html();
 }
 
-function buildPlaceholder(items: SpecItem[], index: number, title: string): string {
-  const payload = JSON.stringify({ title, items }).replace(/</g, "\\u003c");
+function buildPlaceholder(items: SpecItem[], index: number, title: string, level: string): string {
+  const payload = JSON.stringify({ title, level, items }).replace(/</g, "\\u003c");
 
   const fallbackRows = items
     .map(

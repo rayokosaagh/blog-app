@@ -2,6 +2,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { APP_URL } from "@/lib/appUrl";
+import { POST_CATEGORIES } from "@/lib/blog/categories";
 
 // Re-generated hourly rather than at build time, so posts published after a
 // deploy still reach the sitemap without a rebuild.
@@ -28,6 +29,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${APP_URL}/`, changeFrequency: "daily", priority: 1 },
     { url: `${APP_URL}/blog`, changeFrequency: "daily", priority: 0.9 },
+    // Category landing pages (/news, /reviews…) — same weight as /blog, since
+    // each is a section front in its own right.
+    ...POST_CATEGORIES.map((c) => ({
+      url: `${APP_URL}/${c.slug}`,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    })),
     { url: `${APP_URL}/products`, changeFrequency: "daily", priority: 0.8 },
     { url: `${APP_URL}/compare`, changeFrequency: "weekly", priority: 0.6 },
   ];

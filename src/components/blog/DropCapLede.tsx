@@ -36,6 +36,8 @@ export function parseDropCapLedeBlock(html: string): string {
     escapeHtml(tailText);
 
   $(firstTextNode).replaceWith(replacementHtml);
+  // Marks the opening paragraph so the stylesheet can give it the lede rule.
+  $p.addClass("lede");
 
   return $.html();
 }

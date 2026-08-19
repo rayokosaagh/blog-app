@@ -53,6 +53,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             slug: true,
             featuredImage: true,
             createdAt: true,
+            category: true,
             author: {
               select: { name: true },
             },
@@ -87,7 +88,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </span>
         </nav>
 
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-foreground leading-[1.05]">
+        <h1 className="h-display text-foreground">
           {query ? `Results for "${query}"` : "Search"}
         </h1>
 

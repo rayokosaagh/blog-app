@@ -55,69 +55,39 @@ export default function HomeLoading() {
         aria-label="Loading the homepage"
         className="flex flex-col gap-10 sm:gap-14 lg:gap-16 pt-4 sm:pt-6 lg:pt-8 pb-10 sm:pb-14 lg:pb-16"
       >
-        {/* ---- Hero spotlight + top stories ---- */}
+        {/* ---- Hero banner + ad rail, top stories mosaic, value props ---- */}
         <section className="max-w-[1600px] mx-auto px-6 w-full">
-          <div className="pt-6 border-t border-border-heavy">
-            {/* HeroSpotlight: image rail is lg:flex-[3]; the copy panel is a
-                FIXED 22rem/26rem, not a flex sibling — matching that split is
-                what keeps the hero from resizing when content lands. */}
-            <div className="flex flex-col overflow-hidden surface-border shadow-brutal-lg lg:flex-row">
-              <Skeleton className="aspect-video w-full lg:aspect-auto lg:h-[30rem] lg:flex-[3]" />
-
-              <div className="flex w-full flex-col border-t border-border-heavy bg-card p-6 sm:p-8 lg:w-[22rem] lg:border-l lg:border-t-0 xl:w-[26rem]">
-                {/* badge */}
-                <Skeleton className="mb-4 h-6 w-36" />
-                {/* headline (text-2xl/3xl). space-y-1, not 2: real line boxes
-                    are contiguous, and the extra gap was making the mobile
-                    panel taller than the card it stands in for. */}
-                <div className="space-y-1">
-                  <Skeleton className="h-7 w-full" />
-                  <Skeleton className="h-7 w-11/12" />
-                  <Skeleton className="h-7 w-2/3" />
-                </div>
-                {/* description — line-clamp-2 on phones, 4 from sm up, matching
-                    HeroSpotlight. The last two lines are sm-only for that reason. */}
-                <div className="mt-3 space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4 sm:w-full" />
-                  <Skeleton className="hidden h-4 w-full sm:block" />
-                  <Skeleton className="hidden h-4 w-3/4 sm:block" />
-                </div>
-                {/* CTA */}
-                <Skeleton className="mt-6 h-10 w-32" />
-                {/* controls row — mt-auto pins it to the bottom, as in the real card */}
-                <div className="mt-auto flex items-center justify-between border-t border-border pt-5">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-1.5 w-8" />
-                    <Skeleton className="h-1.5 w-1.5" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-10" />
-                    <Skeleton className="h-8 w-8" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* "Top stories" section header — icon chip + title/subtitle, all-stories link */}
-            <div className="mt-6 mb-4 sm:mt-10 sm:mb-5 flex items-end justify-between gap-4 border-b-2 border-border-heavy pb-3">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 shrink-0" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-3 w-44" />
-                </div>
-              </div>
-              <Skeleton className="hidden h-8 w-28 sm:block" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-[4/3] min-w-0" />
-              ))}
-            </div>
+          {/* HeroBanner (min-h 26rem / 30rem at lg) beside the 20rem AdCarousel
+              rail — same grid as page.tsx so nothing shifts when content lands. */}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-stretch">
+            <Skeleton className="min-h-[26rem] w-full surface-border lg:min-h-[30rem]" />
+            <Skeleton className="min-h-[18rem] w-full surface-border lg:min-h-0" />
           </div>
+
+          {/* "Top stories" section header — icon chip + title/subtitle, all-stories pill */}
+          <div className="mt-8 mb-4 flex items-end justify-between gap-4 sm:mt-10 sm:mb-5">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 shrink-0" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-44" />
+              </div>
+            </div>
+            <Skeleton className="hidden h-8 w-28 sm:block" />
+          </div>
+
+          {/* TopStoriesMosaic: lead spans two rows at ~46%, a pair beside it, one wide below */}
+          <div className="grid gap-4 lg:grid-cols-[46fr_54fr] lg:grid-rows-2">
+            <Skeleton className="min-h-[18rem] surface-border sm:min-h-[22rem] lg:row-span-2 lg:min-h-0" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="min-h-[11rem] surface-border" />
+              <Skeleton className="min-h-[11rem] surface-border" />
+            </div>
+            <Skeleton className="min-h-[9rem] surface-border" />
+          </div>
+
+          {/* ValueProps band */}
+          <Skeleton className="mt-6 h-20 w-full surface-border" />
         </section>
 
         {/* ---- Latest posts: socials | feed | poll ---- */}

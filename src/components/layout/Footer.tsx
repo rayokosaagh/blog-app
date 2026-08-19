@@ -60,7 +60,7 @@ function LinkColumn({
 }) {
   return (
     <div>
-      <h3 className="text-xs font-extrabold uppercase tracking-[0.14em] text-foreground mb-5">
+      <h3 className="h-eyebrow text-foreground mb-5">
         {title}
       </h3>
       <ul className="space-y-3">

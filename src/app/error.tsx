@@ -34,7 +34,7 @@ export default function Error({
         <p className="text-sm font-bold uppercase tracking-[0.1em] text-muted-foreground">
           Something went wrong
         </p>
-        <h1 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+        <h1 className="h-display mt-3 text-foreground">
           This page failed to load
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">

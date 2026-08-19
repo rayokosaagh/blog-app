@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseColors } from "@/lib/gadgets/colors";
+import { verdictFieldsFromBody } from "@/lib/verdict";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -46,6 +47,9 @@ export async function PATCH(
         ...(priceFrom !== undefined && { priceFrom: priceFrom ? Number(priceFrom) : null }),
         ...(specs !== undefined && { specs }),
         ...(published !== undefined && { published }),
+        // Same all-or-nothing rules as posts: absent keys leave the verdict
+        // untouched, a null score clears it. See verdictFieldsFromBody.
+        ...verdictFieldsFromBody(body),
         ...(Array.isArray(tagIds) && {
           tags: { set: tagIds.map((tid: string) => ({ id: tid })) },
         }),

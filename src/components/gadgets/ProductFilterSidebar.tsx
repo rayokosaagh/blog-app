@@ -22,8 +22,6 @@ interface Props {
 
 const SORTS = [
   { value: "", label: "Latest" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
   { value: "name", label: "Name (A–Z)" },
 ];
 
@@ -49,8 +47,6 @@ export default function ProductFilterSidebar({
   const [search, setSearch] = useState(sp.get("search") ?? "");
   const [category, setCategory] = useState(sp.get("category") ?? "");
   const [brand, setBrand] = useState(sp.get("brand") ?? "");
-  const [minPrice, setMinPrice] = useState(sp.get("minPrice") ?? "");
-  const [maxPrice, setMaxPrice] = useState(sp.get("maxPrice") ?? "");
   const [sort, setSort] = useState(sp.get("sort") ?? "");
   const [specs, setSpecs] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -65,8 +61,6 @@ export default function ProductFilterSidebar({
     search,
     category,
     brand,
-    minPrice,
-    maxPrice,
     sort,
     ...Object.values(specs),
   ].filter(Boolean).length;
@@ -83,8 +77,6 @@ export default function ProductFilterSidebar({
     const tag = sp.get("tag");
     if (tag) params.set("tag", tag);
     if (brand) params.set("brand", brand);
-    if (minPrice) params.set("minPrice", minPrice);
-    if (maxPrice) params.set("maxPrice", maxPrice);
     if (sort) params.set("sort", sort);
     for (const [k, v] of Object.entries(specs)) if (v) params.set(`spec_${k}`, v);
     const qs = params.toString();
@@ -95,8 +87,6 @@ export default function ProductFilterSidebar({
     setSearch("");
     setCategory("");
     setBrand("");
-    setMinPrice("");
-    setMaxPrice("");
     setSort("");
     setSpecs({});
     // Keep the tag context when clearing the applied filters.
@@ -145,29 +135,6 @@ export default function ProductFilterSidebar({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search..."
             className={`${control} pl-8`}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Price range</label>
-        <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min="0"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-            placeholder="Min"
-            className={control}
-          />
-          <span className="text-muted-foreground">–</span>
-          <input
-            type="number"
-            min="0"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            placeholder="Max"
-            className={control}
           />
         </div>
       </div>

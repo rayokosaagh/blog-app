@@ -111,11 +111,6 @@ function ProductCardContent({
         <h4 className="text-base font-extrabold text-foreground mt-0.5 line-clamp-2">
           {product.name}
         </h4>
-        {product.priceFrom != null && (
-          <p className="text-sm font-bold text-accent mt-2">
-            {product.currency} {product.priceFrom.toLocaleString()}
-          </p>
-        )}
       </div>
     </Link>
   );

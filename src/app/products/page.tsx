@@ -5,7 +5,7 @@ export const revalidate = 60;
 
 const PRODUCTS_DESCRIPTION =
   "Explore, filter and compare phones, laptops, smartwatches and earbuds " +
-  "available in Nepal — full specifications and prices.";
+  "available in Nepal — full specifications, side by side.";
 
 // Shortened from "Gadgets in Nepal | Explore, Filter & Compare": the root
 // layout now appends "| Blog", and the old string would have run past the

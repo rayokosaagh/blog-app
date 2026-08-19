@@ -12,10 +12,12 @@ import MobileNav from "@/components/layout/MobileNav";
 import BackToTop from "@/components/ui/BackToTop";
 import Poll from "@/components/polls/Poll";
 import RatingMeter from "@/components/blog/RatingMeter";
-import KeepReading from "@/components/feeds/KeepReading";
+import ContinueReading from "@/components/feeds/ContinueReading";
 import CommentSection from "@/components/blog/CommentSection";
 import RelatedArticles from "@/components/feeds/RelatedArticles";
 import TagIcon from "@/components/blog/TagIcon";
+import CategoryBadge from "@/components/blog/CategoryBadge";
+import { getPostCategory } from "@/lib/blog/categories";
 import { sortTagsByOrder } from "@/lib/sortTags";
 import { getExcerpt, getReadingTime } from "@/lib/postUtils";
 import { APP_URL } from "@/lib/appUrl";
@@ -286,16 +288,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const orderedTags = sortTagsByOrder(post.tags, post.tagOrder);
   const verdict = readVerdict(post);
+  const category = getPostCategory(post.category);
 
-  const relatedPosts = await prisma.post.findMany({
-    where: {
-      published: true,
-      NOT: { id: post.id },
-    },
-    take: 9,
-    include: { author: true },
-    orderBy: { createdAt: "desc" },
-  });
 
   let ads: any[] = [];
   let banners: any[] = [];
@@ -384,6 +378,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         : `${APP_URL}${post.featuredImage}`,
     }),
     keywords: post.tags.map((t) => t.name).join(", "),
+    articleSection: category.label,
     wordCount: getExcerpt(post.content, Number.MAX_SAFE_INTEGER).split(" ").length,
     timeRequired: `PT${getReadingTime(post.content)}M`,
   };
@@ -446,7 +441,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <nav className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-card border-[1.5px] border-border-heavy text-sm text-muted-foreground font-medium">
               <Link href="/" className="hover:text-accent transition-colors">Home</Link>
               <span className="text-border text-xs">/</span>
-              <Link href="/blog" className="hover:text-accent transition-colors">Blog</Link>
+              {/* The category, not "Blog": it's the section this article
+                  belongs to, and its landing page is the useful place to go
+                  back to. /blog is still one hop away in the navbar. */}
+              <Link href={`/${category.slug}`} className="hover:text-accent transition-colors">
+                {category.label}
+              </Link>
               <span className="text-border text-xs">/</span>
               <span className="text-foreground truncate max-w-[250px]">{post.title}</span>
             </nav>
@@ -454,10 +454,15 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </FadeIn>
 
         <div className="absolute bottom-0 left-0 right-0 max-w-4xl mx-auto px-6 pb-10">
-          {orderedTags.length > 0 && (
-            <FadeIn delay={0.1}>
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                {orderedTags.map((t) => (
+          {/* Category kicker first, then tags: "Review · Mobile · Xiaomi" reads
+              as kind → subject, which is the order a reader parses it in. */}
+          <FadeIn delay={0.1}>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <CategoryBadge category={post.category} />
+              {orderedTags.length > 0 && (
+                <span aria-hidden className="h-4 w-px bg-white/40 mx-0.5" />
+              )}
+              {orderedTags.map((t) => (
                   <Link
                     key={t.id}
                     href={`/blog?tag=${t.slug}`}
@@ -467,12 +472,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     {t.name}
                   </Link>
                 ))}
-              </div>
-            </FadeIn>
-          )}
+            </div>
+          </FadeIn>
 
           <FadeIn delay={0.2}>
-            <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5">{post.title}</h1>
+            <h1 className="h-display text-white mb-5">{post.title}</h1>
           </FadeIn>
 
           <FadeIn delay={0.3}>
@@ -575,13 +579,27 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 .rich-text-render p:has(> br:only-child) { display: none; }
 .rich-text-render > *:last-child { margin-bottom: 0; }
 
+/* Lede: the opening paragraph carries a soft accent rule on the left, and
+   its first letter sits in a tinted square — the initial reads as a mark,
+   not a giant glyph. Both are theme tokens (square/rounded, site accent). */
+.rich-text-render p.lede {
+  padding-left: 1.25rem;
+  border-left: 3px solid color-mix(in oklab, var(--accent) 40%, var(--border));
+}
 .rich-text-render .drop-cap {
   float: left;
-  font-size: 3.4rem;
-  line-height: 0.8;
-  font-weight: 700;
-  padding: 0.05em 0.08em 0 0;
-  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  margin: 0.2rem 1rem 0.35rem 0;
+  border-radius: calc(var(--radius) * 0.75);
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1;
 }
 .rich-text-render .lede-bold {
   font-weight: 700;
@@ -593,77 +611,169 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 .rich-text-render h3,
 .rich-text-render h4 {
   scroll-margin-top: 100px;
+  color: var(--foreground);
+}
+
+/* Article headings — numbered, magazine-style.
+
+     [01] ─────────────────────────────      <- kicker row: bordered chip with
+     Design & build                              the section number + a rule
+                                                to the right edge
+     1.2  Materials                          <- sub-section: small outlined
+                                                sub-number, quieter title
+     SPECS                                   <- label: quiet small-caps
+
+   Numbers come from CSS counters (h2 = section, h3 = sub-section), so an
+   editor writes plain headings and the article numbers itself; add or move
+   a section and everything renumbers. Headings authored with the old H1
+   button (data-was-h1) are the article's own title repeated and stay
+   unnumbered.
+
+   Type (size / weight / tracking / face) comes from the heading-role tokens
+   the admin sets in Dashboard → UI settings → Heading typography: h2 = the
+   "Page title" role, h3 = "Section heading", h4 = "Eyebrow / label". Colours
+   and radii are theme tokens, so the chip is square in brutalist and
+   softly rounded in modern, and follows the site accent. */
+.rich-text-render {
+  counter-reset: section;
 }
 
 .rich-text-render h1 {
-  font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: var(--h-display-size);
+  font-weight: var(--h-display-weight);
+  letter-spacing: var(--h-display-tracking);
+  text-transform: var(--h-display-case);
   line-height: 1.1;
   margin-top: 2.5rem;
   margin-bottom: 1.5rem;
-  color: var(--foreground);
 }
 
+/* H2 (editor "Title"): the big display heading that follows a kicker.
+   Not numbered — it names the section the kicker above it opened. */
 .rich-text-render h2 {
-  font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.625rem);
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.35;
-  margin-top: 2.25rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 3px solid var(--border-heavy);
+  display: block;
+  /* Page-title role, not display: at display size the section titles out-shouted the article title itself. */
+  font-size: calc(var(--h-page-title-size) * 1.15);
+  font-weight: var(--h-page-title-weight);
+  letter-spacing: var(--h-page-title-tracking);
+  text-transform: var(--h-page-title-case);
+  line-height: 1.15;
   color: var(--foreground);
-  display: inline-block;
+  margin-top: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 .rich-text-render h2:first-child {
   margin-top: 0;
 }
 
-/* Headings authored with the editor's old H1 button. They ship as h2 so the
-   post title keeps the only h1, but they keep h1's appearance — otherwise
-   every published post's opening heading would suddenly shrink. Placed after
-   the plain h2 rule so the resets below actually override it: h1 had no
-   underline and was a block, both of which .rich-text-render h2 adds. */
+/* H1 (editor "Section"): the numbered kicker row — "[01] OVERVIEW ────".
+   Authored as h1, shipped as h2[data-was-h1] so the post title stays the
+   page's only <h1>; the attribute is what selects this treatment. Short
+   label type (eyebrow role, a touch larger, in the accent), a bordered
+   number chip before it and a hairline rule filling to the right. */
 .rich-text-render h2[data-was-h1] {
-  font-size: clamp(2rem, 1.5rem + 2vw, 2.5rem);
+  counter-increment: section;
+  counter-reset: subsection;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: calc(var(--h-eyebrow-size) * 1.15);
+  font-weight: var(--h-eyebrow-weight);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--accent);
+  margin-top: 3rem;
+  margin-bottom: 1.25rem;
+}
+.rich-text-render h2[data-was-h1]::before {
+  content: counter(section, decimal-leading-zero);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.5rem;
+  border: 1.5px solid color-mix(in oklab, var(--accent) 45%, var(--card));
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 1rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin-top: 2.5rem;
-  margin-bottom: 1.5rem;
-  color: var(--foreground);
-  display: block;
-  padding-bottom: 0;
-  border-bottom: none;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rich-text-render h2[data-was-h1]::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: color-mix(in oklab, var(--accent) 35%, var(--border));
 }
 .rich-text-render h2[data-was-h1]:first-child {
   margin-top: 0;
 }
+/* A title directly after its kicker sits close to it. */
+.rich-text-render h2[data-was-h1] + h2 {
+  margin-top: 0.75rem;
+}
 
 .rich-text-render h3 {
-  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
-  font-weight: 600;
-  margin-top: 1.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  color: var(--foreground);
-  border-bottom: 1.5px solid var(--border);
+  counter-increment: subsection;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: var(--h-section-size);
+  font-weight: var(--h-section-weight);
+  letter-spacing: var(--h-section-tracking);
+  text-transform: var(--h-section-case);
+  line-height: 1.3;
+  margin-top: 2.25rem;
+  margin-bottom: 0.9rem;
+}
+/* Sub-number "1.2" — small, outlined, quieter than the section chip. */
+.rich-text-render h3::before {
+  content: counter(section) "." counter(subsection);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 1.7rem;
+  padding: 0 0.55rem;
+  border: 1.5px solid var(--border-heavy);
+  border-radius: calc(var(--radius) * 0.5);
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-0.15em);
 }
 
 .rich-text-render h4 {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-  margin-top: 2rem;
-  margin-bottom: 0.75rem;
-  padding: 0.35rem 0.85rem;
-  border: 1.5px solid var(--border-heavy);
+  display: block;
+  font-size: var(--h-eyebrow-size);
+  font-weight: var(--h-eyebrow-weight);
+  letter-spacing: var(--h-eyebrow-tracking);
+  text-transform: var(--h-eyebrow-case);
+  line-height: 1.2;
+  color: color-mix(in oklab, var(--accent) 70%, var(--foreground));
+  margin-top: 1.75rem;
+  margin-bottom: 0.6rem;
 }
+
+/* Role faces. The global "html body *" font rule carries !important, so the
+   face has to be set at higher specificity to take effect. The chips keep
+   the body face on purpose (numbers, not headings). */
+html body .rich-text-render h1,
+html body .rich-text-render h2 { font-family: var(--h-page-title-font) !important; }
+html body .rich-text-render h2[data-was-h1] { font-family: var(--h-eyebrow-font) !important; }
+html body .rich-text-render h3 { font-family: var(--h-section-font) !important; }
+html body .rich-text-render h4 { font-family: var(--h-eyebrow-font) !important; }
+html body .rich-text-render h2[data-was-h1]::before,
+html body .rich-text-render h3::before { font-family: var(--font-sans) !important; }
 
 .rich-text-render img {
   max-width: 100%;
@@ -671,6 +781,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   margin: 2rem auto;
   display: block;
   border: 1.5px solid var(--border-heavy);
+  /* Theme radius: square in brutalist (--radius 0), rounded in modern. */
+  border-radius: var(--radius);
 }
 
 /* Ad and banner creatives fill a fixed-height frame via absolute inset-0,
@@ -710,6 +822,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 .rich-text-render ol { list-style-type: decimal; }
 .rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
 .rich-text-render li::marker { color: var(--accent); }
+
+/* Pre-hydration layout for the Pros & Cons block (see components/feeds/ProsCons.tsx).
+   It has to match <ProsConsCard>'s "grid gap-4 sm:grid-cols-2" exactly or the
+   block resizes when the real card mounts, and injected article HTML can only
+   carry inline styles, which can't hold a breakpoint. The split class is
+   emitted only when both columns have items, mirroring the card's "both". */
+.pros-cons-fallback-card { display: grid; gap: 16px; }
+@media (min-width: 40rem) {
+  .pros-cons-fallback-card.pros-cons-fallback-split { grid-template-columns: 1fr 1fr; }
+}
 
 .rich-text-render .table-wrap {
   margin: 2.75rem 0;
@@ -937,9 +1059,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
       </FadeIn>
 
-      {/* Keep Reading */}
+      {/* Continue reading — the reader's own unfinished articles, from
+          localStorage. Replaces the old "Keep Reading" rail, which showed
+          same-category posts directly above the tag-based Related Articles
+          block: two rows of "here are other articles" back to back, drawn
+          from overlapping pools. This one answers a different question, so
+          the two no longer duplicate each other. Renders nothing on a first
+          visit, which is why it needs no empty state.
+
+          Wrapped to max-w-6xl so it shares an edge with <RelatedArticles />
+          directly below, which is w-full max-w-6xl mx-auto px-6. The
+          component caps itself at 1600px for the homepage, which is far
+          wider than anything on this page. */}
       <FadeIn>
-        <KeepReading relatedPosts={relatedPosts} />
+        <div className="mx-auto mb-8 w-full max-w-6xl">
+          <ContinueReading excludeSlug={post.slug} />
+        </div>
       </FadeIn>
 
       {/* Related Articles (tag-based) */}

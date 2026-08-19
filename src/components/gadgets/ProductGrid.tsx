@@ -106,7 +106,10 @@ export default function ProductGrid({
                   No image
                 </div>
               )}
-              <span className="absolute left-2 top-2 border-2 border-border-heavy bg-accent-3 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-on-accent-3">
+              {/* Taxonomy, not promo: the caption-plate treatment rather than a
+                  filled accent, so the category labels stop competing with the
+                  genuinely promotional badges elsewhere on the page. */}
+              <span className="absolute left-2 top-2 border-2 border-border-heavy bg-photo-overlay/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-on-photo">
                 {p.category.name}
               </span>
 
@@ -148,15 +151,11 @@ export default function ProductGrid({
                 </div>
               )}
 
-              {/* Price row */}
-              <div className="mt-auto flex items-center justify-between gap-2 border-t-2 border-border pt-2.5">
-                {p.priceFrom != null ? (
-                  <p className="text-sm font-black text-accent">
-                    {p.currency} {p.priceFrom.toLocaleString()}
-                  </p>
-                ) : (
-                  <span className="text-xs font-bold text-muted-foreground">See price</span>
-                )}
+              {/* Footer row. Pricing is deliberately not surfaced anywhere
+                  public — Product.priceFrom / currency are still carried on
+                  the model and the admin form for a future pricing feature,
+                  but nothing reader-facing renders them. */}
+              <div className="mt-auto flex items-center justify-end gap-2 border-t-2 border-border pt-2.5">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center border-2 border-border-heavy bg-background text-muted-foreground transition-colors group-hover:bg-accent group-hover:text-on-accent">
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </span>
