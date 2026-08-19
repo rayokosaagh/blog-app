@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import {
+  parseHeadingType,
+  headingTypeFrom,
+  type HeadingType,
+} from "@/lib/typography";
+import {
   isValidHex,
   normalizeHex,
   BRUTALIST_LIGHT_DEFAULT,
@@ -30,6 +35,15 @@ export const SPOTLIGHT_HEADER_DEFAULT = "Handpicked for you";
 export const SPOTLIGHT_TITLE_KEY = "spotlightAdsTitle";
 export const SPOTLIGHT_TITLE_DEFAULT = "Deals worth a look";
 export const UI_THEME_KEY = "uiTheme";
+
+// Heading typography, one JSON blob per theme. A blob rather than ~30
+// individual keys per theme: the key/value store reads fine either way (it is
+// one findMany), but 60 loose keys are unmanageable in the dashboard and in
+// getThemeSettings' key list.
+export const HEADING_TYPE_KEYS = {
+  brutalist: "headingTypeBrutalist",
+  modern: "headingTypeModern",
+} as const;
 
 export type UiTheme = "brutalist" | "modern";
 export const UI_THEME_DEFAULT: UiTheme = "brutalist";
@@ -287,6 +301,30 @@ export async function setBrutalistAccents(patch: {
   ]);
 }
 
+/** Heading typography for both themes. */
+export type HeadingTypeByTheme = { brutalist: HeadingType; modern: HeadingType };
+
+function headingFrom(map: Record<string, string>): HeadingTypeByTheme {
+  return {
+    brutalist: parseHeadingType(map[HEADING_TYPE_KEYS.brutalist], "brutalist"),
+    modern: parseHeadingType(map[HEADING_TYPE_KEYS.modern], "modern"),
+  };
+}
+
+export async function getHeadingType(): Promise<HeadingTypeByTheme> {
+  const map = await getSettingsMap([HEADING_TYPE_KEYS.brutalist, HEADING_TYPE_KEYS.modern]);
+  return headingFrom(map);
+}
+
+/**
+ * Persist one theme's heading settings. The payload is coerced through
+ * headingTypeFrom first, so what lands in the row is always a complete, valid
+ * blob — the read path can then trust it and never has to merge.
+ */
+export async function setHeadingType(theme: UiTheme, value: unknown): Promise<void> {
+  await setSetting(HEADING_TYPE_KEYS[theme], JSON.stringify(headingTypeFrom(value, theme)));
+}
+
 /**
  * Everything the root layout needs to render themed HTML, in ONE query.
  * The layout runs on every page, so this deliberately avoids the
@@ -297,6 +335,7 @@ export async function getThemeSettings(): Promise<{
   modernAccents: ModernAccents;
   brutalistAccents: ThemeAccents;
   darkSurfaces: DarkSurfacesByTheme;
+  headingType: HeadingTypeByTheme;
 }> {
   const map = await getSettingsMap([
     UI_THEME_KEY,
@@ -307,6 +346,8 @@ export async function getThemeSettings(): Promise<{
     ...BRUTALIST_DARK_KEYS,
     ...BRUTALIST_SURFACE_KEYS,
     ...MODERN_SURFACE_KEYS,
+    HEADING_TYPE_KEYS.brutalist,
+    HEADING_TYPE_KEYS.modern,
   ]);
   return {
     uiTheme: map[UI_THEME_KEY] === "modern" ? "modern" : UI_THEME_DEFAULT,
@@ -316,5 +357,6 @@ export async function getThemeSettings(): Promise<{
       dark: trioFrom(map, BRUTALIST_DARK_KEYS, BRUTALIST_DARK_DEFAULT),
     },
     darkSurfaces: surfacesByThemeFrom(map),
+    headingType: headingFrom(map),
   };
 }

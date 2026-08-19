@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Plus_Jakarta_Sans, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { getThemeSettings } from "@/lib/settings";
 import { modernAccentCss, brutalistAccentCss, darkSurfaceCss } from "@/lib/color";
+import { headingTypeCss } from "@/lib/typography";
 import { APP_URL } from "@/lib/appUrl";
 
 const geistSans = Geist({
@@ -25,11 +26,20 @@ const modernSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+// Condensed display face for the brutalist section mastheads ("THE LATEST",
+// "REVIEWS") and river lead headlines — see .font-condensed in globals.css.
+// One weight, latin only, self-hosted by next/font like the others.
+const condensed = Bebas_Neue({
+  weight: "400",
+  variable: "--font-condensed",
+  subsets: ["latin"],
+});
+
 const SITE_NAME = "Blog";
 const SITE_TAGLINE = "Tech news, reviews and gadget comparisons";
 const SITE_DESCRIPTION =
   "In-depth phone, laptop, smartwatch and earbud reviews, launch news and " +
-  "side-by-side spec comparisons — with prices for Nepal.";
+  "side-by-side spec comparisons for Nepal.";
 
 export const metadata: Metadata = {
   // Makes every relative canonical/OG URL below resolve to an absolute one.
@@ -82,7 +92,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { uiTheme, modernAccents, brutalistAccents, darkSurfaces } = await getThemeSettings();
+  const { uiTheme, modernAccents, brutalistAccents, darkSurfaces, headingType } =
+    await getThemeSettings();
 
   // Admin-chosen accent colours for both themes, injected as scoped overrides
   // of the palette tokens. Server-rendered into the initial HTML so there's no
@@ -100,14 +111,19 @@ export default async function RootLayout({
     // Dark-mode base surfaces (background/card/border/text) per theme. Emitted
     // after the accents; they touch a disjoint set of custom properties.
     darkSurfaceCss("brutalist", darkSurfaces.brutalist) +
-    darkSurfaceCss("modern", darkSurfaces.modern);
+    darkSurfaceCss("modern", darkSurfaces.modern) +
+    // Heading type tokens. Emitted for both themes for the same reason as the
+    // palettes above: only the active [data-theme] block matches, so switching
+    // theme stays a pure attribute flip.
+    headingTypeCss("brutalist", headingType.brutalist) +
+    headingTypeCss("modern", headingType.modern);
 
   return (
     <html
       lang="en"
       data-theme={uiTheme}
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${modernSans.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${modernSans.variable} ${condensed.variable} h-full antialiased`}
     >
       <head>
         <link

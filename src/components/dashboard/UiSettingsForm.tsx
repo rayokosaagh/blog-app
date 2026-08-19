@@ -13,7 +13,14 @@ import {
   Moon,
 } from "lucide-react";
 import { Toggle, SuccessToast } from "@/components/dashboard/DashboardUI";
-import type { UiTheme, ModernAccents, DarkSurfacesByTheme } from "@/lib/settings";
+import HeadingTypeSettings from "@/components/dashboard/HeadingTypeSettings";
+import type {
+  UiTheme,
+  ModernAccents,
+  DarkSurfacesByTheme,
+  HeadingTypeByTheme,
+} from "@/lib/settings";
+import { BRUTALIST_HEADING_DEFAULT, MODERN_HEADING_DEFAULT } from "@/lib/typography";
 import {
   buildModernAccentVars,
   buildBrutalistAccentVars,
@@ -206,7 +213,7 @@ const DARK_SURFACE_PRESETS: { label: string; value: DarkSurfaces }[] = [
 ];
 
 const ACCENT_FIELDS: { key: keyof AccentTrio; label: string; hint: string }[] = [
-  { key: "accent", label: "Primary", hint: "Buttons, links, prices, active tabs" },
+  { key: "accent", label: "Primary", hint: "Buttons, links, active tabs" },
   { key: "accent2", label: "Secondary", hint: "Hover highlights, badges, toggles" },
   { key: "accent3", label: "Tertiary", hint: "Category badges, icon chips" },
 ];
@@ -300,12 +307,17 @@ export default function UiSettingsForm({
     brutalist: BRUTALIST_DARK_SURFACES_DEFAULT,
     modern: MODERN_DARK_SURFACES_DEFAULT,
   },
+  initialHeadingType = {
+    brutalist: BRUTALIST_HEADING_DEFAULT,
+    modern: MODERN_HEADING_DEFAULT,
+  },
 }: {
   initialEnabled: boolean;
   initialTheme: UiTheme;
   initialAccents?: ModernAccents;
   initialBrutalistAccents?: ThemeAccents;
   initialDarkSurfaces?: DarkSurfacesByTheme;
+  initialHeadingType?: HeadingTypeByTheme;
 }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -322,6 +334,12 @@ export default function UiSettingsForm({
   const [brutalist, setBrutalist] = useState<ThemeAccents>(initialBrutalistAccents);
   const [savedBrutalist, setSavedBrutalist] = useState<ThemeAccents>(initialBrutalistAccents);
   const [accentSaving, setAccentSaving] = useState(false);
+
+  // Heading typography, per theme. Same saved/editing split as the accents so
+  // the panel can show a dirty state.
+  const [headingType, setHeadingType] = useState<HeadingTypeByTheme>(initialHeadingType);
+  const [savedHeadingType, setSavedHeadingType] =
+    useState<HeadingTypeByTheme>(initialHeadingType);
 
   // Dark-mode base surfaces, per theme.
   const [surfaces, setSurfaces] = useState<DarkSurfacesByTheme>(initialDarkSurfaces);
@@ -1071,6 +1089,18 @@ export default function UiSettingsForm({
           <Toggle checked={enabled} onChange={handleToggle} />
         </div>
       </div>
+
+      <HeadingTypeSettings
+        theme={theme}
+        value={headingType[theme]}
+        saved={savedHeadingType[theme]}
+        onChange={(next) => setHeadingType((prev) => ({ ...prev, [theme]: next }))}
+        onSaved={(next) => {
+          setSavedHeadingType((prev) => ({ ...prev, [theme]: next }));
+          setToast("Heading styles updated");
+        }}
+        onError={setError}
+      />
 
       {toast && <SuccessToast message={toast} onClose={() => setToast(null)} />}
     </div>

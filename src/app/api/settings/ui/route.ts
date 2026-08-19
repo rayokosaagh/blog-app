@@ -12,6 +12,7 @@ import {
   setModernAccents,
   setBrutalistAccents,
   setDarkSurfaces,
+  setHeadingType,
   getThemeSettings,
   type UiTheme,
 } from "@/lib/settings";
@@ -33,6 +34,7 @@ async function readAll() {
     modernAccents: theme.modernAccents,
     darkSurfaces: theme.darkSurfaces,
     brutalistAccents: theme.brutalistAccents,
+    headingType: theme.headingType,
   };
 }
 
@@ -139,6 +141,20 @@ export async function PUT(request: Request) {
         modern: modernSurfaces ?? undefined,
       });
       touched = true;
+    }
+  }
+
+  // Heading typography, per theme. Unlike the colour patches above this is
+  // whole-blob: setHeadingType coerces the payload against the theme defaults
+  // (clamping sizes, snapping the weight to one the chosen face can render),
+  // so a partial or hostile object can't produce an unrenderable value.
+  const headings = body.headingType;
+  if (headings && typeof headings === "object") {
+    for (const t of ["brutalist", "modern"] as const) {
+      if (headings[t] && typeof headings[t] === "object") {
+        await setHeadingType(t, headings[t]);
+        touched = true;
+      }
     }
   }
 

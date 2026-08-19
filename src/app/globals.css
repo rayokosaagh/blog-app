@@ -33,6 +33,12 @@
   --photo-overlay: #000000;
   --on-photo: #ffffff;
 
+  /* Depth veil for stacked/fanned cards (Editor's Verdicts deck): the tint a
+     receding card fades toward. Light themes: a grey mix, since a white veil
+     on white cards would only fade the picture and leave the surface flat.
+     Dark themes override to the page background — receding = darker. */
+  --depth-veil: color-mix(in oklab, var(--foreground) 24%, var(--background));
+
   /* --- UI-style tokens (brutalist is the default) --- */
   --radius: 0px;
   --border-width: 3px;
@@ -51,6 +57,7 @@
 }
 
 .dark {
+  --depth-veil: var(--background);
   /* Neon on charcoal (from reference) — near-black base, lime primary accent,
      cyan secondary, magenta bookmark accent, dark text on the bright fills.
      White brutalist borders + hard shadows let the neons pop. */
@@ -258,6 +265,59 @@ div[data-youtube-video] iframe {
   border-radius: var(--radius-pill);
 }
 
+/* Quiet badge tier.
+
+   Two kinds of badge were sharing one loud filled-accent treatment: promo /
+   status ("Featured", "Newly released", "Most read", "#2") and plain taxonomy
+   (a post's tag, a product's category). With everything shouting, none of it
+   ranked — and on the bento feed the tag colour was picked by `index % 2`, so
+   the colour carried no meaning at all.
+
+   Taxonomy badges use this instead: same geometry as .tag-pill, accent hue
+   retained for identity, but a tint background rather than a fill. Promo and
+   status badges keep bg-accent / bg-accent-2 and stay the loudest thing on a
+   card. Badges that sit ON a photo use bg-photo-overlay/70 + text-on-photo
+   instead, which is the caption-plate treatment already used elsewhere. */
+/* Verdict sub-score meters.
+
+   These were built from raw `border` + `bg-background` atoms. The compat
+   layer below rounds .border-2 / .border-4 / .border-[3px] / .border-[1.5px]
+   in modern — a plain 1px `border` is not on that list, so the meters stayed
+   hard-cornered rectangles inside a card that had rounded to 16px, which is
+   exactly the mismatch AGENTS.md warns about. As their own utility they can
+   be brutalist by default and genuinely modern under the modern theme:
+   outlined and hard-edged there, borderless with a tinted track and fully
+   rounded ends here. Note the 1px is deliberate rather than --border-width;
+   the meter is only 6px tall, so the 3px brutalist border would eat it. */
+.score-bar {
+  height: 6px;
+  border: 1px solid var(--border-heavy);
+  background-color: var(--background);
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  background-color: var(--accent);
+}
+[data-theme='modern'] .score-bar {
+  border: 0;
+  border-radius: var(--radius-pill, 9999px);
+  background-color: var(--accent-tint);
+}
+[data-theme='modern'] .score-bar-fill {
+  border-radius: var(--radius-pill, 9999px);
+}
+
+.tag-pill-quiet {
+  background-color: var(--accent-tint);
+  /* Raw --accent on --accent-tint measured 4.49:1 in brutalist light — a hair
+     under the 4.5 AA floor for 12px bold text. Mixing the accent toward
+     --foreground keeps the hue but always moves away from the tint, since the
+     tint sits on the background side of the palette in every theme. */
+  color: color-mix(in oklab, var(--accent) 78%, var(--foreground));
+  border-color: var(--border-heavy);
+}
+
 /* ------------------------------------------------------------------ */
 /* Themeable surface utilities                                        */
 /* Use these instead of hardcoded border-2 / rounded-none / shadow-[]  */
@@ -301,6 +361,47 @@ div[data-youtube-video] iframe {
 .shadow-brutal-lg { box-shadow: var(--shadow-lg); }
 .shadow-brutal-xl { box-shadow: var(--shadow-xl); }
 
+/* Condensed display face (Bebas Neue, loaded in layout.tsx as --font-condensed).
+   Used for the brutalist section mastheads and river lead headlines in the
+   homepage Newsroom. Uppercase + tight tracking is part of the face's idiom,
+   so it's baked in here rather than repeated at every call site. */
+/* Specificity + !important on purpose: the global `html body *` rule above
+   forces --font-sans on everything, so an opt-in face has to out-rank it. */
+html body .font-condensed,
+html body .font-condensed * {
+  font-family: var(--font-condensed), "Arial Narrow", Impact, sans-serif !important;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+
+/* Bottom-right diagonal cut — the "clipped corner" on Newsroom images. A
+   brutalist flourish: the modern theme drops the cut and rounds the corners
+   instead, and thins the 2px frame (.clip-frame) to a hairline to match the
+   rest of its borders. The inner radius is one px smaller than the frame's so
+   the two curves stay concentric. */
+.clip-corner-br {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+}
+[data-theme='modern'] .clip-corner-br {
+  clip-path: none;
+  border-radius: var(--radius);
+}
+[data-theme='modern'] .clip-frame {
+  padding: 1px;
+}
+[data-theme='modern'] .clip-frame > .clip-corner-br {
+  border-radius: calc(var(--radius) - 1px);
+}
+/* Image that sits on top of a caption panel inside a card: keep its bottom
+   corners square so it meets the panel flush instead of floating as a
+   separate rounded tile. */
+[data-theme='modern'] .clip-flush-b,
+[data-theme='modern'] .clip-flush-b > .clip-corner-br {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 /* The signature interaction: element "presses" toward its shadow on
    hover, and flattens completely on click in brutalist mode, or lifts
    softly in modern mode (see --press-* tokens). Requires the element to
@@ -320,6 +421,16 @@ div[data-youtube-video] iframe {
   box-shadow: var(--shadow-sm);
 }
 
+/* Modern: the base :hover above re-applies --shadow-sm — the shadow these
+   cards already carry — so the "lift" was a 1px nudge with no change in
+   depth and read as no hover at all. Modern lifts further and steps the
+   shadow UP: in a soft-shadow theme rising means a larger shadow, not a
+   smaller one. (Brutalist keeps its hard-offset press above.) */
+[data-theme='modern'] .brutal-press:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
 /* Variant for elements already using shadow-brutal-lg, so hover/active
    steps down proportionally instead of jumping straight to flat. */
 .brutal-press-lg {
@@ -335,6 +446,11 @@ div[data-youtube-video] iframe {
 }
 [data-theme='modern'] .brutal-press-lg:active {
   box-shadow: var(--shadow-md);
+}
+
+[data-theme='modern'] .brutal-press-lg:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-xl);
 }
 
 /* Flat inverted hover for text-only links (nav items, "view all" links
@@ -573,3 +689,127 @@ div[data-youtube-video] iframe {
     transform: translate(var(--sx1), var(--sy1)) rotate(var(--sr1));
   }
 }
+/* ------------------------------------------------------------------ */
+/* Heading roles                                                       */
+/*                                                                     */
+/* Headings are styled by ROLE, not by tag — see src/lib/typography.ts */
+/* for why. Each role reads tokens the root layout emits per theme     */
+/* from the admin's saved settings; the values below are the fallbacks */
+/* so the classes still render correctly if that block is ever absent. */
+/*                                                                     */
+/* Only font-family carries !important, and only via the descendant    */
+/* selector: the `html body *` rule far above forces --font-sans on    */
+/* every element, so an opt-in face has to out-rank it (same reason    */
+/* .font-condensed does). Size, weight, tracking and case need no such */
+/* hammer — nothing else declares them once the size utilities are     */
+/* removed from the markup, which is what the role sweep does.         */
+/* ------------------------------------------------------------------ */
+:root {
+  --h-display-size: clamp(2.25rem, 1.35rem + 3vw, 3.75rem);
+  --h-display-weight: 900;
+  --h-display-tracking: -0.025em;
+  --h-display-case: none;
+  --h-display-font: var(--font-sans);
+
+  --h-page-title-size: clamp(1.5rem, 1.275rem + 0.75vw, 1.875rem);
+  --h-page-title-weight: 800;
+  --h-page-title-tracking: -0.025em;
+  --h-page-title-case: none;
+  --h-page-title-font: var(--font-sans);
+
+  --h-section-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --h-section-weight: 800;
+  --h-section-tracking: -0.015em;
+  --h-section-case: none;
+  --h-section-font: var(--font-sans);
+
+  --h-card-size: clamp(1rem, 0.925rem + 0.25vw, 1.125rem);
+  --h-card-weight: 800;
+  --h-card-tracking: -0.01em;
+  --h-card-case: none;
+  --h-card-font: var(--font-sans);
+
+  --h-eyebrow-size: 0.75rem;
+  --h-eyebrow-weight: 800;
+  --h-eyebrow-tracking: 0.14em;
+  --h-eyebrow-case: uppercase;
+  --h-eyebrow-font: var(--font-sans);
+}
+
+[data-theme='modern'] {
+  --h-display-weight: 800;
+  --h-display-tracking: -0.03em;
+  --h-display-size: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem);
+  --h-page-title-weight: 700;
+  --h-section-weight: 700;
+  --h-card-weight: 700;
+}
+
+/* Line height is intentionally NOT configurable: it is a function of the
+   size, and letting it drift independently is how headings end up with
+   lines that collide or float apart. Baked per role instead. */
+.h-display {
+  font-size: var(--h-display-size);
+  font-weight: var(--h-display-weight);
+  letter-spacing: var(--h-display-tracking);
+  text-transform: var(--h-display-case);
+  line-height: 1.05;
+}
+.h-page-title {
+  font-size: var(--h-page-title-size);
+  font-weight: var(--h-page-title-weight);
+  letter-spacing: var(--h-page-title-tracking);
+  text-transform: var(--h-page-title-case);
+  line-height: 1.15;
+}
+.h-section {
+  font-size: var(--h-section-size);
+  font-weight: var(--h-section-weight);
+  letter-spacing: var(--h-section-tracking);
+  text-transform: var(--h-section-case);
+  line-height: 1.25;
+}
+.h-card {
+  font-size: var(--h-card-size);
+  font-weight: var(--h-card-weight);
+  letter-spacing: var(--h-card-tracking);
+  text-transform: var(--h-card-case);
+  line-height: 1.35;
+}
+.h-eyebrow {
+  font-size: var(--h-eyebrow-size);
+  font-weight: var(--h-eyebrow-weight);
+  letter-spacing: var(--h-eyebrow-tracking);
+  text-transform: var(--h-eyebrow-case);
+  line-height: 1.2;
+}
+
+/* Fixed-ratio smaller variants. The ratio is a design decision, not an admin
+   one: a role covers headings whose size legitimately differs with container
+   (a hero card title vs a sidebar list row), and those should move together
+   when the role is retuned rather than drift apart. */
+.h-section--sm { font-size: calc(var(--h-section-size) * 0.8); }
+.h-card--sm    { font-size: calc(var(--h-card-size) * 0.8); }
+
+/* The font escape hatch. Applied to the element AND its descendants, because
+   the global rule reaches children too — but size is deliberately left off the
+   descendant selector, so badges and chips nested inside a heading keep their
+   own scale. */
+html body .h-display,
+html body .h-display * { font-family: var(--h-display-font) !important; }
+html body .h-page-title,
+html body .h-page-title * { font-family: var(--h-page-title-font) !important; }
+html body .h-section,
+html body .h-section *,
+html body .h-section--sm,
+html body .h-section--sm * { font-family: var(--h-section-font) !important; }
+html body .h-card,
+html body .h-card *,
+html body .h-card--sm,
+html body .h-card--sm * { font-family: var(--h-card-font) !important; }
+html body .h-eyebrow,
+html body .h-eyebrow * { font-family: var(--h-eyebrow-font) !important; }
+
+/* Same hatch for the dashboard's heading preview, which needs to show an
+   arbitrary face and would otherwise be overridden by the global rule. */
+html body .heading-preview { font-family: var(--preview-font) !important; }

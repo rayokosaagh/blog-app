@@ -20,6 +20,7 @@ export default async function UiSettingsPage() {
       initialAccents={theme.modernAccents}
       initialBrutalistAccents={theme.brutalistAccents}
       initialDarkSurfaces={theme.darkSurfaces}
+      initialHeadingType={theme.headingType}
     />
   );
 }
