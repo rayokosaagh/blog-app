@@ -22,16 +22,77 @@
 
 # misc
 .DS_Store
-*.pem
+Thumbs.db
+# Explorer writes this into any folder whose view settings are touched, so it
+# turns up beside source, not only in image directories.
+desktop.ini
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+# The rules above only cover the package manager's own crash logs. An
+# application log is the one that ends up holding session tokens and reader
+# email addresses.
+*.log
+logs/
 
+# ---------------------------------------------------------------------------
+# Secrets — never commit these.
+# ---------------------------------------------------------------------------
 # env files (can opt-in for committing if needed)
 .env*
+# `.env*` only matches a *leading* dot. `prod.env` and `local.env` match it
+# neither, and are exactly what someone reaches for when juggling deployments.
+*.env
+
+# direnv holds `export` lines, so it is an environment file under another name.
+.envrc
+
+# Auth.js writes AUTH_SECRET here when you run `npx auth secret`.
+.auth
+
+# npm registry auth tokens live here as `//registry…:_authToken=`.
+.npmrc
+
+# VS Code's Local History extension snapshots every file it sees into the
+# workspace, .env included — which is how a copy of the secrets walks around
+# the rule above.
+.history/
+
+# Anything deliberately named as such.
+/secrets/
+*.secrets.*
+
+# Keys and certificates. `*.pem` alone covers one format out of many.
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+*.p8
+*.asc
+*.gpg
+id_rsa*
+id_ed25519*
+**/*service-account*.json
+**/*credentials*.json
+
+# Database dumps and local database files.
+#
+# A dump is as sensitive as the database it came from — reader emails, comment
+# history and password hashes, in one file that looks like source.
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
 
 restructure-components.js*
 components-map.json*
@@ -50,5 +111,43 @@ generated/
 CLAUDE.md
 .claude/
 
+# `AGENTS.md` is the same thing under a tool-neutral name. Its content now
+# lives in README.md, which is what a fresh clone actually reads; the file
+# stays on disk for the local agent tooling.
+AGENTS.md
+
+# ---------------------------------------------------------------------------
+# Working documents — kept locally, not in the repository.
+# ---------------------------------------------------------------------------
+# `report.md` is a point-in-time security and correctness audit. It enumerates
+# unfixed vulnerabilities with file-and-line locations, which is a roadmap for
+# anyone who reads it — publishing that alongside the code it describes is the
+# one thing an audit must not do. Untracked with `git rm --cached`; earlier
+# revisions remain in the history.
+report.md
+
+# The design-token guide for the brutalist theme. Working notes rather than
+# something a clone needs in order to run the project.
+NEO-BRUTALISM-GUIDE.md
+
 # audit tooling output (screenshots + json)
 tools/audit/.out/
+
+# Caches, editor state and process files.
+.turbo/
+.eslintcache
+.vscode/
+.idea/
+*.swp
+*.pid
+
+# `/node_modules` above is anchored to the repository root, so it does not
+# match a nested install.
+node_modules/
+
+# Playwright's default output paths — `tools/audit/.out/` above only covers
+# this project's own audit scripts. Reports embed full-page screenshots of
+# whatever data the run rendered.
+test-results/
+playwright-report/
+storybook-static/
