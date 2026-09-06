@@ -32,6 +32,10 @@ export default function SpecificationsCard({
   /** Heading tag as authored in the editor; the card renders it exactly as the article body would. */
   level?: string;
 }) {
+  // An empty payload would render the card chrome around nothing; an empty box
+  // mid-article reads as a broken embed, so render nothing at all.
+  if (items.length === 0) return null;
+
   // The post title owns the page's only h1, so an authored H1 ships as
   // h2[data-was-h1] (the numbered kicker style, same as the body); H2 is the
   // title style; H3/H4 keep their own tag. Older payloads without a level are

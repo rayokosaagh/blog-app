@@ -29,7 +29,6 @@ export default function Carousel({ banners }: CarouselProps) {
     setCurrent((prev) => (prev - 1 + banners.length) % banners.length);
   }, [banners.length]);
 
-  // Auto-advance every 5 seconds
   useEffect(() => {
     if (banners.length <= 1) return;
     const timer = setInterval(next, 5000);
@@ -60,7 +59,6 @@ export default function Carousel({ banners }: CarouselProps) {
       // three top-story columns read as one family. Fills its container.
       className="relative h-full w-full overflow-hidden"
     >
-      {/* Slides */}
       <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div
           key={current}
@@ -73,17 +71,14 @@ export default function Carousel({ banners }: CarouselProps) {
           className="absolute inset-0"
         >
           <Link href={banners[current].link} target="_blank" rel="noopener noreferrer">
-            {/* Image */}
             <img
               src={banners[current].image}
               alt={banners[current].title}
               className="w-full h-full object-cover"
             />
 
-            {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
 
-            {/* Tag + Title */}
             <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
               <motion.span
                 initial={{ opacity: 0, y: 10 }}
@@ -113,7 +108,6 @@ export default function Carousel({ banners }: CarouselProps) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Left Arrow */}
       {banners.length > 1 && (
         <button
           onClick={(e) => { e.preventDefault(); prev(); }}
@@ -124,7 +118,6 @@ export default function Carousel({ banners }: CarouselProps) {
         </button>
       )}
 
-      {/* Right Arrow */}
       {banners.length > 1 && (
         <button
           onClick={(e) => { e.preventDefault(); next(); }}
@@ -157,7 +150,6 @@ export default function Carousel({ banners }: CarouselProps) {
         </div>
       )}
 
-      {/* Progress bar */}
       {banners.length > 1 && (
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-white/20 z-10">
           <motion.div

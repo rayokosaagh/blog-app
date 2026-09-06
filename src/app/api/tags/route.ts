@@ -11,7 +11,7 @@ function slugify(name: string) {
     .replace(/(^-|-$)/g, "");
 }
 
-// GET all tags. `?hasProducts=1` returns only tags with published products.
+// `?hasProducts=1` returns only tags with published products.
 export async function GET(req: Request) {
   try {
     const hasProducts = new URL(req.url).searchParams.get("hasProducts");
@@ -28,7 +28,6 @@ export async function GET(req: Request) {
   }
 }
 
-// CREATE tag
 export async function POST(req: Request) {
   try {
     const session = await auth();

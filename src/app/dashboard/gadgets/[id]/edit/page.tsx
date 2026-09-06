@@ -14,7 +14,7 @@ export default async function EditGadgetPage({
 
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { category: true, tags: true }, // ← added tags
+    include: { category: true, tags: true },
   });
 
   if (!product) return notFound();

@@ -204,7 +204,6 @@ export default function Poll() {
       onHoverEnd={() => setIsHovering(false)}
       className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-4 py-6 sm:px-6 sm:py-8 md:px-8"
     >
-      {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <BarChart3 size={20} className="text-accent" />
@@ -220,7 +219,6 @@ export default function Poll() {
 
       <div className="border-t-2 border-border mt-4 mb-4" />
 
-      {/* Navigation */}
       <div className="flex justify-end mb-4">
         <div className="flex gap-1">
           <button

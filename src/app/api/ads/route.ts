@@ -27,7 +27,6 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log("POST /api/ads body:", body);
 
     const { title, image, link, position, active } = body;
 
@@ -37,8 +36,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    console.log("prisma.ad available?", !!(prisma as any).ad);
 
     const ad = await (prisma as any).ad.create({
       data: { title, image, link, position: position ?? 0, active: active ?? true },

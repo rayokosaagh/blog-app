@@ -125,7 +125,6 @@ export default function MobileNewsTabs({ trendingPosts = [], latestPosts = [] }:
         })}
       </div>
 
-      {/* Vertical list */}
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
           key={tab}
@@ -159,7 +158,6 @@ export default function MobileNewsTabs({ trendingPosts = [], latestPosts = [] }:
                       {i + 1}
                     </span>
 
-                    {/* Text block */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug transition-colors group-hover:text-accent">
                         {post.title}

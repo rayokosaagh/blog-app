@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/FocusedSpecBar.tsx
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { SpecField } from "@/lib/gadgets/types";

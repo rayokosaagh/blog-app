@@ -109,7 +109,6 @@ export default function HeroBanner({
       />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-1/2 bg-gradient-to-t from-photo-overlay/70 to-transparent" />
 
-      {/* Copy */}
       {/* pointer-events-none so the artwork link underneath stays clickable
           across the whole banner; the interactive children opt back in. */}
       <div className="pointer-events-none relative z-10 flex h-full min-h-[inherit] flex-col justify-between p-6 sm:p-8 lg:p-10">

@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/ProductSlots.tsx
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";

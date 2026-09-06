@@ -1,6 +1,4 @@
 // src/app/api/posts/[id]/rating/route.ts
-//
-// Drop this file at: src/app/api/posts/[id]/rating/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";

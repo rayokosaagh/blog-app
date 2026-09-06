@@ -4,7 +4,6 @@ import TrendingNewsList from "./TrendingNewsList";
 const ITEMS_TO_SHOW = 5;
 
 export default async function TrendingNews() {
-  // Trending = the most-viewed published posts, ranked purely by view count.
   const posts = await prisma.post.findMany({
     where: { published: true },
     orderBy: { views: "desc" },

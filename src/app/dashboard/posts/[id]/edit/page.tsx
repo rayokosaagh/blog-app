@@ -167,7 +167,6 @@ export default function EditPostPage({
     <div className="space-y-6">
       <BackLink href="/dashboard/posts" label="Posts" />
 
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center gap-4">
@@ -194,7 +193,6 @@ export default function EditPostPage({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6 pb-20">
-          {/* Title */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Title
@@ -208,7 +206,6 @@ export default function EditPostPage({
             />
           </div>
 
-          {/* Slug */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Slug
@@ -230,7 +227,6 @@ export default function EditPostPage({
               every card. */}
           <CategorySelect value={category} onChange={setCategory} />
 
-          {/* Featured Image */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Featured image
@@ -290,7 +286,6 @@ export default function EditPostPage({
           {/* Tags — kept right under the featured image */}
           <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
-          {/* Published toggle */}
           <div className="flex items-center gap-3 flex-wrap">
             <input
               type="checkbox"
@@ -305,7 +300,6 @@ export default function EditPostPage({
             <NotifySubscribersButton postId={postId} />
           </div>
 
-          {/* Content */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Content
@@ -315,7 +309,6 @@ export default function EditPostPage({
 
           <VerdictEditor value={verdict} onChange={setVerdict} />
 
-          {/* Sticky action bar */}
           <StickyFormActions
             saving={loading}
             disabled={uploading}

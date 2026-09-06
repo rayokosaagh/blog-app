@@ -135,7 +135,6 @@ export default function GadgetsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4 flex-wrap">
@@ -174,7 +173,6 @@ export default function GadgetsPage() {
         </div>
       </div>
 
-      {/* Search & filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -243,7 +241,6 @@ export default function GadgetsPage() {
           </AnimatePresence>
         </div>
 
-        {/* Tag filter */}
         {availableTags.length > 0 && (
           <select
             value={selectedTag}
@@ -260,7 +257,6 @@ export default function GadgetsPage() {
         )}
       </div>
 
-      {/* Products list */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -352,7 +348,6 @@ export default function GadgetsPage() {
         )}
       </div>
 
-      {/* Delete confirmation modal */}
       <AnimatePresence>
         {productToDelete && (
           <motion.div
@@ -410,7 +405,6 @@ export default function GadgetsPage() {
         )}
       </AnimatePresence>
 
-      {/* Error modal */}
       <AnimatePresence>
         {errorMessage && (
           <motion.div
@@ -454,7 +448,6 @@ export default function GadgetsPage() {
         )}
       </AnimatePresence>
 
-      {/* Success toast */}
       <AnimatePresence>
         {deletedName && (
           <motion.div

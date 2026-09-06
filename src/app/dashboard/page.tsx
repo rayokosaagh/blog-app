@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "@/components/dashboard/DashboardClient";
@@ -163,7 +162,6 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Primary content stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           label="Total posts"
@@ -195,7 +193,6 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Engagement & growth stats */}
       <div>
         <SectionLabel>Engagement &amp; growth</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -242,7 +239,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Catalog & gadgets */}
       <div>
         <SectionLabel>Catalog &amp; gadgets</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -289,7 +285,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Site & promotions */}
       <div>
         <SectionLabel>Site &amp; promotions</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">

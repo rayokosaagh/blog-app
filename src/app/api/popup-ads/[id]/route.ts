@@ -1,4 +1,3 @@
-// src/app/api/popup-ads/[id]/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
@@ -9,7 +8,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log("✅ GET - ID:", id);
 
     if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
@@ -32,7 +30,6 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    console.log("✅ PATCH - ID received:", id);
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
@@ -76,7 +73,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    console.log("✅ DELETE - ID received:", id);
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });

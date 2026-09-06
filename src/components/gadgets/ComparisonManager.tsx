@@ -12,6 +12,7 @@ import {
   Layers,
   ListChecks,
 } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 import Modal from "@/components/dashboard/Modal";
 import { SuccessToast } from "@/components/dashboard/DashboardUI";
@@ -30,7 +31,6 @@ interface ComparisonItem {
   verdictB?: string | null;
 }
 
-// ─── Diagonal split product thumbnail ─────────────────────────
 function DiagonalThumb({ item }: { item: ComparisonItem }) {
   return (
     <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
@@ -60,7 +60,6 @@ function DiagonalThumb({ item }: { item: ComparisonItem }) {
           style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
         />
       )}
-      {/* diagonal divider line */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -71,7 +70,6 @@ function DiagonalThumb({ item }: { item: ComparisonItem }) {
   );
 }
 
-// ─── iOS-style animated toggle switch ─────────────────────────
 function ActiveToggle({ active, onToggle }: { active: boolean; onToggle: () => void }) {
   return (
     <button
@@ -269,7 +267,6 @@ export default function ComparisonManager({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Modal state
   const [comparisonToDelete, setComparisonToDelete] = useState<ComparisonItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -325,7 +322,6 @@ export default function ComparisonManager({
     }
   }
 
-  // Persist new drag order to the server
   async function persistOrder(items: ComparisonItem[]) {
     try {
       const res = await fetch("/api/gadgets/comparisons/reorder", {
@@ -448,7 +444,6 @@ export default function ComparisonManager({
 
   return (
     <div className="space-y-6">
-      {/* Add new comparison */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-6 space-y-4">
@@ -528,7 +523,6 @@ export default function ComparisonManager({
         </div>
       </div>
 
-      {/* Existing comparisons — drag to reorder */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3">
@@ -549,7 +543,12 @@ export default function ComparisonManager({
         </div>
 
         {comparisons.length === 0 ? (
-          <p className="p-8 text-sm text-zinc-400 text-center">No comparisons added yet.</p>
+          <EmptyState
+            frame={false}
+            icon={Layers}
+            title="No comparisons yet"
+            description="Pick two gadgets from the same category to feature a comparison on the homepage."
+          />
         ) : (
           <Reorder.Group
             axis="y"
@@ -575,7 +574,6 @@ export default function ComparisonManager({
         )}
       </div>
 
-      {/* Delete confirm modal */}
       <ConfirmDialog
         open={!!comparisonToDelete}
         title="Remove comparison?"
@@ -596,7 +594,6 @@ export default function ComparisonManager({
         onClose={() => setComparisonToDelete(null)}
       />
 
-      {/* Success toast */}
       <AnimatePresence>
         {showSuccess && (
           <SuccessToast
@@ -606,7 +603,6 @@ export default function ComparisonManager({
         )}
       </AnimatePresence>
 
-      {/* Error modal */}
       <Modal
         open={!!errorModalMessage}
         onClose={() => setErrorModalMessage("")}

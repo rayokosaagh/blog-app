@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Mail, Search, ChevronDown, CheckCircle2, X } from "lucide-react";
+import { EmptyStateRow } from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 
 type Status = "CONFIRMED" | "PENDING";
@@ -18,19 +19,16 @@ export default function NewsletterPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
 
-  // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | Status>("ALL");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Delete modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [subscriberToDelete, setSubscriberToDelete] = useState<{ id: string; email: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  // Success
   const [successMessage, setSuccessMessage] = useState("");
 
   async function fetchSubscribers() {
@@ -115,7 +113,6 @@ export default function NewsletterPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center gap-4">
@@ -136,7 +133,6 @@ export default function NewsletterPage() {
         </div>
       </div>
 
-      {/* Metric row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-5">
           <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{subscribers.length}</p>
@@ -152,7 +148,6 @@ export default function NewsletterPage() {
         </div>
       </div>
 
-      {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -207,14 +202,12 @@ export default function NewsletterPage() {
         </div>
       </div>
 
-      {/* Fetch Error */}
       {fetchError && (
         <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm">
           {fetchError}
         </div>
       )}
 
-      {/* Success Banner */}
       {successMessage && (
         <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-sm">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -224,7 +217,6 @@ export default function NewsletterPage() {
         </div>
       )}
 
-      {/* Table */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -238,11 +230,16 @@ export default function NewsletterPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {filteredSubscribers.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-12 text-center text-sm text-zinc-400">
-                    No subscribers found
-                  </td>
-                </tr>
+                <EmptyStateRow
+                  colSpan={4}
+                  icon={Mail}
+                  title={subscribers.length === 0 ? "No subscribers yet" : "No subscribers match your filters"}
+                  description={
+                    subscribers.length === 0
+                      ? "Readers who sign up to the newsletter will be listed here."
+                      : "Try a different status filter or search term."
+                  }
+                />
               ) : (
                 filteredSubscribers.map((subscriber) => (
                   <tr
@@ -289,7 +286,6 @@ export default function NewsletterPage() {
         </div>
       </div>
 
-      {/* Delete Modal */}
       <ConfirmDialog
         open={showDeleteModal && !!subscriberToDelete}
         title="Remove subscriber?"

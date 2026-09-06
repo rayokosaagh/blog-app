@@ -1,4 +1,3 @@
-// src/components/blog/BlogSort.tsx
 "use client";
 
 import Link from "next/link";

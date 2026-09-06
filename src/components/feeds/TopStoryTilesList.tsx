@@ -57,7 +57,6 @@ function StoryTile({ t }: { t: Tile }) {
       href={`/blog/${t.slug}`}
       className="group relative block h-full w-full overflow-hidden rounded-none border-2 border-border-heavy bg-border shadow-brutal-sm brutal-press"
     >
-      {/* Image */}
       {t.featuredImage ? (
         // The tile is a 4:3 cell: two-up on mobile, four across the 1600px
         // container from lg, so it never needs more than ~380px.

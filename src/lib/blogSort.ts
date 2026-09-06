@@ -1,5 +1,3 @@
-// src/lib/blogSort.ts
-//
 // Pure sort vocabulary for the blog listing. Deliberately NOT in the
 // "use client" component file: every export of a "use client" module becomes a
 // client reference when a Server Component imports it, so `parseSort` would

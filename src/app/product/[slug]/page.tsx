@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { APP_URL } from "@/lib/appUrl";
 import JsonLd from "@/components/seo/JsonLd";
 import { getCategoryDef } from "@/lib/gadgets/categories";
+import { groupHasValues } from "@/lib/gadgets/formatSpecValue";
 import { parseColors } from "@/lib/gadgets/colors";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -19,6 +20,8 @@ import type {
 import OwnershipWidget from "@/components/gadgets/product/OwnershipWidget";
 import ProductSpecNav from "@/components/gadgets/product/ProductSpecNav";
 import ProductSpecTable from "@/components/gadgets/product/ProductSpecTable";
+import EmptyState from "@/components/ui/EmptyState";
+import { ClipboardList } from "lucide-react";
 import VerdictCard from "@/components/blog/VerdictCard";
 import { readVerdict, VERDICT_MAX } from "@/lib/verdict";
 
@@ -79,7 +82,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // gate as articles: needs both a bottom line and a score, or nothing shows.
   const verdict = readVerdict(product);
 
-  // ── Ownership widget data ──
   const session = await auth();
   const ownershipCounts = await prisma.productOwnership.groupBy({
     by: ["status"],
@@ -271,15 +273,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
             card carries its own vertical margin (my-10). */}
         {verdict && <VerdictCard verdict={verdict} productName={product.name} />}
 
-        <div className="flex flex-col lg:flex-row gap-8 mt-10">
-          <ProductSpecNav groups={categoryDef.groups} specs={specs} />
+        {/* Each group hides itself when it has no filled fields, and the nav
+            hides with them — so with nothing filled at all the whole section
+            collapsed to an empty spacer. Say so instead. */}
+        {categoryDef.groups.some((group) => groupHasValues(group, specs)) ? (
+          <div className="flex flex-col lg:flex-row gap-8 mt-10">
+            <ProductSpecNav groups={categoryDef.groups} specs={specs} />
 
-          <div className="flex-1 min-w-0 flex flex-col gap-10">
-            {categoryDef.groups.map((group) => (
-              <ProductSpecTable key={group.title} group={group} specs={specs} />
-            ))}
+            <div className="flex-1 min-w-0 flex flex-col gap-10">
+              {categoryDef.groups.map((group) => (
+                <ProductSpecTable key={group.title} group={group} specs={specs} />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-10">
+            <EmptyState
+              variant="brutal"
+              icon={ClipboardList}
+              title="No specifications yet"
+              description="Full specs for this product have not been published."
+            />
+          </div>
+        )}
       </main>
 
       <Footer />

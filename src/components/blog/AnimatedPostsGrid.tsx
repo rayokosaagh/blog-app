@@ -1,4 +1,3 @@
-// src/components/blog/AnimatedPostsGrid.tsx
 "use client";
 
 import { useState } from "react";
@@ -7,7 +6,6 @@ import Link from "next/link";
 import TagIcon from "./TagIcon";
 import type { TagColorMode } from "@/lib/sanitizeSvg";
 import { sortTagsByOrder } from "@/lib/sortTags";
-// remove the local `function Underline(...)` block entirely, add:
 import Underline from "@/components/ui/Underline";
 import CategoryBadge from "./CategoryBadge";
 import { getPostCategory } from "@/lib/blog/categories";
@@ -30,13 +28,6 @@ interface AnimatedPostsGridProps {
   posts: PostItem[];
   hasFilters: boolean;
   filterKey: string;
-  /**
-   * DEV ONLY, off by default: pads the "More posts" list with placeholder posts
-   * so load-more can be exercised when the real post list is short. Their slugs
-   * (`/blog/dummy-post-N`) do not exist, so anything rendered from them is a
-   * dead link — never enable this on a page real visitors see.
-   */
-  showDemoPosts?: boolean;
 }
 
 const PAGE_SIZE = 10;
@@ -60,38 +51,6 @@ function excerpt(html: string, len: number) {
     .substring(0, len);
 }
 
-// --- DEV ONLY: dummy posts so "More posts" + load-more can be tested locally ---
-function generateDummyPosts(count: number, offset: number): PostItem[] {
-  const sampleTitles = [
-    "Redmi Note 15 Pro Plus Review: Is it the best value for the price?",
-    "Galaxy Tab S11 Review: A worthy iPad rival?",
-    "5 budget earbuds that actually sound premium",
-    "How to pick a laptop that will last five years",
-    "OnePlus 13R long-term review: six months later",
-    "The best mechanical keyboards under $100",
-    "Why fast charging is finally standard in 2026",
-    "Foldable phones: gimmick or the future?",
-    "Mirrorless vs DSLR: which should you buy today",
-    "The quiet return of the compact camera",
-  ];
-  const authors = ["Yural Maskey", "Priya Shah", "Daniel Ortiz", "Mei Lin"];
-  return Array.from({ length: count }).map((_, i) => {
-    const n = offset + i;
-    return {
-      id: `dummy-${n}`,
-      slug: `dummy-post-${n}`,
-      title: sampleTitles[n % sampleTitles.length],
-      content: "<p>Sample placeholder content used for testing the load more pagination.</p>",
-      featuredImage: null,
-      createdAt: new Date(2026, 0, ((n * 3) % 27) + 1),
-      tagOrder: [],
-      author: { name: authors[n % authors.length], image: null },
-      tags: [],
-    };
-  });
-}
-// --- end dev-only block ---
-
 /**
  * `eager` is for the lead story only. It's the largest image above the fold and
  * therefore the page's LCP element — lazy-loading it would delay the metric
@@ -114,17 +73,10 @@ function PostThumb({ post, eager = false }: { post: PostItem; eager?: boolean })
   );
 }
 
-// Brutalist swap for the old animated gradient underline: an instant
-// hard-edged highlight block behind the text, like a highlighter
-// stroke, rather than a soft drawn-on underline. No easing on the
-// reveal itself — brutalism moves in steps, not fades.
-
-
 export default function AnimatedPostsGrid({
   posts,
   hasFilters,
   filterKey,
-  showDemoPosts = false,
 }: AnimatedPostsGridProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -143,17 +95,15 @@ export default function AnimatedPostsGrid({
           <p className="text-foreground text-lg font-bold mb-6">
             {hasFilters ? "No posts match these filters" : "No posts yet"}
           </p>
-          {hasFilters && (
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-border-heavy rounded-none text-accent font-extrabold text-xs uppercase tracking-wide shadow-brutal-sm brutal-press group"
-            >
-              <span className="group-hover:-translate-x-1 transition-transform">
-                ←
-              </span>{" "}
-              View all posts
-            </Link>
-          )}
+          <Link
+            href={hasFilters ? "/blog" : "/products"}
+            className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-border-heavy rounded-none text-accent font-extrabold text-xs uppercase tracking-wide shadow-brutal-sm brutal-press group"
+          >
+            <span className="group-hover:-translate-x-1 transition-transform">
+              ←
+            </span>{" "}
+            {hasFilters ? "View all posts" : "Browse gadgets"}
+          </Link>
         </motion.div>
       </AnimatePresence>
     );
@@ -162,13 +112,7 @@ export default function AnimatedPostsGrid({
   const lead = posts[0];
   const sideList = posts.slice(1, 5);
   const gridThree = posts.slice(5, 8);
-  let rest = posts.slice(8);
-
-  // DEV ONLY: pad the list so there's enough to click through "load more" with.
-  // Remove this block (and the showDemoPosts prop) once real data is sufficient.
-  if (showDemoPosts && rest.length < 25) {
-    rest = [...rest, ...generateDummyPosts(25 - rest.length, rest.length)];
-  }
+  const rest = posts.slice(8);
 
   const visibleRest = rest.slice(0, visibleCount);
   const hasMore = visibleCount < rest.length;

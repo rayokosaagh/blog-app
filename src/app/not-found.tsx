@@ -48,7 +48,6 @@ export default function NotFound() {
 
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-6 py-12 lg:py-16">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
-          {/* Copy column */}
           <div className="min-w-0">
             <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-accent sm:text-sm">
               Oops! This page went missing

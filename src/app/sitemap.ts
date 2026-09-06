@@ -1,4 +1,3 @@
-// src/app/sitemap.ts
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { APP_URL } from "@/lib/appUrl";

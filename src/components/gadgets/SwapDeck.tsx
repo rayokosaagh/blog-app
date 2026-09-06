@@ -48,7 +48,6 @@ export default function SwapDeck({
 
   return (
     <div className="relative w-full">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <AnimatePresence mode="wait" initial={false}>
           <motion.h3

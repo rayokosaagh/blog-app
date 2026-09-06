@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email/send";
 import { confirmSubscriptionEmail } from "@/lib/newsLetterEmails";
-// Adjust this import to match your actual auth setup (see src/auth/index.ts)
 import { auth } from "@/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

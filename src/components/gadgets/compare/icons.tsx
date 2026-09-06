@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/icons.tsx
 "use client";
 import { motion } from "framer-motion";
 
@@ -173,7 +172,6 @@ export function GroupIcon({ title, className }: { title: string; className?: str
       </svg>
     );
   }
-  // Generic fallback
   return (
     <svg {...common}>
       <path d="M4 6h16M4 12h16M4 18h10" strokeLinecap="round" />

@@ -15,7 +15,6 @@ export async function GET() {
   }
 }
 
-// POST - Create new banner
 export async function POST(req: Request) {
   try {
     const session = await auth();

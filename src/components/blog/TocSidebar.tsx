@@ -194,7 +194,6 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
 
   return (
     <aside className="sticky top-6 self-start w-full flex flex-col bg-card surface-border shadow-brutal px-6 py-8 md:px-8 max-h-[calc(100dvh-3rem)]">
-      {/* Breadcrumb */}
       <div
         className={`shrink-0 overflow-hidden border-border transition-all duration-300 ease-in-out ${
           showBreadcrumb ? "max-h-20 opacity-100 mb-5 pb-4 border-b-2" : "max-h-0 opacity-0 pointer-events-none"
@@ -239,7 +238,6 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
         </div>
       </div>
 
-      {/* Reading progress */}
       {toc.length > 0 && (
         <div
           className="shrink-0 mt-3 h-2 w-full overflow-hidden bg-border"

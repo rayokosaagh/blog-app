@@ -1,4 +1,3 @@
-// src/components/gadgets/ComparisonTable.tsx
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import { GadgetCategoryDef } from "@/lib/gadgets/types";
@@ -23,7 +22,7 @@ export default function ComparisonTable({
         fields: visibleFieldsAcross(g, specsList).filter((f) => {
           if (!onlyDiff) return true;
           const vals = products.map((p) => JSON.stringify(p.specs?.[f.key] ?? null));
-          return new Set(vals).size > 1; // keep only fields that differ
+          return new Set(vals).size > 1;
         }),
       }))
       .filter((g) => g.fields.length > 0);
@@ -31,7 +30,6 @@ export default function ComparisonTable({
 
   return (
     <div>
-      {/* Header: images, names, prices */}
       <div className="grid" style={{ gridTemplateColumns: `160px repeat(${products.length}, 1fr)` }}>
         <div />
         {products.map((p) => (
@@ -50,7 +48,6 @@ export default function ComparisonTable({
         ))}
       </div>
 
-      {/* Toggles */}
       <div className="flex gap-4 justify-end my-3 text-xs font-bold uppercase tracking-wide text-foreground">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -72,7 +69,6 @@ export default function ComparisonTable({
         </label>
       </div>
 
-      {/* Jump nav */}
       <nav className="flex gap-2 overflow-x-auto scrollbar-hide border-y-2 border-border-heavy py-2 mb-4">
         {groups.map((g) => (
           <a
@@ -85,7 +81,6 @@ export default function ComparisonTable({
         ))}
       </nav>
 
-      {/* Grouped spec table */}
       <div className="table-wrap">
         <table className="w-full text-sm border-collapse">
           <tbody>

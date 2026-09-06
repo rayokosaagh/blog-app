@@ -38,6 +38,10 @@ const pipVariants: Variants = {
 };
 
 export default function KeyHighlightsCard({ items }: KeyHighlightsCardProps) {
+  // An empty payload would render the card chrome around nothing; an empty box
+  // mid-article reads as a broken embed, so render nothing at all.
+  if (items.length === 0) return null;
+
   return (
     <motion.div
       className="not-prose bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-5"

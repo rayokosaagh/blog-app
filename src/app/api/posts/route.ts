@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { verdictFieldsFromBody } from "@/lib/verdict";
 import { DEFAULT_POST_CATEGORY, isPostCategory } from "@/lib/blog/categories";
 
-// GET all posts (with search + tag filter)
 // Used by the dashboard: admins see every post, everyone else sees only their own.
 export async function GET(req: Request) {
   try {
@@ -22,8 +21,6 @@ export async function GET(req: Request) {
 
     const posts = await prisma.post.findMany({
       where: {
-        // Non-admins only ever see their own posts (published or draft).
-        // Admins see everything.
         ...(isAdmin ? {} : { authorId: session.user.id }),
         ...(search
           ? {
@@ -57,7 +54,6 @@ export async function GET(req: Request) {
   }
 }
 
-// CREATE POST
 export async function POST(req: Request) {
   try {
     const session = await auth();

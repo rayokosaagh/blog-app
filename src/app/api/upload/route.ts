@@ -25,7 +25,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
-    // Validate file size (images max 5MB, videos max 20MB).
     const maxSize = isVideo ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -37,11 +36,9 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), "public/uploads");
     await mkdir(uploadsDir, { recursive: true });
 
-    // Generate unique filename
     const uniqueName = `${Date.now()}-${file.name.replace(/\s/g, "-")}`;
     const filePath = path.join(uploadsDir, uniqueName);
 

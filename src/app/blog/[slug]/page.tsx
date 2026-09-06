@@ -421,7 +421,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <ReadingProgressBar />
       <Navbar />
 
-      {/* Hero Header */}
       <div className="relative w-full h-[420px] md:h-[500px] overflow-hidden border-b-[1.5px] border-border-heavy">
         <style>{`
           @keyframes heroZoomIn {
@@ -525,7 +524,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
       </div>
 
-      {/* Main Content */}
       {/* The rails live in the gutters BESIDE the centred article, not in flow
           with it.
 
@@ -952,7 +950,6 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
             <SpecificationsMount />
             <GalleryMount />
 
-            {/* Author Bio */}
             <div className="mt-10 pt-6 border-t-[1.5px] border-border-heavy">
               <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-4 justify-between bg-background border-[1.5px] border-border-heavy px-5 py-4 sm:px-6 sm:py-5">
                 <Link href="/blog" className="group inline-flex items-center gap-2 text-accent hover:underline font-bold text-sm transition-colors shrink-0">
@@ -1038,21 +1035,18 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
         </FadeIn>
       )}
 
-      {/* POLL */}
       <FadeIn>
         <div className="max-w-4xl mx-auto px-6 mt-6 mb-6 md:mt-8 md:mb-8">
           <Poll />
         </div>
       </FadeIn>
 
-      {/* RATING */}
       <FadeIn>
         <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
           <RatingMeter postId={post.id} />
         </div>
       </FadeIn>
 
-      {/* COMMENTS */}
       <FadeIn>
         <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
           <CommentSection postId={post.id} />

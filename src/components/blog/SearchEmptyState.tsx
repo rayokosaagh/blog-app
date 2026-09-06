@@ -1,4 +1,3 @@
-// src/components/blog/SearchEmptyState.tsx
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";

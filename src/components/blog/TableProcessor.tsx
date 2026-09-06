@@ -16,7 +16,6 @@ export default function TableProcessor({ html }: { html: string }) {
     let match;
 
     while ((match = tableRegex.exec(html)) !== null) {
-      // Add HTML before this table
       if (match.index > lastIndex) {
         result.push({
           type: "html",
@@ -24,7 +23,6 @@ export default function TableProcessor({ html }: { html: string }) {
         });
       }
 
-      // Decode the table HTML
       try {
         const tableHtml = atob(match[1]);
         result.push({ type: "table", content: tableHtml });
@@ -35,7 +33,6 @@ export default function TableProcessor({ html }: { html: string }) {
       lastIndex = match.index + match[0].length;
     }
 
-    // Add remaining HTML
     if (lastIndex < html.length) {
       result.push({ type: "html", content: html.slice(lastIndex) });
     }

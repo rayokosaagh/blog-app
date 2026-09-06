@@ -1,10 +1,5 @@
 "use client";
 
-// src/components/RatingMeter.tsx
-//
-// Usage (e.g. inside src/app/blog/[slug]/page.tsx, at the bottom of the article):
-//   <RatingMeter postId={post.id} />
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   motion,

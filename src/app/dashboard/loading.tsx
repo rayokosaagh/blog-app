@@ -16,7 +16,6 @@ import Skeleton from "@/components/ui/Skeleton";
 export default function DashboardLoading() {
   return (
     <div role="status" aria-busy="true" aria-label="Loading dashboard">
-      {/* Page heading + primary action */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Skeleton className="h-8 w-56" />
@@ -25,7 +24,6 @@ export default function DashboardLoading() {
         <Skeleton className="h-10 w-36" />
       </div>
 
-      {/* Stat cards */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
@@ -39,7 +37,6 @@ export default function DashboardLoading() {
         ))}
       </div>
 
-      {/* Chart / panel pair */}
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-2 dark:border-zinc-800 dark:bg-zinc-900">
           <Skeleton className="h-5 w-40" />
@@ -61,7 +58,6 @@ export default function DashboardLoading() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <div className="border-b border-zinc-200 p-5 dark:border-zinc-800">
           <Skeleton className="h-5 w-36" />

@@ -137,7 +137,6 @@ export default function AccountClient() {
 
   return (
     <div className="space-y-6">
-      {/* Profile card */}
       <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8">
         <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
           Profile
@@ -149,7 +148,6 @@ export default function AccountClient() {
         <div className="border-t-2 border-border-heavy mt-5 mb-6" />
 
         <div className="flex flex-col sm:flex-row gap-6">
-          {/* Avatar */}
           <div className="flex flex-col items-center gap-3 shrink-0">
             <div className="w-24 h-24 border-2 border-border-heavy overflow-hidden bg-muted">
               {image ? (
@@ -182,7 +180,6 @@ export default function AccountClient() {
             />
           </div>
 
-          {/* Fields */}
           <div className="flex-1 space-y-4 min-w-0">
             <div>
               <label className="block text-xs font-extrabold uppercase tracking-wide text-muted-foreground mb-1.5">
@@ -259,7 +256,6 @@ export default function AccountClient() {
         </div>
       </div>
 
-      {/* Activity */}
       <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-6 md:px-8">
         <h2 className="h-eyebrow text-muted-foreground mb-4">
           Your activity

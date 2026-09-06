@@ -170,7 +170,6 @@ export default function SocialsPage() {
     }
   }
 
-  // Add / Edit form
   if (view === "add" || view === "edit") {
     return (
       <div className="space-y-6 max-w-2xl">
@@ -338,10 +337,8 @@ export default function SocialsPage() {
     );
   }
 
-  // List view
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4 flex-wrap">

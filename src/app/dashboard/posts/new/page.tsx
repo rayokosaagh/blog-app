@@ -111,10 +111,8 @@ export default function NewPostPage() {
         return;
       }
 
-      // Show success message
       setSuccess(true);
 
-      // Redirect after 2 seconds
       setTimeout(() => {
         window.location.href = "/dashboard/posts";
       }, 2000);
@@ -125,7 +123,6 @@ export default function NewPostPage() {
     }
   }
 
-  // Success screen
   if (success) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -156,7 +153,6 @@ export default function NewPostPage() {
     <div className="space-y-6">
       <BackLink href="/dashboard/posts" label="Posts" />
 
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center gap-4">
@@ -183,7 +179,6 @@ export default function NewPostPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6 pb-20">
-          {/* Title */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Title
@@ -197,7 +192,6 @@ export default function NewPostPage() {
             />
           </div>
 
-          {/* Slug */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Slug
@@ -219,7 +213,6 @@ export default function NewPostPage() {
               every card. */}
           <CategorySelect value={category} onChange={setCategory} />
 
-          {/* Featured Image */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Featured image
@@ -278,7 +271,6 @@ export default function NewPostPage() {
           {/* Tags — kept right under the featured image */}
           <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
-          {/* Published toggle */}
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -292,7 +284,6 @@ export default function NewPostPage() {
             </label>
           </div>
 
-          {/* Content */}
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
               Content
@@ -302,7 +293,6 @@ export default function NewPostPage() {
 
           <VerdictEditor value={verdict} onChange={setVerdict} />
 
-          {/* Sticky action bar */}
           <StickyFormActions
             saving={loading}
             disabled={uploading}

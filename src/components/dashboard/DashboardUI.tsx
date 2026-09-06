@@ -1,4 +1,3 @@
-// src/components/dashboard/DashboardUI.tsx
 "use client";
 
 import { motion } from "framer-motion";

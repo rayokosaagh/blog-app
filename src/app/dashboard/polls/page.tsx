@@ -29,7 +29,6 @@ export default function PollsPage() {
   const [currentPoll, setCurrentPoll] = useState<Poll | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Form states
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [endsAt, setEndsAt] = useState("");
@@ -189,7 +188,6 @@ export default function PollsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4">

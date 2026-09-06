@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/CategorySelector.tsx
 "use client";
 import { motion } from "framer-motion";
 import { CategoryOption } from "./types";

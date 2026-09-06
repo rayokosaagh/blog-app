@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUpRight, Cpu, MemoryStick, HardDrive, Smartphone, BatteryCharging } from "lucide-react";
+import { ArrowUpRight, Cpu, MemoryStick, HardDrive, Smartphone, BatteryCharging, Package } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import Underline from "@/components/ui/Underline";
 import CompareToggle from "@/components/gadgets/compare/CompareToggle";
 
@@ -70,15 +71,23 @@ function keySpecChips(specs: unknown): { Icon: LucideIcon; value: string }[] {
 export default function ProductGrid({
   products,
   emptyLabel = "No products found.",
+  emptyDescription,
+  emptyAction,
 }: {
   products: ProductCardData[];
   emptyLabel?: string;
+  emptyDescription?: string;
+  emptyAction?: { href: string; label: string };
 }) {
   if (products.length === 0) {
     return (
-      <div className="rounded-none border-2 border-border-heavy bg-card p-12 text-center text-muted-foreground shadow-brutal">
-        {emptyLabel}
-      </div>
+      <EmptyState
+        variant="brutal"
+        icon={Package}
+        title={emptyLabel}
+        description={emptyDescription}
+        action={emptyAction}
+      />
     );
   }
 
@@ -92,7 +101,6 @@ export default function ProductGrid({
             href={`/product/${p.slug}`}
             className="brutal-press group flex flex-col overflow-hidden rounded-none border-2 border-border-heavy bg-card shadow-brutal-sm"
           >
-            {/* Image */}
             <div className="relative aspect-[4/3] overflow-hidden border-b-2 border-border-heavy bg-white">
               {p.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -128,7 +136,6 @@ export default function ProductGrid({
               </div>
             </div>
 
-            {/* Body */}
             <div className="flex flex-1 flex-col p-3">
               <p className="truncate text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
                 {p.brand}

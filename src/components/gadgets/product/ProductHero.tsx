@@ -137,7 +137,6 @@ export default function ProductHero({
 
   return (
     <div className="border-2 border-border-heavy bg-card shadow-brutal-lg rounded-none">
-      {/* Title bar */}
       <div className="hero-titlebar flex items-center justify-between gap-4 border-b-4 border-border-heavy bg-foreground px-6 py-4 sm:px-8">
         <div className="min-w-0">
           <span className="tag-pill inline-flex bg-accent-3 text-on-accent-3 mb-2">
@@ -158,10 +157,8 @@ export default function ProductHero({
 
       <div className="p-6 sm:p-8">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Product gallery — main image + arrows + thumbnail rail */}
           <ProductGallery images={galleryImages} alt={product.name} />
 
-          {/* Meta bullets + brand */}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
               {product.brand}
@@ -203,7 +200,6 @@ export default function ProductHero({
             <ProductColors colors={colors} />
           </div>
 
-          {/* Stat blocks — price (always, if set) + any passed-in stats (views/fans, etc.) */}
           {allStats.length > 0 && (
             <div className="flex sm:flex-col gap-3 justify-center sm:w-44 shrink-0">
               {allStats.map((s, i) => {
@@ -225,7 +221,6 @@ export default function ProductHero({
           )}
         </div>
 
-        {/* Quick-spec strip */}
         {quickSpecs.length > 0 && (
           <div className="mt-6 border-2 border-border-heavy grid grid-cols-2 sm:grid-cols-4 divide-y-2 sm:divide-y-0 sm:divide-x-2 divide-border">
             {quickSpecs.map((q, i) => {

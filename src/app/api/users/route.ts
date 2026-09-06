@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-// GET all users
 export async function GET() {
   try {
     const session = await auth();
@@ -22,7 +21,6 @@ export async function GET() {
   }
 }
 
-// POST create new user
 export async function POST(req: Request) {
   try {
     const session = await auth();

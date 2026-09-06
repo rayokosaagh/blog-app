@@ -1,4 +1,3 @@
-// src/components/feeds/specIcons.tsx
 import type { ComponentType } from "react";
 import {
   Monitor,

@@ -236,7 +236,6 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
 
   const panelContent = (
     <>
-      {/* Search field */}
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
@@ -434,7 +433,6 @@ export default function ExploreMenu({ variant = "dropdown", onNavigate }: Explor
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Link
           href="/blog"

@@ -1,4 +1,3 @@
-// src/app/robots.ts
 import type { MetadataRoute } from "next";
 import { APP_URL } from "@/lib/appUrl";
 

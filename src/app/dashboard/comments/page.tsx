@@ -11,6 +11,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
+import { EmptyStateRow } from "@/components/ui/EmptyState";
 
 type Status = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -164,7 +165,6 @@ export default function CommentsModerationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
@@ -195,7 +195,6 @@ export default function CommentsModerationPage() {
         </div>
       </div>
 
-      {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -255,7 +254,6 @@ export default function CommentsModerationPage() {
         </div>
       )}
 
-      {/* Table */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -270,11 +268,16 @@ export default function CommentsModerationPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {filteredComments.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-sm text-zinc-400">
-                    No comments found
-                  </td>
-                </tr>
+                <EmptyStateRow
+                  colSpan={5}
+                  icon={MessageCircle}
+                  title={comments.length === 0 ? "No comments yet" : "No comments match your filters"}
+                  description={
+                    comments.length === 0
+                      ? "Comments readers leave on your posts will show up here for moderation."
+                      : "Try a different status filter or search term."
+                  }
+                />
               ) : (
                 filteredComments.map((comment) => {
                   const busy = pendingActionId === comment.id;

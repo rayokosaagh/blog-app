@@ -52,7 +52,6 @@ export default function NavbarSearch() {
   const trimmedQuery = query.trim();
   const isQueryTooShort = trimmedQuery.length > 0 && trimmedQuery.length < MIN_QUERY_LENGTH;
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -63,7 +62,7 @@ export default function NavbarSearch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch search results with debounce
+  // 300ms debounce so each keystroke doesn't hit the API.
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (trimmedQuery.length < MIN_QUERY_LENGTH) {
@@ -103,7 +102,7 @@ export default function NavbarSearch() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Load product names once, turn each into a "first two words…." phrase.
+  // Load product names once, turn each into a "first five words…." phrase.
   useEffect(() => {
     let cancelled = false;
     fetch("/api/gadgets/products")

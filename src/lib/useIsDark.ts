@@ -1,4 +1,3 @@
-// lib/useIsDark.ts
 "use client";
 
 import { useEffect, useState } from "react";

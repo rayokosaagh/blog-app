@@ -49,7 +49,6 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
 
   return (
     <div>
-      {/* Eyebrow / icon chip label — matches Latest News header pattern */}
       <div className="flex items-center gap-2 mb-5">
         <div className="w-6 h-6 flex items-center justify-center bg-accent-2 border-2 border-border-heavy shrink-0">
           <Flame className="w-3.5 h-3.5 text-on-accent-2" fill="currentColor" />
@@ -95,7 +94,6 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
                 )}
               </div>
 
-              {/* Title + date */}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
                   <Underline>{post.title}</Underline>
@@ -109,7 +107,6 @@ export default function TrendingNewsList({ posts }: TrendingNewsListProps) {
               </div>
             </Link>
 
-            {/* Flat divider between rows, skipped after the last item */}
             {i < posts.length - 1 && (
               <div className="h-[1.5px] bg-border ml-[46px]" />
             )}

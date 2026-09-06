@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/ProductSearchBox.tsx
 "use client";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";

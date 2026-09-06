@@ -1,4 +1,3 @@
-// components/AnalyticsCharts.tsx
 "use client";
 
 import { Line, Bar } from "react-chartjs-2";
@@ -139,7 +138,6 @@ export default function AnalyticsCharts({
     },
   };
 
-  // --- Metric totals for the summary row ---
   const totalPosts = publishedPosts;
   const totalNewUsers = Object.values(monthlyUserData).reduce((a, b) => a + b, 0);
   const totalSubscribers = Object.values(monthlySubscriberData).reduce((a, b) => a + b, 0);
@@ -148,7 +146,6 @@ export default function AnalyticsCharts({
   const ratingSum = ratingEntries.reduce((sum, [star, c]) => sum + Number(star) * c, 0);
   const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : "—";
 
-  // Posts over time
   const postMonths = Object.keys(monthlyPostData);
   const postsLineData = {
     labels: postMonths.length ? postMonths : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -168,7 +165,6 @@ export default function AnalyticsCharts({
     ],
   };
 
-  // User growth
   const userMonths = Object.keys(monthlyUserData);
   const userGrowthData = {
     labels: userMonths.length ? userMonths : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -188,7 +184,6 @@ export default function AnalyticsCharts({
     ],
   };
 
-  // Rating distribution
   const ratingBarData = {
     labels: ["1★", "2★", "3★", "4★", "5★"],
     datasets: [
@@ -202,7 +197,6 @@ export default function AnalyticsCharts({
     ],
   };
 
-  // Newsletter growth
   const subMonths = Object.keys(monthlySubscriberData);
   const newsletterData = {
     labels: subMonths.length ? subMonths : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -228,7 +222,6 @@ export default function AnalyticsCharts({
         Analytics
       </p>
 
-      {/* Summary metric row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <MetricCard
           icon={FileText}
@@ -260,7 +253,6 @@ export default function AnalyticsCharts({
         />
       </div>
 
-      {/* Feature chart, full width */}
       <ChartCard accent="#3b82f6" title="Posts over time">
         <div className="h-64">
           <Line data={postsLineData} options={sharedLineOptions} />

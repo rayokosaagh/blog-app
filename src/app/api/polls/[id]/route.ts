@@ -21,6 +21,9 @@ export async function PATCH(
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
     if (body.endsAt !== undefined) updateData.endsAt = body.endsAt ? new Date(body.endsAt) : null;
 
+    // Sending `options` deletes and recreates every option row, destroying
+    // existing votes. To change only isActive/question/endsAt, omit options
+    // entirely — that takes the simple-update branch below instead.
     if (Array.isArray(body.options)) {
       const cleanOptions = body.options
         .map((o: string) => (typeof o === "string" ? o.trim() : ""))

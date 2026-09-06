@@ -1,4 +1,3 @@
-// components/dashboard/DashboardShell.tsx
 "use client";
 
 import { useState } from "react";
@@ -44,7 +43,6 @@ export default function DashboardShell({
 
   return (
     <div className="h-screen flex bg-zinc-50 dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50 overflow-hidden">
-      {/* Mobile drawer backdrop */}
       {drawerOpen && (
         <div
           onClick={() => setDrawerOpen(false)}
@@ -116,14 +114,12 @@ export default function DashboardShell({
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardTopbar userName={userName} onMenuClick={() => setDrawerOpen(true)} />
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-8 bg-zinc-50/60 dark:bg-zinc-950">
           {children}
         </main>
 
-        {/* Bottom nav — phones only */}
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-t border-zinc-200/80 dark:border-zinc-800/80">
           <div className="flex items-stretch">
             {BOTTOM_NAV_ITEMS.map(({ href, label, icon: Icon }) => {

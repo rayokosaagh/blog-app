@@ -179,7 +179,6 @@ export default function Lightbox({ src, onClose, onPrev, onNext, counter, title 
           aria-modal="true"
           aria-label={title || "Image viewer"}
         >
-          {/* Stage */}
           <motion.div
             initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -209,7 +208,6 @@ export default function Lightbox({ src, onClose, onPrev, onNext, counter, title 
               />
             </div>
 
-            {/* Zoom badge */}
             <div className="absolute left-3 top-3 rounded-none border-2 border-border-heavy bg-foreground px-2 py-0.5 text-xs font-extrabold tabular-nums text-background">
               {Math.round(scale * 100)}%
             </div>
@@ -242,7 +240,6 @@ export default function Lightbox({ src, onClose, onPrev, onNext, counter, title 
             )}
           </motion.div>
 
-          {/* Floating toolbar */}
           <motion.div
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/ControlsBar.tsx
 "use client";
 import ToggleSwitch from "./ToggleSwitch";
 import { SearchIcon } from "./icons";

@@ -1,4 +1,3 @@
-// src/app/compare/page.tsx
 import type { Metadata } from "next";
 import GadgetCompare from "@/components/gadgets/GadgetCompare";
 import Navbar from "@/components/layout/Navbar";

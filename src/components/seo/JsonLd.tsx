@@ -1,5 +1,3 @@
-// src/components/seo/JsonLd.tsx
-
 /**
  * Emits a JSON-LD structured-data block.
  *

@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/types.ts
 import { SpecField } from "@/lib/gadgets/types";
 
 export interface CategoryOption {

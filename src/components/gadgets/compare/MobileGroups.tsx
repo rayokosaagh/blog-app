@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/MobileGroups.tsx
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { BenchmarkFieldIcon, ChevronIcon, GroupIcon } from "./icons";

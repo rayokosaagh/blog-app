@@ -95,17 +95,14 @@ export default function Footer() {
               <FooterNewsletter />
             </div>
 
-            {/* Useful links */}
             <div className="col-span-1 lg:col-span-2">
               <LinkColumn title="Useful Links" links={USEFUL_LINKS} />
             </div>
 
-            {/* Other resources */}
             <div className="col-span-1 lg:col-span-3">
               <LinkColumn title="Other Resources" links={OTHER_RESOURCES} />
             </div>
 
-            {/* Brand + socials */}
             <div className="col-span-2 lg:col-span-3">
               <span className="text-2xl font-black tracking-tight text-foreground">
                 Blog
@@ -138,7 +135,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Bottom bar */}
           <div className="mt-12 border-t-2 border-border pt-6 text-center">
             <p className="text-sm font-bold text-muted-foreground">
               © {year} Blog. All rights reserved.

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Users as UsersIcon, Search, ChevronDown, CheckCircle2, Plus } from "lucide-react";
+import { EmptyStateRow } from "@/components/ui/EmptyState";
 import Modal from "@/components/dashboard/Modal";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 import { useFileDrop } from "@/components/dashboard/useFileDrop";
@@ -26,13 +27,11 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
 
-  // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Modals
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -49,7 +48,6 @@ export default function UsersPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Success
   const [successAction, setSuccessAction] = useState<ActionType>(null);
   const [successName, setSuccessName] = useState("");
 
@@ -247,7 +245,6 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
@@ -277,7 +274,6 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -338,7 +334,6 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Success Banner */}
       {successAction && (
         <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl flex items-center gap-3 text-sm">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -351,7 +346,6 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Table */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -367,11 +361,16 @@ export default function UsersPage() {
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-12 text-center text-sm text-zinc-400">
-                    No users found
-                  </td>
-                </tr>
+                <EmptyStateRow
+                  colSpan={6}
+                  icon={UsersIcon}
+                  title={users.length === 0 ? "No users yet" : "No users match your filters"}
+                  description={
+                    users.length === 0
+                      ? "Accounts with dashboard access will be listed here."
+                      : "Try a different role filter or search term."
+                  }
+                />
               ) : (
                 filteredUsers.map((user) => (
                   <tr key={user.id} className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
@@ -421,7 +420,6 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Delete Modal */}
       <ConfirmDialog
         open={showDeleteModal && !!userToDelete}
         title="Delete user?"
@@ -438,7 +436,6 @@ export default function UsersPage() {
         }}
       />
 
-      {/* Add / Edit Modal */}
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}

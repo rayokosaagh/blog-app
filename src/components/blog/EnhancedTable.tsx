@@ -102,13 +102,11 @@ export default function EnhancedTable({ html }: { html: string }) {
   const stripHtml = (html: string) =>
   html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
 
-  // Filter and sort data
   const processedData = useMemo(() => {
     if (!tableData) return null;
 
     let filtered = tableData.rows;
 
-    // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((row) =>
@@ -116,7 +114,6 @@ export default function EnhancedTable({ html }: { html: string }) {
       );
     }
 
-    // Sort
     if (sortColumn !== null && sortDirection) {
       filtered = [...filtered].sort((a, b) => {
         const aVal = a[sortColumn]?.replace(/<[^>]*>/g, "").trim() || "";
@@ -170,7 +167,6 @@ export default function EnhancedTable({ html }: { html: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const textarea = document.createElement("textarea");
       textarea.value = text;
       document.body.appendChild(textarea);
@@ -258,7 +254,6 @@ export default function EnhancedTable({ html }: { html: string }) {
 
   return (
     <div className="my-8 rounded-none border-2 border-border-heavy bg-card shadow-brutal">
-      {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b-2 border-border-heavy bg-muted">
         <div className="flex items-center gap-3 min-w-0">
           {processedData.caption && (
@@ -308,7 +303,6 @@ export default function EnhancedTable({ html }: { html: string }) {
         </div>
 
         <div className="flex items-center gap-1">
-          {/* View toggle */}
           <div className="flex items-center overflow-hidden rounded-none border-2 border-border-heavy mr-1">
             <button
               onClick={() => setViewMode("cards")}
@@ -334,7 +328,6 @@ export default function EnhancedTable({ html }: { html: string }) {
             </button>
           </div>
 
-          {/* Search toggle */}
           <button
             onClick={() => setShowSearch(!showSearch)}
             className={`p-1.5 rounded-none border-2 transition-colors duration-100 ${
@@ -347,7 +340,6 @@ export default function EnhancedTable({ html }: { html: string }) {
             {showSearch ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
           </button>
 
-          {/* Copy */}
           <button
             onClick={handleCopyTable}
             className="p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
@@ -360,7 +352,6 @@ export default function EnhancedTable({ html }: { html: string }) {
             )}
           </button>
 
-          {/* Export CSV */}
           <button
             onClick={handleExportCSV}
             className="p-1.5 rounded-none border-2 border-transparent text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2 hover:border-border-heavy transition-colors duration-100"
@@ -371,7 +362,6 @@ export default function EnhancedTable({ html }: { html: string }) {
         </div>
       </div>
 
-      {/* Search Bar */}
       {showSearch && (
         <div className="px-4 py-2 border-b-2 border-border-heavy bg-muted">
           <div className="relative">
@@ -396,7 +386,6 @@ export default function EnhancedTable({ html }: { html: string }) {
         </div>
       )}
 
-      {/* Content */}
       <div
         className={`${expanded ? "max-h-[600px] overflow-y-auto" : ""} ${
           viewMode === "table" ? "overflow-x-auto scrollbar-hide" : ""
@@ -406,7 +395,6 @@ export default function EnhancedTable({ html }: { html: string }) {
   <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
     {processedData.headers.slice(1).map((productName, i) => {
       const headerIndex = i + 1;
-      // Inside the cards map, change the attributes line:
 const attributes = processedData.rows
   .map((row) => ({ label: stripHtml(row[0] || ""), value: row[headerIndex] }))
   .filter((item) => item.value);
@@ -491,7 +479,6 @@ const attributes = processedData.rows
         )}
       </div>
 
-      {/* Footer */}
       {processedData.rows.length > 10 && (
         <div className="flex items-center justify-end px-4 py-2 border-t-2 border-border-heavy bg-muted">
           <button

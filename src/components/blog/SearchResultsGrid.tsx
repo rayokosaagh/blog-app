@@ -1,4 +1,3 @@
-// src/components/blog/SearchResultsGrid.tsx
 "use client";
 
 import Link from "next/link";

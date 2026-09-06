@@ -177,7 +177,6 @@ function ColorRow({
           Drop photo for {color.name?.trim() || "this color"}
         </div>
       )}
-      {/* Reorder handle */}
       <div className="flex flex-col text-zinc-300 dark:text-zinc-600">
         <button
           type="button"
@@ -190,7 +189,6 @@ function ColorRow({
         </button>
       </div>
 
-      {/* Swatch + native color picker */}
       <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden ring-1 ring-zinc-300 dark:ring-zinc-600">
         <input
           type="color"
@@ -201,7 +199,6 @@ function ColorRow({
         />
       </div>
 
-      {/* Name */}
       <input
         value={color.name}
         onChange={(e) => onUpdate(idx, { name: e.target.value })}
@@ -209,7 +206,6 @@ function ColorRow({
         className={`${inputClass} flex-1 min-w-[8rem]`}
       />
 
-      {/* Hex */}
       <input
         value={color.hex}
         onChange={(e) => onUpdate(idx, { hex: e.target.value })}
@@ -218,7 +214,6 @@ function ColorRow({
         style={{ fontFamily: "var(--font-mono)" }}
       />
 
-      {/* Eyedropper (Chromium only) */}
       {supportsEyeDropper && (
         <button
           type="button"
@@ -231,7 +226,6 @@ function ColorRow({
         </button>
       )}
 
-      {/* Per-color image */}
       {color.image ? (
         <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden ring-1 ring-zinc-300 dark:ring-zinc-600 bg-white">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -273,7 +267,6 @@ function ColorRow({
         }}
       />
 
-      {/* Remove row */}
       <button
         type="button"
         onClick={() => onRemove(idx)}

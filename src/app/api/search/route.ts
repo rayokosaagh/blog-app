@@ -33,17 +33,21 @@ export async function GET(req: NextRequest) {
       take,
     });
 
-    const [bodyMatches, products] = await Promise.all([
+    const [relatedMatches, products] = await Promise.all([
       titleMatches.length >= take
         ? Promise.resolve([])
-        : // Mirrors /search: body, tag and author matches count too, so a reader
-          // who half-remembers a phrase from a review can still find it.
+        : // Tag and author only - deliberately NOT `content`. Post bodies are
+          // stored as HTML, so a substring match there also hits href
+          // attributes and embedded related-article links: "samsung" pulled in
+          // the Xiaomi and iPhone reviews purely because each linked to a
+          // samsung-* URL, and "nothing" matched any post using the word in
+          // prose. The /search results page still matches bodies - a five-row
+          // type-ahead cannot afford that noise.
           prisma.post.findMany({
             where: {
               published: true,
               id: { notIn: titleMatches.map((p) => p.id) },
               OR: [
-                { content: like },
                 { tags: { some: { name: like } } },
                 { author: { name: like } },
               ],
@@ -68,7 +72,7 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({ results: [...titleMatches, ...bodyMatches], products });
+    return NextResponse.json({ results: [...titleMatches, ...relatedMatches], products });
   } catch (error) {
     console.error('Search API error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

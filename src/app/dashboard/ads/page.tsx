@@ -67,7 +67,6 @@ export default function AdsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center gap-4">
@@ -88,7 +87,6 @@ export default function AdsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800/70 p-1 rounded-xl w-fit">
         <button
           onClick={() => setActiveTab("inline")}
@@ -355,7 +353,6 @@ function AdsCrudTab({
     }
   }
 
-  // Add / Edit form
   if (view === "add" || view === "edit") {
     return (
       <div className="space-y-6 max-w-2xl">
@@ -516,7 +513,6 @@ function AdsCrudTab({
     );
   }
 
-  // List view
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -533,7 +529,6 @@ function AdsCrudTab({
         </button>
       </div>
 
-      {/* Search & filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -607,7 +602,11 @@ function AdsCrudTab({
           <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No {pluralLabel.toLowerCase()} found</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            {ads.length === 0
+              ? `No ${pluralLabel.toLowerCase()} yet`
+              : `No ${pluralLabel.toLowerCase()} match your filters`}
+          </p>
           <button
             onClick={openAdd}
             className="text-blue-500 hover:text-blue-600 text-sm font-semibold mt-2"
@@ -906,7 +905,6 @@ function PopupAdsTab() {
     }
   }
 
-  // Add / Edit form
   if (view === "add" || view === "edit") {
     return (
       <div className="space-y-6 max-w-2xl">
@@ -1102,7 +1100,6 @@ function PopupAdsTab() {
     );
   }
 
-  // List view
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1119,7 +1116,6 @@ function PopupAdsTab() {
         </button>
       </div>
 
-      {/* Search & filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -1193,7 +1189,9 @@ function PopupAdsTab() {
           <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <AppWindow className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No popup ads found</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            {ads.length === 0 ? "No popup ads yet" : "No popup ads match your filters"}
+          </p>
           <button
             onClick={openAdd}
             className="text-blue-500 hover:text-blue-600 text-sm font-semibold mt-2"
@@ -1501,7 +1499,6 @@ function SpotlightAdsTab() {
 
   const formIsVideo = !!form.mediaUrl && mediaTypeFromUrl(form.mediaUrl) === "video";
 
-  // Add / Edit form
   if (view === "add" || view === "edit") {
     return (
       <div className="space-y-6 max-w-2xl">
@@ -1674,10 +1671,8 @@ function SpotlightAdsTab() {
     );
   }
 
-  // List view
   return (
     <div className="space-y-6">
-      {/* Card header settings — eyebrow label + title */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -1752,7 +1747,9 @@ function SpotlightAdsTab() {
           <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <MonitorPlay className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No spotlight ads found</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            {ads.length === 0 ? "No spotlight ads yet" : "No spotlight ads match your filters"}
+          </p>
           <button
             onClick={openAdd}
             className="text-blue-500 hover:text-blue-600 text-sm font-semibold mt-2"

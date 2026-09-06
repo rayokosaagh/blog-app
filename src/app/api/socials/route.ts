@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { isSvgIcon, sanitizeSvg } from "@/lib/sanitizeSvg";
 
-// GET /api/socials
 export async function GET() {
   try {
     const links = await prisma.socialLink.findMany({
@@ -18,7 +17,6 @@ export async function GET() {
   }
 }
 
-// POST /api/socials
 export async function POST(request: Request) {
   try {
     const session = await auth();

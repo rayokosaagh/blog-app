@@ -1,4 +1,3 @@
-// src/components/gadgets/compare/ToggleSwitch.tsx
 "use client";
 
 // Small on/off switch, reused for the two diff toggles. Renders as a

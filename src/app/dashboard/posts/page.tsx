@@ -45,7 +45,6 @@ export default function PostsPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [posts]);
 
-  // Fetch posts on client
   useEffect(() => {
     async function fetchPosts() {
       try {
@@ -61,7 +60,6 @@ export default function PostsPage() {
     fetchPosts();
   }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -103,7 +101,6 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4">
@@ -133,7 +130,6 @@ export default function PostsPage() {
         </div>
       </div>
 
-      {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -146,7 +142,6 @@ export default function PostsPage() {
           />
         </div>
 
-        {/* Category filter */}
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
@@ -161,7 +156,6 @@ export default function PostsPage() {
           ))}
         </select>
 
-        {/* Tag filter */}
         {availableTags.length > 0 && (
           <select
             value={tagFilter}
@@ -177,7 +171,6 @@ export default function PostsPage() {
           </select>
         )}
 
-        {/* Custom Dropdown */}
         <div className="relative sm:w-52" ref={dropdownRef}>
           <button
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
@@ -220,7 +213,6 @@ export default function PostsPage() {
         </div>
       </div>
 
-      {/* Posts List */}
       <div className="space-y-4">
         {filteredPosts.length === 0 ? (
           <AnimatedPostCard index={0}>
@@ -241,7 +233,6 @@ export default function PostsPage() {
           filteredPosts.map((post, index) => (
             <AnimatedPostCard key={post.id} index={index}>
               <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden flex flex-col sm:flex-row">
-                {/* Featured Image */}
                 {post.featuredImage ? (
                   <img
                     src={post.featuredImage}
@@ -254,7 +245,6 @@ export default function PostsPage() {
                   </div>
                 )}
 
-                {/* Post Info */}
                 <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between min-w-0">
                   <div>
                     <div className="flex items-start justify-between gap-4">
@@ -282,13 +272,11 @@ export default function PostsPage() {
                     </div>
                   </div>
 
-                  {/* Footer */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
                       By {post.author.name} · {new Date(post.createdAt).toDateString()}
                     </p>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-4">
                       {post.published && (
                         <>
@@ -329,7 +317,6 @@ export default function PostsPage() {
         )}
       </div>
 
-      {/* Success confirmation after a delete */}
       <AnimatePresence>
         {deletedTitle && (
           <SuccessToast

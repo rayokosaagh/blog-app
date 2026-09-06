@@ -162,10 +162,20 @@ export default async function ProductListing({
             <ProductGrid
               products={products}
               emptyLabel={
-                tag
-                  ? `No ${tag.name} products match your filters.`
-                  : "No products match your filters."
+                filtered
+                  ? tag
+                    ? `No ${tag.name} products match your filters.`
+                    : "No products match your filters."
+                  : tag
+                    ? `No ${tag.name} products yet.`
+                    : "No products yet."
               }
+              emptyDescription={
+                filtered
+                  ? "Try clearing a filter or widening your search."
+                  : "Published gadgets will show up here."
+              }
+              emptyAction={filtered ? { href: basePath, label: "Clear filters" } : undefined}
             />
           </div>
         </div>

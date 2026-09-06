@@ -1,4 +1,3 @@
-// src/app/rss.xml/route.ts
 import { APP_URL } from "@/lib/appUrl";
 import {
   buildRss,

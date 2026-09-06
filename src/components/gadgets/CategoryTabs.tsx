@@ -1,4 +1,3 @@
-// src/components/gadgets/CategoryTabs.tsx
 "use client";
 import { CATEGORY_LIST } from "@/lib/gadgets/categories";
 import { useRouter } from "next/navigation";

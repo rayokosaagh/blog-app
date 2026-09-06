@@ -53,7 +53,6 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
   const next = useCallback(() => go(1), [go]);
   const prev = useCallback(() => go(-1), [go]);
 
-  // Auto-advance every 6s.
   useEffect(() => {
     if (banners.length <= 1) return;
     const timer = setInterval(next, 6000);
@@ -72,7 +71,6 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
 
   return (
     <div className="flex flex-col overflow-hidden surface-border shadow-brutal-lg lg:flex-row">
-      {/* Hero image (left / top) */}
       {/* aspect-video below lg instead of a fixed h-56/h-72. Banner artwork is
           16:9 and routinely has the product name set into the image; a 340x224
           box (1.52:1) cropped ~15% off each side with `object-cover`, slicing

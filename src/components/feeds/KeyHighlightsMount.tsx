@@ -38,6 +38,8 @@ export default function KeyHighlightsMount() {
 
     mountAll();
 
+    // The article HTML is injected after hydration in places, so watch for
+    // placeholders arriving late.
     const observer = new MutationObserver(() => mountAll());
     observer.observe(document.body, { childList: true, subtree: true });
 

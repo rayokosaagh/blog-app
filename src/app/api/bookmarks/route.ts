@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
-// GET /api/bookmarks — list the current user's bookmarked posts
 export async function GET() {
   const session = await auth();
   if (!session?.user) {

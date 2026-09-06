@@ -1,4 +1,3 @@
-// src/app/search/loading.tsx
 "use client";
 
 import { motion } from "framer-motion";

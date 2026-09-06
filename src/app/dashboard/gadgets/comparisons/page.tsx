@@ -1,4 +1,3 @@
-// src/app/dashboard/gadgets/comparisons/page.tsx
 import { prisma } from "@/lib/prisma";
 import { GitCompare } from "lucide-react";
 import ComparisonManager from "@/components/gadgets/ComparisonManager";

@@ -1,4 +1,3 @@
-// src/app/search/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -72,7 +71,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Header */}
       <header className="max-w-6xl mx-auto px-6 pt-16 pb-10">
         <nav className="inline-flex items-center gap-2 px-4 py-2 bg-card border-2 border-border-heavy rounded-none text-xs text-muted-foreground font-bold shadow-brutal-sm mb-8">
           <Link href="/" className="brutal-invert px-1 -mx-1">
@@ -99,7 +97,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </p>
       </header>
 
-      {/* Results */}
       <main className="max-w-6xl mx-auto px-6 pb-24">
         {posts.length === 0 ? (
           <SearchEmptyState query={query} />

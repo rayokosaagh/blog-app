@@ -1,4 +1,3 @@
-// src/lib/gadgets/categories/mobiles.ts
 import { GadgetCategoryDef } from "../types";
 
 export const mobiles: GadgetCategoryDef = {

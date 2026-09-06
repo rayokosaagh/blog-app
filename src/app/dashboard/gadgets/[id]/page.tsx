@@ -1,4 +1,3 @@
-// src/app/dashboard/gadgets/[id]/page.tsx  (or [id]/edit/page.tsx — whichever this actually is)
 import { prisma } from "@/lib/prisma";
 import GadgetProductForm from "@/components/gadgets/GadgetProductForm";
 import { notFound } from "next/navigation";

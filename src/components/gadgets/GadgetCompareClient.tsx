@@ -1,4 +1,3 @@
-// src/components/GadgetCompareClient.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,6 +14,8 @@ import DesktopTable from "./compare/DesktopTable";
 import MobileTable from "./compare/MobileTable";
 import ComparisonVerdict, { type EditorVerdict } from "./compare/ComparisonVerdict";
 import { visibleFieldsAcross } from "@/lib/gadgets/formatSpecValue";
+import EmptyState from "@/components/ui/EmptyState";
+import { SlidersHorizontal } from "lucide-react";
 
 interface GadgetCompareClientProps {
   categories: CategoryOption[];
@@ -372,9 +373,24 @@ function updateActiveGroup() {
 
         {showComparison ? (
           groups.length === 0 ? (
-            <p className="text-center text-muted-foreground py-10 text-sm">
-              No specs match "{fieldFilter}".
-            </p>
+            <EmptyState
+              variant="brutal"
+              icon={SlidersHorizontal}
+              title={
+                fieldFilter.trim()
+                  ? `No specs match "${fieldFilter}"`
+                  : onlyDiff
+                    ? "These products match on every spec"
+                    : "No specs to compare yet"
+              }
+              description={
+                fieldFilter.trim()
+                  ? "Try a shorter search term."
+                  : onlyDiff
+                    ? 'Turn off "differences only" to see the full spec sheet.'
+                    : "Neither product has any specifications filled in yet."
+              }
+            />
           ) : (
             <>
               {/* Renders nothing unless an editor wrote a summary for this

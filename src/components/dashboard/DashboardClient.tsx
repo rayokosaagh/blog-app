@@ -1,10 +1,10 @@
-// components/DashboardClient.tsx
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, FileText } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Post {
   id: string;
@@ -122,13 +122,22 @@ export default function DashboardClient({ initialRecentPosts }: DashboardClientP
       <div className="max-h-[420px] overflow-auto">
         <AnimatePresence mode="popLayout">
           {filteredPosts.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="p-12 text-center text-sm text-zinc-400"
-            >
-              No posts match that search.
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <EmptyState
+                frame={false}
+                icon={FileText}
+                title={initialRecentPosts.length === 0 ? "No posts yet" : "No posts match that search"}
+                description={
+                  initialRecentPosts.length === 0
+                    ? "Your most recent posts will appear here once you publish one."
+                    : "Try a different search term or status filter."
+                }
+                action={
+                  initialRecentPosts.length === 0
+                    ? { href: "/dashboard/posts/new", label: "Write your first post" }
+                    : undefined
+                }
+              />
             </motion.div>
           ) : (
             filteredPosts.map((post, i) => (

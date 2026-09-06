@@ -124,7 +124,6 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Add modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("");
@@ -135,7 +134,6 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
   const [editColorMode, setEditColorMode] = useState<TagColorMode>("AUTO");
   const [editColor, setEditColor] = useState(DEFAULT_TAG_COLOR);
 
-  // Edit modal
   const [showEditModal, setShowEditModal] = useState(false);
   const [tagToEdit, setTagToEdit] = useState<Tag | null>(null);
   const [editName, setEditName] = useState("");
@@ -143,11 +141,9 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
   const [editing, setEditing] = useState(false);
   const [editError, setEditError] = useState("");
 
-  // Edit success modal
   const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
   const [editedTagName, setEditedTagName] = useState("");
 
-  // Delete modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -384,7 +380,6 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
         Click a tag to select it, the pencil to edit it, or ✕ to delete it everywhere.
       </p>
 
-      {/* Delete Modal */}
       {showDeleteModal && tagToDelete && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
@@ -422,7 +417,6 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
         </div>
       )}
 
-      {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
@@ -505,7 +499,6 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
         </div>
       )}
 
-      {/* Edit Modal */}
       {showEditModal && tagToEdit && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">
@@ -587,7 +580,6 @@ export default function TagPicker({ selectedTagIds, onChange }: TagPickerProps) 
           </div>
         </div>
       )}
-      {/* Edit Success Modal */}
       {showEditSuccessModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden scale-95 animate-in zoom-in-95 duration-300">

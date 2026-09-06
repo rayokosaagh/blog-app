@@ -75,12 +75,10 @@ export default function BookmarksClient() {
     );
   }, [bookmarks, searchTerm]);
 
-  // Step 1: user clicks "Remove Bookmark" — open confirmation modal
   const requestRemove = (postId: string, postTitle: string) => {
     setConfirmModal({ open: true, postId, title: postTitle });
   };
 
-  // Step 2: user confirms — actually call the API
   const confirmRemove = async () => {
     const { postId, title } = confirmModal;
     setConfirmModal({ open: false, postId: "", title: "" });
@@ -115,7 +113,6 @@ export default function BookmarksClient() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-foreground">Your Bookmarks</h1>
@@ -125,7 +122,6 @@ export default function BookmarksClient() {
         </div>
       </div>
 
-      {/* Search */}
       {bookmarks.length > 0 && (
         <div className="flex-1 relative group">
           <input
@@ -139,7 +135,6 @@ export default function BookmarksClient() {
         </div>
       )}
 
-      {/* Bookmarks List */}
       <div className="space-y-4">
         {filteredBookmarks.length === 0 ? (
           <AnimatedPostCard index={0}>
@@ -159,7 +154,6 @@ export default function BookmarksClient() {
           filteredBookmarks.map((post, index) => (
             <AnimatedPostCard key={post.bookmarkId} index={index}>
               <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal overflow-hidden flex">
-                {/* Featured Image */}
                 {post.featuredImage ? (
                   <img loading="lazy" decoding="async"
                     src={post.featuredImage}
@@ -172,7 +166,6 @@ export default function BookmarksClient() {
                   </div>
                 )}
 
-                {/* Post Info */}
                 <div className="flex-1 p-6 flex flex-col justify-between">
                   <div>
                     <h2 className="text-lg font-extrabold text-foreground">{post.title}</h2>
@@ -181,13 +174,11 @@ export default function BookmarksClient() {
                     </p>
                   </div>
 
-                  {/* Footer */}
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-sm text-muted-foreground">
                       {new Date(post.createdAt).toDateString()}
                     </p>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-4">
                       <Link
                         href={`/blog/${post.slug}`}

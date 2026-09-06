@@ -219,7 +219,6 @@ export default function BlogFilters({ tags, authors, years, basePath = "/blog" }
               animate="visible"
               className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-6"
             >
-              {/* Text search */}
               <motion.div variants={fieldVariants} className="md:col-span-2">
                 <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
                   Search
@@ -254,7 +253,6 @@ export default function BlogFilters({ tags, authors, years, basePath = "/blog" }
                 </div>
               </motion.div>
 
-              {/* Author */}
               <motion.div variants={fieldVariants}>
                 <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
                   Author
@@ -276,7 +274,6 @@ export default function BlogFilters({ tags, authors, years, basePath = "/blog" }
                 </div>
               </motion.div>
 
-              {/* Month / Year */}
               <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-2 relative">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
@@ -336,7 +333,6 @@ export default function BlogFilters({ tags, authors, years, basePath = "/blog" }
                 </AnimatePresence>
               </motion.div>
 
-              {/* Tag pills + actions */}
               <motion.div
                 variants={fieldVariants}
                 className="md:col-span-4 flex items-start justify-between flex-wrap gap-3 pt-3 border-t-[1.5px] border-border mt-1"

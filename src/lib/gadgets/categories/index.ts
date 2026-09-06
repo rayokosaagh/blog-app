@@ -1,4 +1,3 @@
-// src/lib/gadgets/categories/index.ts
 import { GadgetCategoryDef } from "../types";
 import { mobiles } from "./mobiles";
 import { laptops } from "./laptops";

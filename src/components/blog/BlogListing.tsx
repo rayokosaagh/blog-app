@@ -175,7 +175,6 @@ export default async function BlogListing({
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Header */}
       {/* overflow-x-clip: the ambient glow below is wider than a phone viewport,
           and without this it makes the whole page pan sideways. */}
       <header className="max-w-6xl mx-auto px-6 pt-16 pb-10 relative overflow-x-clip">
@@ -277,7 +276,6 @@ export default async function BlogListing({
         </div>
       </header>
 
-      {/* Posts */}
       <main className="max-w-6xl mx-auto px-6 pb-24">
         <AnimatedPostsGrid
           posts={posts}

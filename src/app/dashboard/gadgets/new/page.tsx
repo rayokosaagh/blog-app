@@ -1,4 +1,3 @@
-// src/app/dashboard/gadgets/new/page.tsx
 import { PackagePlus } from "lucide-react";
 import GadgetProductForm from "@/components/gadgets/GadgetProductForm";
 import BackLink from "@/components/dashboard/BackLink";

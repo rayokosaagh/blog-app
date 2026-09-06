@@ -213,7 +213,6 @@ export default function BannersPage() {
     }
   }
 
-  // Add / Edit form
   if (view === "add" || view === "edit") {
     return (
       <div className="space-y-6 max-w-2xl">
@@ -431,10 +430,8 @@ export default function BannersPage() {
     );
   }
 
-  // List view
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         <div className="h-1 bg-blue-500" />
         <div className="p-5 sm:p-6 flex items-center justify-between gap-4 flex-wrap">
@@ -464,7 +461,6 @@ export default function BannersPage() {
         </div>
       </div>
 
-      {/* Search & filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -538,7 +534,9 @@ export default function BannersPage() {
           <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <GalleryHorizontal className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No banners found</p>
+          <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            {banners.length === 0 ? "No banners yet" : "No banners match your filters"}
+          </p>
           <button onClick={openAdd} className="text-blue-500 hover:text-blue-600 text-sm font-semibold mt-2">
             Add your first banner
           </button>

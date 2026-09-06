@@ -253,10 +253,6 @@ const mosaicStories = topStories.map((p) => ({
           </section>
         )}
 
-        {/*
-          Main Content - Posts centered / Poll + Social right
-
-        */}
         {banners.length > 0}
 
 

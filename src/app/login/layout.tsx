@@ -1,5 +1,3 @@
-// src/app/login/layout.tsx
-//
 // login/page.tsx is a Client Component, and Client Components cannot export
 // `metadata` — Next only reads it from server modules. This thin server layout
 // exists solely to attach the sign-in page's metadata.

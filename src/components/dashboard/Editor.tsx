@@ -12,7 +12,6 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Youtube from "@tiptap/extension-youtube";
 
-// Table extensions - named imports
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
@@ -181,7 +180,6 @@ export default function Editor({ content, onChange }: EditorProps) {
         controls: true,
         nocookie: true,
       }),
-      // Tables
       Table.configure({
         resizable: true,
         HTMLAttributes: { class: "border-collapse table-auto w-full" },
@@ -204,13 +202,11 @@ export default function Editor({ content, onChange }: EditorProps) {
           // dark:prose-invert + explicit ink: the surface goes zinc-900 in
           // dark mode and text-gray-900 alone rendered black-on-black.
           "min-h-[400px] px-8 py-6 focus:outline-none prose prose-lg max-w-none text-gray-900 dark:prose-invert dark:text-zinc-100 " +
-          // Fixed List Formatting
           "[&_ul]:list-disc [&_ol]:list-decimal " +
           "[&_li]:ml-6 [&_li]:pl-2 [&_li_p]:my-0 " +
           "[&_ul_ul]:ml-6 [&_ol_ol]:ml-6 " +
           "[&_ul]:mt-4 [&_ol]:mt-4 [&_li]:mt-1 " +
           "prose-ul:ml-0 prose-ol:ml-0 " +
-          // Table Formatting
           "prose-table:w-full prose-table:border-collapse " +
           "prose-th:border prose-th:border-gray-300 prose-td:border prose-td:border-gray-300 dark:prose-th:border-zinc-700 dark:prose-td:border-zinc-700 " +
           "prose-th:bg-gray-100 dark:prose-th:bg-zinc-800 prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3",
@@ -267,7 +263,6 @@ export default function Editor({ content, onChange }: EditorProps) {
     }),
   });
 
-  // Escape-to-close, focus the input, and lock background scroll while the modal is open
   useEffect(() => {
     if (!showYoutubeModal) return;
 
@@ -405,7 +400,6 @@ export default function Editor({ content, onChange }: EditorProps) {
     editor.chain().focus().insertContentAt({ from, to }, html).run();
   }
 
-  // Add link
   function addLink() {
     const url = window.prompt("Enter URL:");
     if (!url) return;
@@ -417,7 +411,6 @@ export default function Editor({ content, onChange }: EditorProps) {
       .run();
   }
 
-  // Remove link
   function removeLink() {
     editor?.chain().focus().unsetLink().run();
   }
@@ -438,7 +431,6 @@ export default function Editor({ content, onChange }: EditorProps) {
     }
   }
 
-  // Upload image
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) await uploadInlineImage(file);
@@ -518,7 +510,6 @@ export default function Editor({ content, onChange }: EditorProps) {
     }
   }
 
-  // YouTube embed modal
   function openYoutubeModal() {
     setYoutubeUrl("");
     setYoutubeError("");
@@ -603,7 +594,6 @@ export default function Editor({ content, onChange }: EditorProps) {
             long content. NOTE: no `overflow-hidden` on this wrapper — an
             overflow ancestor silently breaks `position: sticky`. */}
         <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-gray-200 bg-gray-50/95 backdrop-blur-sm sticky top-0 z-30 rounded-t-xl">
-          {/* Text formatting */}
           <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={ui.bold} title="Bold">
             <Bold className={iconClass} />
           </ToolbarButton>
@@ -641,7 +631,6 @@ export default function Editor({ content, onChange }: EditorProps) {
 
           <Divider />
 
-          {/* Alignment */}
           <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("left").run()} active={ui.alignLeft} title="Align left">
             <AlignLeft className={iconClass} />
           </ToolbarButton>
@@ -654,7 +643,6 @@ export default function Editor({ content, onChange }: EditorProps) {
 
           <Divider />
 
-          {/* Lists */}
           <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={ui.bulletList} title="Bullet list">
             <List className={iconClass} />
           </ToolbarButton>
@@ -664,7 +652,6 @@ export default function Editor({ content, onChange }: EditorProps) {
 
           <Divider />
 
-          {/* Blocks */}
           <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={ui.blockquote} title="Quote">
             <Quote className={iconClass} />
           </ToolbarButton>
@@ -732,7 +719,6 @@ export default function Editor({ content, onChange }: EditorProps) {
 
           <Divider />
 
-          {/* Link */}
           <ToolbarButton onClick={addLink} active={ui.link} title="Add link">
             <LinkIcon className={iconClass} />
           </ToolbarButton>
@@ -742,7 +728,6 @@ export default function Editor({ content, onChange }: EditorProps) {
             </ToolbarButton>
           )}
 
-          {/* Media */}
           <ToolbarButton onClick={() => fileInputRef.current?.click()} title="Upload image">
             <ImageIcon className={iconClass} />
           </ToolbarButton>
@@ -769,7 +754,6 @@ export default function Editor({ content, onChange }: EditorProps) {
 
           <Divider />
 
-          {/* History */}
           <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo" disabled={!ui.canUndo}>
             <Undo2 className={iconClass} />
           </ToolbarButton>
@@ -778,7 +762,6 @@ export default function Editor({ content, onChange }: EditorProps) {
           </ToolbarButton>
         </div>
 
-        {/* Editor Content */}
         <div
           {...bodyDropProps}
           className={`relative rounded-b-lg overflow-hidden transition-colors ${
@@ -796,7 +779,6 @@ export default function Editor({ content, onChange }: EditorProps) {
         </div>
       </div>
 
-      {/* YouTube embed modal */}
       {showYoutubeModal && (
         <>
           <style>{`

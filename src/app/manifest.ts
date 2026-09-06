@@ -1,4 +1,3 @@
-// src/app/manifest.ts
 import type { MetadataRoute } from "next";
 
 /**

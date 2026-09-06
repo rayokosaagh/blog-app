@@ -14,7 +14,6 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Create Admin user
   const adminPassword = await bcrypt.hash("admin123", 10);
   const admin = await prisma.user.upsert({
     where: { email: "admin@blog.com" },
@@ -27,7 +26,6 @@ async function main() {
     },
   });
 
-  // Create Editor user
   const editorPassword = await bcrypt.hash("editor123", 10);
   const editor = await prisma.user.upsert({
     where: { email: "editor@blog.com" },

@@ -574,7 +574,6 @@ export default function UiSettingsForm({
 
   return (
     <div className="max-w-3xl">
-      {/* Header */}
       <div className="mb-8">
         <h1
           className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50"
@@ -594,7 +593,6 @@ export default function UiSettingsForm({
         </div>
       )}
 
-      {/* Site theme card */}
       <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
@@ -650,7 +648,6 @@ export default function UiSettingsForm({
         </div>
       </div>
 
-      {/* Accent colors card */}
       <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/10 text-fuchsia-500">
@@ -719,7 +716,6 @@ export default function UiSettingsForm({
               </div>
             )}
 
-            {/* Presets */}
             <div className={`mt-4 space-y-3 ${modernDarkLocked ? "pointer-events-none opacity-50" : ""}`}>
               {presetGroups.map((group, gi) => (
                 <div key={group.heading ?? `group-${gi}`}>
@@ -762,7 +758,6 @@ export default function UiSettingsForm({
               ))}
             </div>
 
-            {/* Individual pickers */}
             <div className={`mt-4 space-y-3 ${modernDarkLocked ? "opacity-50" : ""}`}>
               {ACCENT_FIELDS.map((f) => {
                 const value = editing[f.key];
@@ -894,7 +889,6 @@ export default function UiSettingsForm({
               </div>
             </div>
 
-            {/* Actions */}
             <div className="mt-4 flex items-center gap-2">
               <button
                 type="button"
@@ -918,7 +912,6 @@ export default function UiSettingsForm({
         </div>
       </div>
 
-      {/* Dark mode colors card */}
       <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-500">
@@ -938,7 +931,6 @@ export default function UiSettingsForm({
               heavier outlines are generated from these, so you only set four.
             </p>
 
-            {/* Presets */}
             <div className="mt-4 flex flex-wrap gap-2">
               {DARK_SURFACE_PRESETS.map((p) => {
                 const active = surfacesEqual(editingSurfaces, p.value);
@@ -964,7 +956,6 @@ export default function UiSettingsForm({
               })}
             </div>
 
-            {/* Individual pickers */}
             <div className="mt-4 space-y-3">
               {SURFACE_FIELDS.map((f) => {
                 const value = editingSurfaces[f.key];
@@ -1037,7 +1028,6 @@ export default function UiSettingsForm({
               Switch the preview above to <strong>Dark</strong> to see these applied.
             </p>
 
-            {/* Actions */}
             <div className="mt-4 flex items-center gap-2">
               <button
                 type="button"
@@ -1061,7 +1051,6 @@ export default function UiSettingsForm({
         </div>
       </div>
 
-      {/* Animated background card */}
       <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">

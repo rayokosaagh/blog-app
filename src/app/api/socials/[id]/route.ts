@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { isSvgIcon, sanitizeSvg } from "@/lib/sanitizeSvg";
 
-// PUT /api/socials/[id] - Update Social Link
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -45,7 +44,6 @@ export async function PUT(
   }
 }
 
-// DELETE /api/socials/[id]
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

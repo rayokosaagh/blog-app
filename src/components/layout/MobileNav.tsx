@@ -23,7 +23,6 @@ export default function MobileNav({ toc }: MobileNavProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Calculate Reading Progress
   useEffect(() => {
     const handleScroll = () => {
       const windowHeight = window.innerHeight;
@@ -86,7 +85,6 @@ export default function MobileNav({ toc }: MobileNavProps) {
     };
   }, [toc]);
 
-  // Lock scroll while the side panel is open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
@@ -96,7 +94,6 @@ export default function MobileNav({ toc }: MobileNavProps) {
 
   const panel = (
     <>
-      {/* Backdrop */}
       <div
         className={`fixed inset-0 z-[200] 2xl:hidden bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"

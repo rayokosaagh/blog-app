@@ -38,7 +38,6 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
 
   return (
     <div className="mx-auto shrink-0 lg:mx-0">
-      {/* Main image with arrows beside it */}
       <div className="flex items-center justify-center gap-2 sm:gap-3">
         {count > 1 && (
           <button type="button" onClick={() => go(-1)} aria-label="Previous image" className={arrow}>
@@ -75,7 +74,6 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
         )}
       </div>
 
-      {/* Thumbnail rail below */}
       {count > 1 && (
         <div className="scrollbar-hide mt-3 flex justify-center gap-2 overflow-x-auto pb-1">
           {clean.map((thumb, i) => (

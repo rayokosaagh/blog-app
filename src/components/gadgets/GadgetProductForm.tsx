@@ -280,7 +280,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
           )}
         </AnimatePresence>
 
-        {/* Basic info */}
         <FormCard title="Basic info">
           <div>
             <label className={labelClass}>Category</label>
@@ -459,7 +458,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
           </div>
         </FormCard>
 
-        {/* Gallery */}
         <FormCard title="Gallery">
           <p className="text-xs text-zinc-400 dark:text-zinc-500 -mt-1">
             Extra photos shown in the carousel on the product page, alongside the main image.
@@ -547,7 +545,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
           </label>
         </FormCard>
 
-        {/* Color variants */}
         <FormCard title="Colors">
           <ColorVariantsEditor
             value={colors}
@@ -566,7 +563,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
             their product page. Same component as the post editor. */}
         <VerdictEditor value={verdict} onChange={setVerdict} />
 
-        {/* Dynamic spec groups */}
         {def?.groups.map((group) => (
           <FormCard key={group.title} title={group.title}>
             <div className="grid grid-cols-2 gap-4">
@@ -625,7 +621,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
           </FormCard>
         ))}
 
-        {/* Sticky action bar */}
         <StickyFormActions
           saving={saving}
           disabled={uploading || galleryUploading || colorsUploading}
@@ -634,7 +629,6 @@ export default function GadgetProductForm({ mode, productId, initial }: GadgetPr
         />
       </form>
 
-      {/* Success toast */}
       <AnimatePresence>
         {saved && (
           <motion.div

@@ -1,4 +1,3 @@
-// src/lib/gadgets/categories/laptops.ts
 import { GadgetCategoryDef } from "../types";
 export const earbuds: GadgetCategoryDef = {
   slug: "earbuds",
