@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Heart, PackageCheck, History } from "lucide-react";
+import AuthRequiredNotice from "@/components/auth/AuthRequiredNotice";
 
 type OwnershipStatus = "WANT" | "HAVE" | "HAD";
 
@@ -9,7 +10,7 @@ interface OwnershipWidgetProps {
   productId: string;
   initialCounts: Record<OwnershipStatus, number>;
   initialUserStatus: OwnershipStatus | null;
-  /** Pass false to render a disabled/sign-in-prompt state for logged-out users. */
+  /** False for logged-out visitors: a click explains sign-in instead of voting. */
   isSignedIn: boolean;
 }
 
@@ -28,9 +29,17 @@ export default function OwnershipWidget({
   const [counts, setCounts] = useState(initialCounts);
   const [userStatus, setUserStatus] = useState(initialUserStatus);
   const [isPending, startTransition] = useTransition();
+  const [needsAuth, setNeedsAuth] = useState(false);
+  // The button clicked, so the sign-in notice opens under it, not mid-widget.
+  const [noticeAnchor, setNoticeAnchor] = useState<HTMLElement | null>(null);
 
-  function handleClick(status: OwnershipStatus) {
-    if (!isSignedIn || isPending) return;
+  function handleClick(status: OwnershipStatus, button: HTMLElement) {
+    if (!isSignedIn) {
+      setNoticeAnchor(button);
+      setNeedsAuth(true);
+      return;
+    }
+    if (isPending) return;
 
     // Optimistic update
     const prevCounts = counts;
@@ -64,34 +73,49 @@ export default function OwnershipWidget({
   }
 
   return (
-    <div className="grid grid-cols-3 border-2 border-border-heavy divide-x-2 divide-border">
-      {OPTIONS.map(({ status, label, icon: Icon }) => {
-        const isActive = userStatus === status;
-        return (
-          <button
-            key={status}
-            type="button"
-            disabled={!isSignedIn}
-            onClick={() => handleClick(status)}
-            title={isSignedIn ? undefined : "Sign in to vote"}
-            className={`brutal-press flex flex-col items-center justify-center gap-1.5 px-3 py-5 text-center transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-60 ${
-              isActive
-                ? "bg-accent-2 text-on-accent-2"
-                : "bg-background text-foreground hover:bg-accent-tint"
-            }`}
-          >
-            <Icon size={22} />
-            <span className="text-xs font-extrabold uppercase tracking-wide">{label}</span>
-            <span
-              className={`text-[11px] font-bold ${
-                isActive ? "text-on-accent-2" : "text-muted-foreground"
+    // Buttons stay enabled when signed out (a greyed-out control with a hover
+    // tooltip told nobody on touch why it didn't work); the click opens the
+    // sign-in notice under the widget instead.
+    <div className="relative">
+      {/* overflow-hidden: the modern theme rounds this frame, and the square
+          segment backgrounds otherwise painted over its corners. The segments
+          don't take brutal-press — that lifts a standalone card, and lifting
+          one cell of a framed control pushed it out through the border. The
+          tint is the hover feedback. */}
+      <div className="grid grid-cols-3 overflow-hidden border-2 border-border-heavy divide-x-2 divide-border">
+        {OPTIONS.map(({ status, label, icon: Icon }) => {
+          const isActive = userStatus === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              onClick={(e) => handleClick(status, e.currentTarget)}
+              className={`flex flex-col items-center justify-center gap-1.5 px-3 py-5 text-center transition-colors duration-100 ${
+                isActive
+                  ? "bg-accent-2 text-on-accent-2"
+                  : "bg-background text-foreground hover:bg-accent-tint"
               }`}
             >
-              {counts[status]} {counts[status] === 1 ? "user" : "users"}
-            </span>
-          </button>
-        );
-      })}
+              <Icon size={22} />
+              <span className="text-xs font-extrabold uppercase tracking-wide">{label}</span>
+              <span
+                className={`text-[11px] font-bold ${
+                  isActive ? "text-on-accent-2" : "text-muted-foreground"
+                }`}
+              >
+                {counts[status]} {counts[status] === 1 ? "user" : "users"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <AuthRequiredNotice
+        open={needsAuth}
+        onClose={() => setNeedsAuth(false)}
+        action="mark gadgets you want, have or had"
+        align="center"
+        anchor={noticeAnchor}
+      />
     </div>
   );
 }
