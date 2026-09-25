@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Toggle, SuccessToast } from "@/components/dashboard/DashboardUI";
 import HeadingTypeSettings from "@/components/dashboard/HeadingTypeSettings";
+import ArticleTypeSettings from "@/components/dashboard/ArticleTypeSettings";
+import { ARTICLE_TYPE_DEFAULT } from "@/lib/articleType";
 import BrutalistBorderSettings from "@/components/dashboard/BrutalistBorderSettings";
 import BrandingSettings from "@/components/dashboard/BrandingSettings";
 import {
@@ -40,6 +42,7 @@ import type {
   ModernAccents,
   DarkSurfacesByTheme,
   HeadingTypeByTheme,
+  ArticleTypeByTheme,
   Branding,
 } from "@/lib/settings";
 import { BRUTALIST_HEADING_DEFAULT, MODERN_HEADING_DEFAULT } from "@/lib/typography";
@@ -462,6 +465,7 @@ export default function UiSettingsForm({
     brutalist: BRUTALIST_HEADING_DEFAULT,
     modern: MODERN_HEADING_DEFAULT,
   },
+  initialArticleType = { brutalist: ARTICLE_TYPE_DEFAULT, modern: ARTICLE_TYPE_DEFAULT },
   initialBrutalistBorder = BRUTALIST_BORDER_DEFAULT,
   initialAccentText = ACCENT_TEXT_DEFAULT,
   initialBranding = { logo: null, logoDark: null, siteIcon: null },
@@ -472,6 +476,7 @@ export default function UiSettingsForm({
   initialBrutalistAccents?: ThemeAccents;
   initialDarkSurfaces?: DarkSurfacesByTheme;
   initialHeadingType?: HeadingTypeByTheme;
+  initialArticleType?: ArticleTypeByTheme;
   initialBrutalistBorder?: BrutalistBorder;
   initialAccentText?: AccentText;
   initialBranding?: Branding;
@@ -497,6 +502,11 @@ export default function UiSettingsForm({
   const [headingType, setHeadingType] = useState<HeadingTypeByTheme>(initialHeadingType);
   const [savedHeadingType, setSavedHeadingType] =
     useState<HeadingTypeByTheme>(initialHeadingType);
+
+  // Article typography, per theme. Same saved/editing split.
+  const [articleType, setArticleType] = useState<ArticleTypeByTheme>(initialArticleType);
+  const [savedArticleType, setSavedArticleType] =
+    useState<ArticleTypeByTheme>(initialArticleType);
 
   // Brutalist outline/shadow. Same saved/editing split for the dirty state.
   const [border, setBorder] = useState<BrutalistBorder>(initialBrutalistBorder);
@@ -668,7 +678,8 @@ export default function UiSettingsForm({
   const colorsDirty = accentsDirty || surfacesDirty;
   const bordersDirty = !isModern && JSON.stringify(border) !== JSON.stringify(savedBorder);
   const headingsDirty =
-    JSON.stringify(headingType[theme]) !== JSON.stringify(savedHeadingType[theme]);
+    JSON.stringify(headingType[theme]) !== JSON.stringify(savedHeadingType[theme]) ||
+    JSON.stringify(articleType[theme]) !== JSON.stringify(savedArticleType[theme]);
   const surfaceDefault =
     theme === "modern" ? MODERN_DARK_SURFACES_DEFAULT : BRUTALIST_DARK_SURFACES_DEFAULT;
 
@@ -1588,6 +1599,21 @@ export default function UiSettingsForm({
             onSaved={(next) => {
               setSavedHeadingType((prev) => ({ ...prev, [theme]: next }));
               setToast("Heading styles updated");
+            }}
+            onError={setError}
+          />
+        )}
+
+        {tab === "typography" && (
+          <ArticleTypeSettings
+            theme={theme}
+            value={articleType[theme]}
+            saved={savedArticleType[theme]}
+            siteType={headingType[theme]}
+            onChange={(next) => setArticleType((prev) => ({ ...prev, [theme]: next }))}
+            onSaved={(next) => {
+              setSavedArticleType((prev) => ({ ...prev, [theme]: next }));
+              setToast("Article typography updated");
             }}
             onError={setError}
           />

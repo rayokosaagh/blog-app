@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { cache } from "react";
-import { Geist, Geist_Mono, Plus_Jakarta_Sans, Bebas_Neue } from "next/font/google";
+import { Geist, Geist_Mono, Plus_Jakarta_Sans, Bebas_Neue, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { getThemeSettings } from "@/lib/settings";
 import { modernAccentCss, brutalistAccentCss, darkSurfaceCss } from "@/lib/color";
 import { headingTypeCss } from "@/lib/typography";
+import { articleTypeCss } from "@/lib/articleType";
 import { brutalistBorderCss } from "@/lib/brutalistBorder";
 import { accentTextCss } from "@/lib/accentText";
 import { APP_URL } from "@/lib/appUrl";
@@ -40,6 +41,14 @@ const modernSans = Plus_Jakarta_Sans({
 const condensed = Bebas_Neue({
   weight: "400",
   variable: "--font-condensed",
+  subsets: ["latin"],
+});
+
+// Reading face, offered in the article/heading typography settings. Variable
+// weight axis, so one file covers 200-900; like every face here it is only
+// fetched by a browser when a setting actually uses it.
+const serif = Source_Serif_4({
+  variable: "--font-serif",
   subsets: ["latin"],
 });
 
@@ -122,6 +131,7 @@ export default async function RootLayout({
     brutalistAccents,
     darkSurfaces,
     headingType,
+    articleType,
     brutalistBorder,
     accentText,
     branding,
@@ -154,14 +164,18 @@ export default async function RootLayout({
     // palettes above: only the active [data-theme] block matches, so switching
     // theme stays a pure attribute flip.
     headingTypeCss("brutalist", headingType.brutalist) +
-    headingTypeCss("modern", headingType.modern);
+    headingTypeCss("modern", headingType.modern) +
+    // Blog post typography — only the values an admin changed; the article
+    // CSS falls back to the heading roles above for everything else.
+    articleTypeCss("brutalist", articleType.brutalist) +
+    articleTypeCss("modern", articleType.modern);
 
   return (
     <html
       lang="en"
       data-theme={uiTheme}
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${modernSans.variable} ${condensed.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${modernSans.variable} ${condensed.variable} ${serif.variable} h-full antialiased`}
     >
       <head>
         <link

@@ -23,6 +23,7 @@ import {
   type BrutalistBorder,
 } from "@/lib/brutalistBorder";
 import { accentTextFrom, parseAccentText, type AccentText } from "@/lib/accentText";
+import { articleTypeFrom, parseArticleType, type ArticleType } from "@/lib/articleType";
 
 // Re-exported for existing importers; the values live in @/lib/color so the
 // dashboard's client components can read them without pulling in Prisma.
@@ -49,6 +50,13 @@ export const UI_THEME_KEY = "uiTheme";
 export const HEADING_TYPE_KEYS = {
   brutalist: "headingTypeBrutalist",
   modern: "headingTypeModern",
+} as const;
+
+// Article typography (blog post body + heading levels), one JSON blob per
+// theme for the same reason as the heading type. See articleType.ts.
+export const ARTICLE_TYPE_KEYS = {
+  brutalist: "articleTypeBrutalist",
+  modern: "articleTypeModern",
 } as const;
 
 // Brutalist outline/shadow colours per scheme + shadow blur, one JSON blob for
@@ -395,6 +403,21 @@ export async function setHeadingType(theme: UiTheme, value: unknown): Promise<vo
   await setSetting(HEADING_TYPE_KEYS[theme], JSON.stringify(headingTypeFrom(value, theme)));
 }
 
+/** Article typography for both themes. */
+export type ArticleTypeByTheme = { brutalist: ArticleType; modern: ArticleType };
+
+function articleFrom(map: Record<string, string>): ArticleTypeByTheme {
+  return {
+    brutalist: parseArticleType(map[ARTICLE_TYPE_KEYS.brutalist], "brutalist"),
+    modern: parseArticleType(map[ARTICLE_TYPE_KEYS.modern], "modern"),
+  };
+}
+
+/** Persist one theme's article typography, coerced to a complete valid blob. */
+export async function setArticleType(theme: UiTheme, value: unknown): Promise<void> {
+  await setSetting(ARTICLE_TYPE_KEYS[theme], JSON.stringify(articleTypeFrom(value, theme)));
+}
+
 /** Persist the brutalist border settings, coerced to a complete valid blob. */
 export async function setBrutalistBorder(value: unknown): Promise<void> {
   await setSetting(BRUTALIST_BORDER_KEY, JSON.stringify(brutalistBorderFrom(value)));
@@ -416,6 +439,7 @@ export async function getThemeSettings(): Promise<{
   brutalistAccents: ThemeAccents;
   darkSurfaces: DarkSurfacesByTheme;
   headingType: HeadingTypeByTheme;
+  articleType: ArticleTypeByTheme;
   brutalistBorder: BrutalistBorder;
   accentText: AccentText;
   branding: Branding;
@@ -431,6 +455,8 @@ export async function getThemeSettings(): Promise<{
     ...MODERN_SURFACE_KEYS,
     HEADING_TYPE_KEYS.brutalist,
     HEADING_TYPE_KEYS.modern,
+    ARTICLE_TYPE_KEYS.brutalist,
+    ARTICLE_TYPE_KEYS.modern,
     BRUTALIST_BORDER_KEY,
     ACCENT_TEXT_KEY,
     ...Object.values(BRANDING_KEYS),
@@ -444,6 +470,7 @@ export async function getThemeSettings(): Promise<{
     },
     darkSurfaces: surfacesByThemeFrom(map),
     headingType: headingFrom(map),
+    articleType: articleFrom(map),
     brutalistBorder: parseBrutalistBorder(map[BRUTALIST_BORDER_KEY]),
     accentText: parseAccentText(map[ACCENT_TEXT_KEY]),
     branding: brandingFrom(map),

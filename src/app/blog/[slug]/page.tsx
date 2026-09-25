@@ -663,7 +663,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="bg-card border-[1.5px] border-border-heavy px-8 md:px-10 pt-12 pb-8">
             <style>{`
             .rich-text-render { color: var(--foreground); }
-.rich-text-render p { color: var(--muted-foreground); line-height: 1.85; margin-bottom: 1.15rem; font-size: 1.0625rem; }
+/* Every --a-* variable below is Dashboard -> UI settings -> Article
+   typography (src/lib/articleType.ts). They are only emitted when an admin
+   changes a value, and each fallback is the value this rule had before, so
+   an untouched setting renders exactly as it always has. */
+.rich-text-render p { color: var(--muted-foreground); line-height: var(--a-body-leading, 1.85); margin-bottom: 1.15rem; font-size: var(--a-body-size, 1.0625rem); }
 .rich-text-render p:empty,
 .rich-text-render p:has(> br:only-child) { display: none; }
 .rich-text-render > *:last-child { margin-bottom: 0; }
@@ -742,10 +746,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 .rich-text-render h2 {
   display: block;
   /* Page-title role, not display: at display size the section titles out-shouted the article title itself. */
-  font-size: calc(var(--h-page-title-size) * 1.05);
-  font-weight: var(--h-page-title-weight);
-  letter-spacing: var(--h-page-title-tracking);
-  text-transform: var(--h-page-title-case);
+  font-size: var(--a-title-size, calc(var(--h-page-title-size) * 1.05));
+  font-weight: var(--a-title-weight, var(--h-page-title-weight));
+  letter-spacing: var(--a-title-tracking, var(--h-page-title-tracking));
+  text-transform: var(--a-title-case, var(--h-page-title-case));
   line-height: 1.15;
   color: var(--foreground);
   margin-top: 1.25rem;
@@ -766,10 +770,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-size: calc(var(--h-eyebrow-size) * 1.15);
-  font-weight: var(--h-eyebrow-weight);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: var(--a-kicker-size, calc(var(--h-eyebrow-size) * 1.15));
+  font-weight: var(--a-kicker-weight, var(--h-eyebrow-weight));
+  letter-spacing: var(--a-kicker-tracking, 0.18em);
+  text-transform: var(--a-kicker-case, uppercase);
   line-height: 1.2;
   color: var(--accent);
   margin-top: 3rem;
@@ -814,10 +818,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
-  font-size: var(--h-section-size);
-  font-weight: var(--h-section-weight);
-  letter-spacing: var(--h-section-tracking);
-  text-transform: var(--h-section-case);
+  font-size: var(--a-sub-size, var(--h-section-size));
+  font-weight: var(--a-sub-weight, var(--h-section-weight));
+  letter-spacing: var(--a-sub-tracking, var(--h-section-tracking));
+  text-transform: var(--a-sub-case, var(--h-section-case));
   line-height: 1.3;
   margin-top: 2.25rem;
   margin-bottom: 0.9rem;
@@ -843,10 +847,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
 .rich-text-render h4 {
   display: block;
-  font-size: var(--h-eyebrow-size);
-  font-weight: var(--h-eyebrow-weight);
-  letter-spacing: var(--h-eyebrow-tracking);
-  text-transform: var(--h-eyebrow-case);
+  font-size: var(--a-minor-size, var(--h-eyebrow-size));
+  font-weight: var(--a-minor-weight, var(--h-eyebrow-weight));
+  letter-spacing: var(--a-minor-tracking, var(--h-eyebrow-tracking));
+  text-transform: var(--a-minor-case, var(--h-eyebrow-case));
   line-height: 1.2;
   color: color-mix(in oklab, var(--accent) 70%, var(--foreground));
   margin-top: 1.75rem;
@@ -856,11 +860,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 /* Role faces. The global "html body *" font rule carries !important, so the
    face has to be set at higher specificity to take effect. The chips keep
    the body face on purpose (numbers, not headings). */
+/* Body face for everything in the article that isn't a heading — paragraphs,
+   lists, tables. :where() keeps it at the global rule's specificity (0,0,2),
+   so it wins over that by coming later but still loses to the role classes
+   (.h-eyebrow, .h-card, .font-condensed…) the mounted blocks use, and to the
+   heading rules below. */
+html body :where(.rich-text-render, .rich-text-render *) { font-family: var(--a-body-font, var(--font-sans)) !important; }
+/* Each heading rule also covers the heading's descendants: text wrapped in
+   <strong>/<span> by the editor would otherwise match the body rule above
+   and render in the body face (e.g. a serif body leaking into headings). */
 html body .rich-text-render h1,
-html body .rich-text-render h2 { font-family: var(--h-page-title-font) !important; }
-html body .rich-text-render h2[data-was-h1] { font-family: var(--h-eyebrow-font) !important; }
-html body .rich-text-render h3 { font-family: var(--h-section-font) !important; }
-html body .rich-text-render h4 { font-family: var(--h-eyebrow-font) !important; }
+html body .rich-text-render h1 * { font-family: var(--h-page-title-font) !important; }
+html body .rich-text-render h2,
+html body .rich-text-render h2 * { font-family: var(--a-title-font, var(--h-page-title-font)) !important; }
+html body .rich-text-render h2[data-was-h1],
+html body .rich-text-render h2[data-was-h1] * { font-family: var(--a-kicker-font, var(--h-eyebrow-font)) !important; }
+html body .rich-text-render h3,
+html body .rich-text-render h3 * { font-family: var(--a-sub-font, var(--h-section-font)) !important; }
+html body .rich-text-render h4,
+html body .rich-text-render h4 * { font-family: var(--a-minor-font, var(--h-eyebrow-font)) !important; }
 html body .rich-text-render h2[data-was-h1]::before,
 html body .rich-text-render h3::before { font-family: var(--font-sans) !important; }
 
@@ -909,7 +927,9 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
 .rich-text-render ul, .rich-text-render ol { padding-left: 1.75rem; margin: 1.35rem 0; }
 .rich-text-render ul { list-style-type: disc; }
 .rich-text-render ol { list-style-type: decimal; }
-.rich-text-render li { margin: 0.45rem 0; line-height: 1.8; }
+/* No fallback on font-size: an unset variable makes the declaration invalid,
+   so it falls back to inheriting, which is what list items did before. */
+.rich-text-render li { margin: 0.45rem 0; line-height: var(--a-body-leading, 1.8); font-size: var(--a-body-size); }
 .rich-text-render li::marker { color: var(--accent); }
 
 /* Pre-hydration layout for the Pros & Cons block (see components/feeds/ProsCons.tsx).

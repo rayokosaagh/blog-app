@@ -20,6 +20,7 @@ export default async function UiSettingsPage() {
       initialBrutalistAccents={theme.brutalistAccents}
       initialDarkSurfaces={theme.darkSurfaces}
       initialHeadingType={theme.headingType}
+      initialArticleType={theme.articleType}
       initialBrutalistBorder={theme.brutalistBorder}
       initialAccentText={theme.accentText}
       initialBranding={theme.branding}

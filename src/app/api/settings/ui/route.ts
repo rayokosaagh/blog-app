@@ -13,6 +13,7 @@ import {
   setBrutalistAccents,
   setDarkSurfaces,
   setHeadingType,
+  setArticleType,
   setBrutalistBorder,
   setAccentText,
   setBranding,
@@ -41,6 +42,7 @@ async function readAll() {
     darkSurfaces: theme.darkSurfaces,
     brutalistAccents: theme.brutalistAccents,
     headingType: theme.headingType,
+    articleType: theme.articleType,
     brutalistBorder: theme.brutalistBorder,
     accentText: theme.accentText,
     branding: theme.branding,
@@ -162,6 +164,18 @@ export async function PUT(request: Request) {
     for (const t of ["brutalist", "modern"] as const) {
       if (headings[t] && typeof headings[t] === "object") {
         await setHeadingType(t, headings[t]);
+        touched = true;
+      }
+    }
+  }
+
+  // Article typography, per theme — whole-blob like the headings: coerced on
+  // write (fonts from the allowed list, sizes clamped, weights snapped).
+  const article = body.articleType;
+  if (article && typeof article === "object") {
+    for (const t of ["brutalist", "modern"] as const) {
+      if (article[t] && typeof article[t] === "object") {
+        await setArticleType(t, article[t]);
         touched = true;
       }
     }

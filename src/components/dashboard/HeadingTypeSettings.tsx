@@ -229,10 +229,10 @@ export default function HeadingTypeSettings({
 
 /**
  * The per-role controls, shared by the list row and the page preview's
- * click-to-edit popover. `compact` keeps two columns at any width, since the
+ * click-to-edit popover — and by ArticleTypeSettings for its heading levels. `compact` keeps two columns at any width, since the
  * popover is narrow regardless of the viewport.
  */
-function RoleFields({
+export function RoleFields({
   style,
   onPatch,
   compact = false,
@@ -333,13 +333,13 @@ function RoleFields({
   );
 }
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
+export function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{children}</span>
   );
 }
 
-function NumberField({
+export function NumberField({
   label,
   hint,
   suffix,
@@ -396,7 +396,7 @@ const SAMPLE: Record<HeadingRole, string> = {
  * the clamp(), so it scales with the viewport exactly as the real heading
  * does. Pair with the `heading-preview` class.
  */
-function headingCss(style: HeadingStyle): React.CSSProperties {
+export function headingCss(style: HeadingStyle): React.CSSProperties {
   return {
     fontSize: sizeExpression(style),
     fontWeight: style.weight,

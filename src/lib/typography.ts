@@ -24,13 +24,14 @@ export const HEADING_ROLES = ["display", "pageTitle", "section", "card", "eyebro
 export type HeadingRole = (typeof HEADING_ROLES)[number];
 
 /**
- * The faces an admin can choose. All four are already declared in
- * layout.tsx, so none of them adds a new dependency — and an unused
- * next/font face is never fetched by the browser, only its @font-face rule
- * ships. "theme" means "whatever --font-sans resolves to", which is the
- * default and the only option that follows the brutalist/modern switch.
+ * The faces an admin can choose. All of them are declared in layout.tsx, and
+ * an unused next/font face is never fetched by the browser, only its
+ * @font-face rule ships. "theme" means "whatever --font-sans resolves to",
+ * which is the default and the only option that follows the brutalist/modern
+ * switch. "serif" (Source Serif 4) is the one reading face — added for the
+ * article typography settings, where long-form body text is the use case.
  */
-export const HEADING_FONTS = ["theme", "jakarta", "grotesk", "condensed", "geist"] as const;
+export const HEADING_FONTS = ["theme", "jakarta", "grotesk", "condensed", "geist", "serif"] as const;
 export type HeadingFont = (typeof HEADING_FONTS)[number];
 
 export const HEADING_FONT_STACKS: Record<HeadingFont, string> = {
@@ -39,6 +40,7 @@ export const HEADING_FONT_STACKS: Record<HeadingFont, string> = {
   grotesk: '"Space Grotesk", Arial, Helvetica, sans-serif',
   condensed: 'var(--font-condensed), "Arial Narrow", Impact, sans-serif',
   geist: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
+  serif: 'var(--font-serif), Georgia, "Times New Roman", serif',
 };
 
 export const HEADING_FONT_LABELS: Record<HeadingFont, string> = {
@@ -47,6 +49,7 @@ export const HEADING_FONT_LABELS: Record<HeadingFont, string> = {
   grotesk: "Space Grotesk",
   condensed: "Bebas Neue",
   geist: "Geist",
+  serif: "Source Serif 4",
 };
 
 /**
@@ -61,6 +64,7 @@ export const HEADING_FONT_WEIGHTS: Record<HeadingFont, number[]> = {
   grotesk: [500, 700],
   condensed: [400],
   geist: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+  serif: [200, 300, 400, 500, 600, 700, 800, 900],
 };
 
 export type HeadingStyle = {
@@ -151,7 +155,7 @@ function isFiniteNumber(v: unknown): v is number {
  * independent: an invalid weight leaves the fallback's weight in place rather
  * than discarding the whole role, matching how trioFrom() treats colours.
  */
-function styleFrom(input: unknown, fallback: HeadingStyle): HeadingStyle {
+export function headingStyleFrom(input: unknown, fallback: HeadingStyle): HeadingStyle {
   if (!input || typeof input !== "object") return fallback;
   const src = input as Record<string, unknown>;
 
@@ -194,7 +198,7 @@ export function headingTypeFrom(input: unknown, theme: UiThemeName): HeadingType
   if (!input || typeof input !== "object") return fallback;
   const src = input as Record<string, unknown>;
   return Object.fromEntries(
-    HEADING_ROLES.map((role) => [role, styleFrom(src[role], fallback[role])]),
+    HEADING_ROLES.map((role) => [role, headingStyleFrom(src[role], fallback[role])]),
   ) as HeadingType;
 }
 
