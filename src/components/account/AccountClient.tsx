@@ -138,7 +138,7 @@ export default function AccountClient() {
   return (
     <div className="space-y-6">
       <div className="bg-card border-2 border-border-heavy rounded-none shadow-brutal px-6 py-8 md:px-8">
-        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
+        <h1 className="h-page-title text-foreground">
           Profile
         </h1>
         <p className="text-sm text-muted-foreground mt-1">

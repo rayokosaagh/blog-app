@@ -309,7 +309,7 @@ function VerdictPanel({
               <p className="text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
                 {p.brand}
               </p>
-              <h3 className="mt-0.5 line-clamp-2 text-lg font-extrabold leading-snug tracking-tight text-foreground sm:text-xl lg:text-2xl">
+              <h3 className="h-section mt-0.5 line-clamp-2 text-foreground">
                 {p.name}
               </h3>
               <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">

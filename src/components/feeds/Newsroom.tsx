@@ -320,7 +320,7 @@ function NewsRow({ item, index }: { item: NewsItem; index: number }) {
         <DateBlock date={item.createdAt} lead={false} index={index} />
         <div className="min-w-0">
           <Kicker item={item} index={index} />
-          <h3 className="mt-1.5 line-clamp-2 text-lg font-extrabold leading-snug text-foreground sm:text-xl">
+          <h3 className="h-card mt-1.5 line-clamp-2 text-foreground">
             <Underline>{item.title}</Underline>
           </h3>
           <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{item.dek}</p>
@@ -407,7 +407,7 @@ function ReviewsRail({ reviews }: { reviews: ReviewItem[] }) {
               <Clock className="h-3 w-3" /> {lead.readingTime} min read
             </span>
           </p>
-          <h3 className="mt-2 text-xl font-extrabold leading-snug">{lead.title}</h3>
+          <h3 className="h-page-title mt-2">{lead.title}</h3>
           <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-on-photo/70">{lead.summary}</p>
         </div>
         <span className="absolute bottom-4 right-4">

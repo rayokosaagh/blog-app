@@ -53,7 +53,7 @@ export default function NotFound() {
               Oops! This page went missing
             </p>
 
-            <h1 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            <h1 className="h-display mt-4 text-foreground">
               This page
               <br />
               <span className="text-accent">can&apos;t</span> be found
@@ -84,7 +84,7 @@ export default function NotFound() {
             </div>
 
             <div className="mt-10 max-w-sm">
-              <h2 className="text-base font-extrabold text-foreground">
+              <h2 className="h-section h-section--sm text-foreground">
                 Still need help?
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">

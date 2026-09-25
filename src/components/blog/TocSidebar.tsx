@@ -215,7 +215,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
       <div className="shrink-0 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <List size={18} className="text-accent shrink-0" />
-          <h2 className="text-xl min-[1600px]:text-2xl font-extrabold text-foreground truncate">Contents</h2>
+          <h2 className="h-section h-section--sm text-foreground truncate">Contents</h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {/* Position in the article — turns a long list into "where am I" */}

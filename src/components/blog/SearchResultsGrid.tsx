@@ -85,7 +85,7 @@ export default function SearchResultsGrid({
                   <div className="mb-2">
                     <CategoryBadge category={post.category} size="sm" asSpan />
                   </div>
-<h2 className="text-sm font-bold text-foreground line-clamp-2 mb-2">
+<h2 className="h-card h-card--sm text-foreground line-clamp-2 mb-2">
   <Underline>{post.title}</Underline>
 </h2>
 

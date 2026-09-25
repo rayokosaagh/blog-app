@@ -115,7 +115,7 @@ export default function BookmarksClient() {
     <div className="space-y-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-foreground">Your Bookmarks</h1>
+          <h1 className="h-page-title text-foreground">Your Bookmarks</h1>
           <p className="text-muted-foreground mt-1">
             {filteredBookmarks.length} of {bookmarks.length} saved posts
           </p>
@@ -168,7 +168,7 @@ export default function BookmarksClient() {
 
                 <div className="flex-1 p-6 flex flex-col justify-between">
                   <div>
-                    <h2 className="text-lg font-extrabold text-foreground">{post.title}</h2>
+                    <h2 className="h-card text-foreground">{post.title}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       by {post.author.name || "Unknown"}
                     </p>

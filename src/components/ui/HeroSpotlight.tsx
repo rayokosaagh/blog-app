@@ -169,7 +169,7 @@ export default function HeroSpotlight({ banners }: { banners: Banner[] }) {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link href={b.link} target="_blank" rel="noopener noreferrer">
-                <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-foreground transition-colors duration-300 group-hover/card:text-black sm:text-3xl">
+                <h2 className="h-page-title text-foreground transition-colors duration-300 group-hover/card:text-black">
                   {b.title}
                 </h2>
               </Link>

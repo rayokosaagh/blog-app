@@ -114,7 +114,7 @@ export default function SpotlightAdRail({
             </span>
           )}
           {title && (
-            <h3 className="truncate text-[15px] font-extrabold leading-tight tracking-tight text-foreground">
+            <h3 className="h-card truncate text-foreground">
               {title}
             </h3>
           )}

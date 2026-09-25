@@ -108,7 +108,7 @@ function ProductCardContent({
         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
           {product.brand}
         </p>
-        <h4 className="text-base font-extrabold text-foreground mt-0.5 line-clamp-2">
+        <h4 className="h-card text-foreground mt-0.5 line-clamp-2">
           {product.name}
         </h4>
       </div>

@@ -58,7 +58,7 @@ export default function ContinueReading({
           <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
             {resuming ? "Pick up where you left off" : "Recently read"}
           </p>
-          <h2 className="mt-0.5 flex items-center gap-2 text-2xl font-black tracking-tight text-foreground">
+          <h2 className="h-section mt-0.5 flex items-center gap-2 text-foreground">
             <History className="h-5 w-5 text-accent" strokeWidth={2.5} />
             Continue reading
           </h2>
@@ -100,7 +100,7 @@ export default function ContinueReading({
               </div>
 
               <div className="flex flex-1 flex-col p-3">
-                <h3 className="line-clamp-3 text-sm font-extrabold leading-snug text-foreground">
+                <h3 className="h-card h-card--sm line-clamp-3 text-foreground">
                   {e.title}
                 </h3>
 

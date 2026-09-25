@@ -57,7 +57,7 @@ export default function FooterNewsletter() {
       <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-accent">
         Want to hear from us?
       </p>
-      <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-foreground">
+      <h3 className="h-section mt-2 text-foreground">
         Subscribe to our newsletter
       </h3>
 

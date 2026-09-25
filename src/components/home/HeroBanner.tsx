@@ -127,7 +127,7 @@ export default function HeroBanner({
                   {b.badge}
                 </span>
               )}
-              <h2 className="mt-4 text-3xl font-black leading-[1.05] tracking-tight sm:text-4xl lg:text-5xl">
+              <h2 className="h-display mt-4">
                 {b.title}
               </h2>
               {b.description && (

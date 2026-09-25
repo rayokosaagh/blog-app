@@ -30,7 +30,7 @@ export default function ProductSpecTable({ group, specs }: ProductSpecTableProps
       </div>
 
       <div className="flex-1 min-w-0 p-4 sm:p-5">
-        <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wide text-foreground pb-3 mb-3 border-b-2 border-border">
+        <h2 className="h-section h-section--sm text-foreground pb-3 mb-3 border-b-2 border-border">
           {group.title}
         </h2>
 

@@ -113,7 +113,7 @@ export default function LoginPage() {
 
         <div className="relative bg-card border-[3px] border-border-heavy shadow-brutal-xl p-8">
           <div className="mb-7 flex flex-col items-start">
-            <h1 className="!text-4xl font-extrabold uppercase tracking-tight text-foreground tag-pill mb-3 bg-accent text-on-accent">
+            <h1 className="h-page-title text-foreground tag-pill mb-3 bg-accent text-on-accent">
               Sign in
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">

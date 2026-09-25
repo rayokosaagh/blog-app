@@ -78,7 +78,7 @@ function FeaturedCard({ post }: { post: RelatedArticlePost }) {
 
         <div className="p-6 md:p-8">
           <Link href={href} className="block">
-            <h3 className="text-2xl md:text-[28px] font-extrabold text-foreground leading-snug mb-3 transition-colors duration-100 group-hover:text-accent">
+            <h3 className="h-page-title text-foreground mb-3 transition-colors duration-100 group-hover:text-accent">
               <Underline>{post.title}</Underline>
             </h3>
           </Link>
@@ -146,7 +146,7 @@ function ListItem({ post }: { post: RelatedArticlePost }) {
               {primaryTag.name}
             </p>
           )}
-          <h4 className="text-[15px] font-extrabold text-foreground leading-snug line-clamp-2 transition-colors duration-100 group-hover:text-accent">
+          <h4 className="h-card text-foreground line-clamp-2 transition-colors duration-100 group-hover:text-accent">
             <Underline>{post.title}</Underline>
           </h4>
           <p className="text-xs text-muted-foreground mt-1.5 truncate">
@@ -182,7 +182,7 @@ export default function RelatedArticles({ posts, heading = "More Articles" }: Re
       >
         <div>
           <p className="text-xs font-extrabold uppercase tracking-wide text-accent mb-1.5">On this topic</p>
-          <h2 className="text-2xl md:text-3xl font-black text-foreground">{heading}</h2>
+          <h2 className="h-section text-foreground">{heading}</h2>
         </div>
         <Link
           href={seeAllHref}

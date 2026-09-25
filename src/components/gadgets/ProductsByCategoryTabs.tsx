@@ -113,7 +113,7 @@ export default function ProductsByCategoryTabs({
                       line, so break-words split it mid-token ("Nothing(4a)Pr" /
                       "o"). At 16px it fits whole and the longer names still
                       wrap on their spaces. */}
-                  <h4 className="text-base font-extrabold text-foreground mt-0.5 line-clamp-2 break-words">
+                  <h4 className="h-card text-foreground mt-0.5 line-clamp-2 break-words">
                     <Underline>{p.name}</Underline>
                   </h4>
                 </div>

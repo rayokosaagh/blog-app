@@ -91,7 +91,7 @@ export default function Carousel({ banners }: CarouselProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-white text-lg sm:text-2xl font-bold mb-3 line-clamp-2 tracking-tight"
+                className="h-page-title text-white mb-3 line-clamp-2"
               >
                 {banners[current].title}
               </motion.h3>

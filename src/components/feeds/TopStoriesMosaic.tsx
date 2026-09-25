@@ -130,7 +130,7 @@ export default function TopStoriesMosaic({ stories }: { stories: MosaicStory[] }
           </div>
           <div className="relative z-10 mt-6 max-w-[56%] sm:max-w-[50%]">
             <Rank n={1} className="block text-6xl sm:text-7xl" />
-            <h3 className="mt-2 text-xl font-extrabold leading-tight text-foreground sm:text-2xl xl:text-3xl">
+            <h3 className="h-page-title mt-2 text-foreground">
               {lead.title}
             </h3>
             <div className="mt-3">
@@ -156,7 +156,7 @@ export default function TopStoriesMosaic({ stories }: { stories: MosaicStory[] }
               {s.score !== null && <ScoreBadge score={s.score} className="absolute right-3 top-3 z-10" />}
               <div className="relative z-10 max-w-[60%]">
                 <Rank n={i + 2} className="block text-4xl" />
-                <h3 className="mt-2 line-clamp-3 text-base font-extrabold leading-snug text-foreground sm:text-lg">
+                <h3 className="h-card mt-2 line-clamp-3 text-foreground">
                   {s.title}
                 </h3>
                 <div className="mt-2.5">
@@ -178,7 +178,7 @@ export default function TopStoriesMosaic({ stories }: { stories: MosaicStory[] }
             <SidePhoto story={wide} width="w-[56%]" sizes="(min-width: 1024px) 560px, 60vw" />
             <div className="relative z-10 flex max-w-[54%] items-start gap-4">
               <Rank n={4} className="text-4xl sm:text-5xl" />
-              <h3 className="line-clamp-2 text-base font-extrabold leading-snug text-foreground sm:text-lg">
+              <h3 className="h-card line-clamp-2 text-foreground">
                 {wide.title}
               </h3>
             </div>

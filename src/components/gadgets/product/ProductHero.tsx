@@ -142,7 +142,7 @@ export default function ProductHero({
           <span className="tag-pill inline-flex bg-accent-3 text-on-accent-3 mb-2">
             {categoryName}
           </span>
-          <h1 className="text-xl sm:text-2xl font-black text-background tracking-tight truncate">
+          <h1 className="h-page-title text-background truncate">
             {product.name}
           </h1>
         </div>

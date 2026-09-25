@@ -168,11 +168,14 @@ function Tile({
 
           <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5">
             <h3
-              className={`group leading-tight tracking-tight ${
-                mobileHero ? "text-base line-clamp-3 mb-1.5" : "text-xs line-clamp-2 mb-1"
-              } ${big ? "md:text-xl lg:text-2xl md:mb-2 md:line-clamp-3" : "md:text-sm md:mb-1 md:line-clamp-2"}`}
+              // Card-title role. Small tiles take the --sm ratio so they still
+              // step down from the big/hero tile when the role is retuned. (A
+              // plain class, so it can't take an md: variant — hence per-tile.)
+              className={`group h-card ${big || mobileHero ? "" : "h-card--sm"} ${
+                mobileHero ? "line-clamp-3 mb-1.5" : "line-clamp-2 mb-1"
+              } ${big ? "md:mb-2 md:line-clamp-3" : "md:mb-1 md:line-clamp-2"}`}
             >
-              <span className="font-bold text-on-photo">
+              <span className="text-on-photo">
                 <Underline block>{post.title}</Underline>
               </span>
             </h3>
@@ -283,7 +286,7 @@ export default function LatestPostsFeed({
             {eyebrow && (
               <p className="text-xs font-extrabold uppercase tracking-wide text-accent mb-1.5">{eyebrow}</p>
             )}
-            <h2 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">{heading}</h2>
+            <h2 className="h-section text-foreground">{heading}</h2>
           </div>
           {viewAllHref && (
             <Link

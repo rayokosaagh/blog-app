@@ -103,7 +103,7 @@ export default function ProductFilterSidebar({
         <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border-heavy bg-accent text-on-accent">
           <SlidersHorizontal className="h-3.5 w-3.5" />
         </span>
-        <h2 className="text-base font-extrabold tracking-tight text-foreground">Filters</h2>
+        <h2 className="h-section h-section--sm text-foreground">Filters</h2>
 
         {/* Mobile-only expand/collapse toggle (form stays open on lg+) */}
         <button

@@ -156,7 +156,7 @@ export default function AnimatedPostsGrid({
                     <CategoryBadge category={lead.category} size="sm" asSpan />
                     <time className="text-muted-foreground">{formatDate(lead.createdAt)}</time>
                   </div>
-                  <h2 className="text-2xl font-extrabold text-foreground leading-snug mb-3">
+                  <h2 className="h-page-title text-foreground mb-3">
                     <Underline>{lead.title}</Underline>
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-5">
@@ -277,7 +277,7 @@ export default function AnimatedPostsGrid({
                             </>
                           )}
                         </div>
-                        <h3 className="text-base font-bold text-foreground leading-snug line-clamp-2">
+                        <h3 className="h-card text-foreground line-clamp-2">
                           <Underline>{post.title}</Underline>
                         </h3>
                       </div>

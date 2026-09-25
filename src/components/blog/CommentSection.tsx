@@ -626,7 +626,7 @@ export default function CommentSection({ postId }: { postId: string }) {
     >
       <div className="flex items-center gap-2">
         <MessageCircle size={22} className="text-accent" />
-        <h2 className="text-2xl font-extrabold text-foreground">Conversation</h2>
+        <h2 className="h-section text-foreground">Conversation</h2>
       </div>
       <div className="border-t-2 border-border-heavy mt-4 mb-4" />
 

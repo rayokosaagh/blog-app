@@ -252,7 +252,7 @@ export default function RatingMeter({ postId, className = "" }: RatingMeterProps
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Star size={22} className="text-accent" />
-          <h2 className="text-2xl font-extrabold text-foreground">Rate this article</h2>
+          <h2 className="h-section text-foreground">Rate this article</h2>
         </div>
 
         <AnimatePresence mode="wait">

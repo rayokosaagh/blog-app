@@ -19,7 +19,7 @@ export default function OfflinePage() {
           <WifiOff className="h-7 w-7" strokeWidth={2.5} />
         </span>
 
-        <h1 className="text-2xl font-black tracking-tight text-foreground">
+        <h1 className="h-page-title text-foreground">
           You&apos;re offline
         </h1>
 

@@ -69,7 +69,7 @@ export default function NewsletterForm() {
               <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <h3 className="text-lg font-extrabold text-foreground tracking-tight">Almost there</h3>
+          <h3 className="h-section h-section--sm text-foreground">Almost there</h3>
           <p className="text-sm text-muted-foreground">{message}</p>
         </motion.div>
       ) : (
@@ -86,7 +86,7 @@ export default function NewsletterForm() {
             Stay in the loop
           </motion.span>
 
-          <motion.h3 variants={item} className="text-lg font-extrabold text-foreground leading-tight tracking-tight">
+          <motion.h3 variants={item} className="h-section h-section--sm text-foreground">
             Subscribe to our newsletter
           </motion.h3>
           <motion.p variants={item} className="text-sm text-muted-foreground mt-2 max-w-[15rem]">

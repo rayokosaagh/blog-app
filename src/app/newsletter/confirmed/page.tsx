@@ -25,7 +25,7 @@ export default async function NewsletterConfirmedPage({
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-2xl font-extrabold text-foreground">
+      <h1 className="h-page-title text-foreground">
         {copy.title}
       </h1>
       <p className="max-w-md text-muted-foreground">{copy.body}</p>

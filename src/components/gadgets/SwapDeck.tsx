@@ -56,7 +56,7 @@ export default function SwapDeck({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: reduceMotion ? 0 : -10 }}
             transition={TITLE_T}
-            className="group inline-block text-base sm:text-lg font-extrabold uppercase tracking-wide text-foreground"
+            className="h-section h-section--sm group inline-block text-foreground"
           >
             <Underline>{title}</Underline>
           </motion.h3>

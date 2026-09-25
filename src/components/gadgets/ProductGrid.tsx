@@ -140,7 +140,7 @@ export default function ProductGrid({
               <p className="truncate text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">
                 {p.brand}
               </p>
-              <h4 className="mt-0.5 line-clamp-2 text-base font-extrabold leading-snug text-foreground">
+              <h4 className="h-card mt-0.5 line-clamp-2 text-foreground">
                 <Underline>{p.name}</Underline>
               </h4>
 

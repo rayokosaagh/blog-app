@@ -32,7 +32,7 @@ export default function VerdictCard({
         <Award className="h-4 w-4 shrink-0" strokeWidth={2.5} />
         <h2
           id="verdict-heading"
-          className="text-[11px] font-extrabold uppercase tracking-[0.16em]"
+          className="h-eyebrow"
         >
           Our verdict
         </h2>
