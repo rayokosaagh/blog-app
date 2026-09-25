@@ -68,7 +68,11 @@ export default function ProductSlots({
       variants={slotContainerVariants}
       initial="hidden"
       animate="show"
-      className="relative z-10 flex items-stretch gap-2 sm:gap-4 mb-6"
+      // z-10 is a stacking context, so a search dropdown's own z-30 only ranks
+      // inside this row — the sticky compare bar (z-20) painted over it. While
+      // a slot's search has focus the row lifts above the bar; otherwise the
+      // bar keeps covering cards scrolling beneath it.
+      className="relative z-10 focus-within:z-30 flex items-stretch gap-2 sm:gap-4 mb-6"
     >
       {Array.from({ length: visibleSlots }).map((_, i) => {
         const current = slots[i];

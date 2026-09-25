@@ -59,7 +59,9 @@ export default function JumpNav({
   if (groups.length === 0) return null;
 
   return (
-    <div className="hidden sm:flex items-center gap-1 pt-3">
+    // Shown on phones too: it lives in the compact sticky bar, where it's the
+    // quickest way round a long spec sheet on a small screen.
+    <div className="flex min-w-0 flex-1 items-center gap-1">
       <AnimatePresence>
         {canScrollLeft && (
           <motion.button

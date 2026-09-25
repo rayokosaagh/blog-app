@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import GadgetCompare from "@/components/gadgets/GadgetCompare";
+import RelatedComparisons from "@/components/gadgets/RelatedComparisons";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -40,6 +41,7 @@ export default async function ComparePage({
       <main className="relative min-h-screen bg-background">
         <div className="relative max-w-6xl mx-auto px-4 py-10">
           <GadgetCompare defaultCategory={category} defaultSlugs={slugs} />
+          <RelatedComparisons categorySlug={category} excludeSlugs={slugs} />
         </div>
       </main>
 

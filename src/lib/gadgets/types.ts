@@ -8,6 +8,7 @@ export interface SpecField {
   unit?: string;
   options?: string[];
   higherIsBetter?: boolean;
+  important?: boolean;  // survives the /compare "Key specs" toggle
 }
 
 export interface SpecGroup {

@@ -217,8 +217,14 @@ function ComparisonRow({
 
 export default function LatestComparisonsClient({
   comparisons,
+  eyebrow = "Head-to-head",
+  title = "Latest Comparisons",
+  subtitle = "Two gadgets, every spec side by side",
 }: {
   comparisons: ComparisonItem[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
 }) {
   const shouldReduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
@@ -229,9 +235,9 @@ export default function LatestComparisonsClient({
     <section className="w-full">
       <SectionHeader
         Icon={Scale}
-        eyebrow="Head-to-head"
-        title="Latest Comparisons"
-        subtitle="Two gadgets, every spec side by side"
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
         action={{ href: "/compare", label: "Compare gadgets" }}
       />
 

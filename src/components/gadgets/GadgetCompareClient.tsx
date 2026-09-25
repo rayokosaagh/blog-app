@@ -8,7 +8,7 @@ import { CategoryOption, Product, ProductLite } from "./compare/types";
 import CategorySelector from "./compare/CategorySelector";
 import ProductSlots from "./compare/ProductSlots";
 import ControlsBar from "./compare/ControlsBar";
-import JumpNav from "./compare/JumpNav";
+import CompactCompareBar from "./compare/CompactCompareBar";
 import FocusedSpecBar from "./compare/FocusedSpecBar";
 import DesktopTable from "./compare/DesktopTable";
 import MobileTable from "./compare/MobileTable";
@@ -39,8 +39,9 @@ export default function GadgetCompareClient({
   const [def, setDef] = useState<GadgetCategoryDef | undefined>(initialDef);
   const [categoryProducts, setCategoryProducts] = useState<ProductLite[]>(initialCategoryProducts);
   const [loading, setLoading] = useState(false);
-  const [highlightDiff, setHighlightDiff] = useState(true);
+  const [highlightDiff, setHighlightDiff] = useState(false);
   const [onlyDiff, setOnlyDiff] = useState(false);
+  const [keyOnly, setKeyOnly] = useState(false);
   const [editorVerdicts, setEditorVerdicts] = useState<EditorVerdict>(
     initialEditorVerdicts ?? {}
   );
@@ -60,23 +61,54 @@ export default function GadgetCompareClient({
 
   const requestIdRef = useRef(0);
 
-  // Tracks the live height of the sticky header (tabs + slots + controls
-  // + jump nav). Used so anchor jumps land BELOW the sticky bar instead
-  // of being hidden underneath it, and recalculates whenever the header's
-  // content changes size (e.g. controls/nav appearing once 2+ products
-  // are picked).
-  const stickyHeaderRef = useRef<HTMLDivElement>(null);
+  // Sticky layout, GadgetByte-style: the category tabs, slot cards and
+  // controls scroll away normally; only the compact bar (product row +
+  // section chips) sticks, just under the site navbar.
+  //
+  // navHeight — the site header is itself sticky at top:0, so the bar has to
+  //   sit below it rather than slide underneath (which the old header did).
+  // stuck — the full slot cards have scrolled out from under the navbar, so
+  //   the bar's compact product row opens in their place.
+  // headerOffset — how much of the viewport the navbar + *pinned* bar cover,
+  //   so section jumps and the scroll-spy line land below them. Measured as
+  //   the pinned height even before pinning, since that's where a jump ends up.
+  const slotsRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [navHeight, setNavHeight] = useState(0);
+  const [stuck, setStuck] = useState(false);
   const [headerOffset, setHeaderOffset] = useState(0);
 
+  // Navbar is rendered by each page, not the root layout, so after a
+  // client-side navigation the outgoing page's header is still in the DOM
+  // when this runs — and querySelector returns it first. It's removed a beat
+  // later and measures 0, which pinned the bar at top:0 under the new header.
+  // Whenever the watched header leaves the document, re-resolve to the live one.
   useEffect(() => {
-    const el = stickyHeaderRef.current;
-    if (!el) return;
-    const update = () => setHeaderOffset(el.offsetHeight);
+    let nav: HTMLElement | null = null;
+    const ro = new ResizeObserver(() => update());
+    const update = () => {
+      if (!nav?.isConnected) {
+        if (nav) ro.unobserve(nav);
+        nav = document.querySelector<HTMLElement>(".header-frame");
+        if (!nav) return;
+        ro.observe(nav);
+      }
+      setNavHeight(nav.offsetHeight);
+    };
     update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    const el = slotsRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < navHeight),
+      { rootMargin: `-${navHeight}px 0px 0px 0px` },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [navHeight]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -227,8 +259,9 @@ function jumpToGroup(title: string) {
     [slots]
   );
 
-  // Spec groups shown in the table — filtered by "only differences"
-  // and by the free-text field-label search.
+  // Spec groups shown in the table — filtered by "only differences",
+  // "key specs" (fields flagged `important` in the category def) and by the
+  // free-text field-label search.
   const groups = useMemo(() => {
     if (!def) return [];
     const q = fieldFilter.trim().toLowerCase();
@@ -240,7 +273,8 @@ function jumpToGroup(title: string) {
         // dashes says nothing. A row only one product fills is kept: that gap
         // is the comparison.
         fields: visibleFieldsAcross(g, specsList).filter((f) => {
-          if (q && !f.label.toLowerCase().includes(q) && !g.title.toLowerCase().includes(q)) return false;
+          if (keyOnly && !f.important) return false;
+          if (q &&!f.label.toLowerCase().includes(q) && !g.title.toLowerCase().includes(q)) return false;
           if (onlyDiff) {
             const vals = filledProducts.map((p) => JSON.stringify(p.specs?.[f.key] ?? null));
             return new Set(vals).size > 1;
@@ -249,7 +283,7 @@ function jumpToGroup(title: string) {
         }),
       }))
       .filter((g) => g.fields.length > 0);
-  }, [onlyDiff, def, filledProducts, fieldFilter]);
+  }, [onlyDiff, keyOnly, def, filledProducts, fieldFilter]);
 
   useEffect(() => {
   if (groups.length === 0) return;
@@ -297,6 +331,56 @@ function updateActiveGroup() {
 
   const showComparison = !!def && filledProducts.length >= 2;
 
+  // Pinned bar height = its current height, plus the compact product row's
+  // natural height while that row is still collapsed (it opens on pinning).
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) {
+      setHeaderOffset(navHeight);
+      return;
+    }
+    const update = () => {
+      const row = bar.querySelector<HTMLElement>("[data-compact-products]");
+      const collapsedRow = stuck ? 0 : (row?.offsetHeight ?? 0);
+      setHeaderOffset(navHeight + bar.offsetHeight + collapsedRow);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [navHeight, stuck, showComparison]);
+
+  // Filled products in table order, each with the slot it occupies (the
+  // compact bar's remove button needs the slot, the table needs the order).
+  const barProducts = useMemo(
+    () =>
+      slots.flatMap((s, slotIndex) => (s ? [{ product: s, slotIndex }] : [])),
+    [slots],
+  );
+
+  // "+ Add" in the compact bar: back up to the slot cards, into the first
+  // empty slot's search — or reveal a hidden slot if every visible one is full.
+  function addFromBar() {
+    const el = slotsRef.current;
+    if (!el) return;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - navHeight - 16, behavior: "smooth" });
+    const emptyIndex = slots.findIndex((s) => !s);
+    const inputs = el.querySelectorAll<HTMLInputElement>("input");
+    const target = emptyIndex >= 0 ? inputs[emptyIndex] : undefined;
+    if (target) {
+      target.focus({ preventScroll: true });
+      return;
+    }
+    el.querySelector<HTMLButtonElement>('button[aria-label="Add another product to compare"]')?.click();
+    // The revealed slot mounts on the next render; focus its search then.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const all = el.querySelectorAll<HTMLInputElement>("input");
+        all[all.length - 1]?.focus({ preventScroll: true });
+      }),
+    );
+  }
+
   return (
     <LayoutGroup>
       <motion.div
@@ -306,7 +390,7 @@ function updateActiveGroup() {
         className="relative rounded-none border-2 border-border-heavy bg-card shadow-brutal-lg p-4 sm:p-8"
       >
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+          <h1 className="h-page-title text-foreground">
             Compare Gadgets
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -314,24 +398,21 @@ function updateActiveGroup() {
           </p>
         </div>
 
-        {/* ── Sticky compare header: category tabs, product cards,
-             filter/sort controls — stays visible while scrolling
-             through a long spec table below. Adjust `top-0` to e.g.
-             `top-16` if your site has a fixed navbar overlapping it. ── */}
-        <div
-          ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-4 sm:-mx-8 px-4 sm:px-8 pt-1 pb-2 bg-background"
-        >
+        {/* ── Selection: category tabs, full slot cards, controls.
+             Scrolls away normally; the compact bar below takes over. ── */}
+        <div>
           <CategorySelector categories={categories} category={category} onChange={handleCategoryChange} />
 
-          <ProductSlots
-            maxSlots={maxSlots}
-            slots={slots}
-            categoryProducts={categoryProducts}
-            usedSlugs={usedSlugs}
-            onPick={handlePick}
-            onRemove={handleRemove}
-          />
+          <div ref={slotsRef}>
+            <ProductSlots
+              maxSlots={maxSlots}
+              slots={slots}
+              categoryProducts={categoryProducts}
+              usedSlugs={usedSlugs}
+              onPick={handlePick}
+              onRemove={handleRemove}
+            />
+          </div>
 
           {loading && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
@@ -357,19 +438,47 @@ function updateActiveGroup() {
               onHighlightDiffChange={setHighlightDiff}
               onlyDiff={onlyDiff}
               onOnlyDiffChange={setOnlyDiff}
+              keyOnly={keyOnly}
+              onKeyOnlyChange={setKeyOnly}
             />
           )}
 
-          {showComparison && <JumpNav groups={groups} activeGroupTitle={activeGroupTitle} onJump={jumpToGroup} />}
-
-          <FocusedSpecBar
-            focusedField={focusedField}
-            focusedKey={focusedKey}
-            filledProducts={filledProducts}
-            onClear={() => setFocusedKey(null)}
-          />
         </div>
-        {/* ── /Sticky compare header ──────────────────────────────── */}
+
+        {/* ── Compact sticky bar: pinned under the site navbar while the
+             spec table scrolls. Product row on the table's columns +
+             section chips; the focused-spec strip rides along. ── */}
+        {showComparison && (
+          <div
+            ref={barRef}
+            className="sticky z-20 -mx-4 sm:-mx-8 px-4 sm:px-8 pt-2 pb-2 bg-background"
+            style={{ top: navHeight }}
+          >
+            <CompactCompareBar
+              products={barProducts}
+              stuck={stuck}
+              highlightDiff={highlightDiff}
+              onHighlightDiffChange={setHighlightDiff}
+              onlyDiff={onlyDiff}
+              onOnlyDiffChange={setOnlyDiff}
+              keyOnly={keyOnly}
+              onKeyOnlyChange={setKeyOnly}
+              onRemove={handleRemove}
+              canAdd={filledProducts.length < maxSlots}
+              onAdd={addFromBar}
+              groups={groups}
+              activeGroupTitle={activeGroupTitle}
+              onJump={jumpToGroup}
+            />
+            <FocusedSpecBar
+              focusedField={focusedField}
+              focusedKey={focusedKey}
+              filledProducts={filledProducts}
+              onClear={() => setFocusedKey(null)}
+            />
+          </div>
+        )}
+        {/* ── /Compact sticky bar ──────────────────────────────────── */}
 
         {showComparison ? (
           groups.length === 0 ? (
@@ -380,15 +489,21 @@ function updateActiveGroup() {
                 fieldFilter.trim()
                   ? `No specs match "${fieldFilter}"`
                   : onlyDiff
-                    ? "These products match on every spec"
-                    : "No specs to compare yet"
+                    ? keyOnly
+                      ? "These products match on every key spec"
+                      : "These products match on every spec"
+                    : keyOnly
+                      ? "No key specs filled in yet"
+                      : "No specs to compare yet"
               }
               description={
                 fieldFilter.trim()
                   ? "Try a shorter search term."
                   : onlyDiff
                     ? 'Turn off "differences only" to see the full spec sheet.'
-                    : "Neither product has any specifications filled in yet."
+                    : keyOnly
+                      ? 'Turn off "Key specs" to see the full spec sheet.'
+                      : "Neither product has any specifications filled in yet."
               }
             />
           ) : (

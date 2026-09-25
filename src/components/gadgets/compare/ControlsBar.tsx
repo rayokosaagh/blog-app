@@ -9,6 +9,8 @@ export default function ControlsBar({
   onHighlightDiffChange,
   onlyDiff,
   onOnlyDiffChange,
+  keyOnly,
+  onKeyOnlyChange,
 }: {
   fieldFilter: string;
   onFieldFilterChange: (v: string) => void;
@@ -16,6 +18,8 @@ export default function ControlsBar({
   onHighlightDiffChange: (v: boolean) => void;
   onlyDiff: boolean;
   onOnlyDiffChange: (v: boolean) => void;
+  keyOnly: boolean;
+  onKeyOnlyChange: (v: boolean) => void;
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-3">
@@ -30,9 +34,10 @@ export default function ControlsBar({
         />
       </div>
 
-      <div className="flex gap-4 sm:gap-6 shrink-0">
+      <div className="flex flex-wrap gap-3 sm:gap-4 shrink-0">
         <ToggleSwitch checked={highlightDiff} onChange={onHighlightDiffChange} label="Highlight" />
         <ToggleSwitch checked={onlyDiff} onChange={onOnlyDiffChange} label="Diffs only" />
+        <ToggleSwitch checked={keyOnly} onChange={onKeyOnlyChange} label="Key specs" />
       </div>
     </div>
   );

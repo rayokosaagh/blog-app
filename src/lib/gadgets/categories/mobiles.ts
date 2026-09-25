@@ -17,7 +17,7 @@ export const mobiles: GadgetCategoryDef = {
     {
       title: "Launch",
       fields: [
-        { key: "launchDate", label: "Date", type: "text" },
+        { key: "launchDate", label: "Date", type: "text", important: true },
         { key: "marketStatus", label: "Market Status", type: "select", options: ["In Stock", "Upcoming", "Discontinued"] },
       ],
     },
@@ -25,36 +25,36 @@ export const mobiles: GadgetCategoryDef = {
       title: "Body",
       fields: [
         { key: "dimensions", label: "Dimension", type: "text" },
-        { key: "weightGm", label: "Weight", type: "number", unit: "gm", higherIsBetter: false },
+        { key: "weightGm", label: "Weight", type: "number", unit: "gm", higherIsBetter: false, important: true },
         { key: "build", label: "Build Materials", type: "multiline" },
       ],
     },
     {
       title: "Memory",
       fields: [
-        { key: "ram", label: "RAM", type: "text" },
-        { key: "storage", label: "Storage", type: "text" },
+        { key: "ram", label: "RAM", type: "text", important: true },
+        { key: "storage", label: "Storage", type: "text", important: true },
         { key: "sdCard", label: "SD Card", type: "boolean" },
       ],
     },
     {
       title: "Display",
       fields: [
-        { key: "screenSize", label: "Size", type: "text",  },
-        { key: "displayType", label: "Display Type", type: "text" },
+        { key: "screenSize", label: "Size", type: "text", important: true },
+        { key: "displayType", label: "Display Type", type: "text", important: true },
         { key: "resolution", label: "Resolution", type: "text" },
         { key: "brightness", label: "Brightness", type: "text"},
-        { key: "refreshRate", label: "Refresh Rate", type: "number", unit: "Hz", higherIsBetter: true },
+        { key: "refreshRate", label: "Refresh Rate", type: "number", unit: "Hz", higherIsBetter: true, important: true },
 
       ],
     },
     {
       title: "Performance",
       fields: [
-        { key: "chipset", label: "Chipset", type: "text" },
+        { key: "chipset", label: "Chipset", type: "text", important: true },
         { key: "cpu", label: "CPU", type: "multiline" },
         { key: "gpu", label: "GPU", type: "multiline" },
-        { key: "os", label: "OS", type: "text" },
+        { key: "os", label: "OS", type: "text", important: true },
         { key: "ui", label: "UI Version", type: "text" },
         { key: "osSupport", label: "OS Support", type: "text" },
       ],
@@ -62,7 +62,7 @@ export const mobiles: GadgetCategoryDef = {
     {
       title: "Benchmark",
       fields: [
-        { key: "antutu", label: "Antutu", type: "text" },
+        { key: "antutu", label: "Antutu", type: "text", important: true },
         { key: "geekbench", label: "GeekBench", type: "text" },
         { key: "3Dmark", label: "3DMark", type: "text" },
       ],
@@ -71,7 +71,7 @@ export const mobiles: GadgetCategoryDef = {
       title: "Rear Camera System",
       fields: [
         { key: "type", label: "Type", type: "text" },
-        { key: "backSensors", label: "Sensors", type: "multiline" },
+        { key: "backSensors", label: "Sensors", type: "multiline", important: true },
         { key: "features", label: "Features", type: "multiline" },
         { key: "video", label: "Video", type: "multiline" },
       ],
@@ -79,7 +79,7 @@ export const mobiles: GadgetCategoryDef = {
     {
       title: "Front Camera System",
       fields: [
-        { key: "frontSensors", label: "Sensors", type: "multiline" },
+        { key: "frontSensors", label: "Sensors", type: "multiline", important: true },
         { key: "frontFeatures", label: "Features", type: "multiline" },
         { key: "frontVideo", label: "Video", type: "multiline" },
       ],
@@ -118,8 +118,8 @@ export const mobiles: GadgetCategoryDef = {
     {
       title: "Battery",
       fields: [
-        { key: "batteryMah", label: "Capacity", type: "text"},
-        { key: "charging", label: "Charging", type: "text" },
+        { key: "batteryMah", label: "Capacity", type: "text", important: true },
+        { key: "charging", label: "Charging", type: "text", important: true },
         { key: "wirelessCharging", label: "Wireless Charging", type: "text" },
       ],
     },

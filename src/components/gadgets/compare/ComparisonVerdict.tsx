@@ -55,7 +55,7 @@ export default function ComparisonVerdict({
         <ListChecks className="h-4 w-4 shrink-0" strokeWidth={2.5} />
         <h2
           id="comparison-summary-heading"
-          className="text-[11px] font-extrabold uppercase tracking-[0.16em]"
+          className="h-eyebrow"
         >
           Summary
         </h2>
@@ -71,7 +71,7 @@ export default function ComparisonVerdict({
       >
         {rows.map((r) => (
           <div key={r.slug} className="flex flex-col gap-2 bg-card p-4">
-            <h3 className="text-sm font-extrabold leading-snug text-foreground">{r.name}</h3>
+            <h3 className="h-card h-card--sm text-foreground">{r.name}</h3>
             <p className="text-sm font-medium leading-relaxed text-muted-foreground">
               {r.summary}
             </p>

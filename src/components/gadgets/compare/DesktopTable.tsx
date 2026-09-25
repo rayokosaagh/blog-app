@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BenchmarkFieldIcon, GroupIcon } from "./icons";
 import { Product, SpecGroupLike } from "./types";
 import { isSpecEmpty } from "@/lib/gadgets/formatSpecValue";
+import { LABEL_COL_PX, ZEBRA, cellText, productAccent } from "./columns";
 
 export default function DesktopTable({
   groups,
@@ -22,16 +23,27 @@ export default function DesktopTable({
   highlightDiff: boolean;
   onToggleFocus: (key: string) => void;
 }) {
+  // No blank column for a free slot: the product columns take the full
+  // width, and "+ Add" lives in the sticky bar's chip row instead.
+  const columnCount = filledProducts.length + 1;
   return (
     <div className="hidden sm:block relative z-0 overflow-x-auto rounded-none border-2 border-border-heavy">
-      <table className="w-full text-sm border-collapse">
+      {/* Fixed layout on shared widths so the sticky CompactCompareBar's
+          product cells line up with these columns. */}
+      <table className="w-full table-fixed text-sm border-collapse">
+        <colgroup>
+          <col style={{ width: LABEL_COL_PX.desktop }} />
+          {filledProducts.map((p) => (
+            <col key={p.id} />
+          ))}
+        </colgroup>
         <thead>
           <tr className="bg-card border-b-2 border-border-heavy">
             <th className="sticky left-0 bg-card border-r-2 border-border-heavy p-3 text-left font-extrabold uppercase tracking-wide text-xs text-muted-foreground z-10">
               Spec
             </th>
-            {filledProducts.map((p) => (
-              <th key={p.id} className="p-3 text-left font-extrabold text-foreground truncate max-w-[160px]">
+            {filledProducts.map((p, i) => (
+              <th key={p.id} className={`p-3 text-left font-extrabold text-foreground truncate ${productAccent(i).bar}`}>
                 {p.name}
               </th>
             ))}
@@ -51,14 +63,16 @@ export default function DesktopTable({
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     id={g.title.toLowerCase()}
                     style={{ scrollMarginTop: headerOffset + 12 }}
-                    className={`transition-colors duration-100 ${
-                      isActiveGroup ? "bg-accent-tint" : "bg-card"
-                    }`}
+                    className={`transition-colors duration-100 ${isActiveGroup ? "bg-accent/25" : "bg-accent/15"}`}
                   >
+                    {/* Every section header carries the accent wash and bar so
+                        the table reads as banded sections; the one in view is
+                        a shade deeper, with accent text. The bar is an inset
+                        shadow because the modern theme thins border-l-4. */}
                     <td
-                      colSpan={filledProducts.length + 1}
-                      className={`font-extrabold uppercase tracking-wide text-xs p-3 border-l-4 ${
-                        isActiveGroup ? "border-l-accent text-accent" : "border-l-transparent text-foreground"
+                      colSpan={columnCount}
+                      className={`font-extrabold uppercase tracking-wide text-xs p-3 shadow-[inset_4px_0_0_var(--accent)] ${
+                        isActiveGroup ? "text-accent" : "text-foreground"
                       }`}
                     >
                       <span className="inline-flex items-center gap-2">
@@ -67,11 +81,13 @@ export default function DesktopTable({
                       </span>
                     </td>
                   </motion.tr>
-                  {g.fields.map((f) => {
+                  {g.fields.map((f, rowIndex) => {
                     const vals = filledProducts.map((p) => p.specs?.[f.key]);
                     const differs = new Set(vals.map((v) => JSON.stringify(v))).size > 1;
                     const isFocused = focusedKey === f.key;
                     const isDimmed = focusedKey !== null && !isFocused;
+                    const zebra = rowIndex % 2 === 1;
+                    const markDiff = highlightDiff && differs;
                     return (
                       <motion.tr
                         key={f.key}
@@ -82,12 +98,12 @@ export default function DesktopTable({
                         transition={{ duration: 0.2, ease: "easeOut" }}
                         onClick={() => onToggleFocus(f.key)}
                         className={`border-b-2 border-border cursor-pointer transition-colors duration-100 hover:bg-accent-tint ${
-                          isFocused ? "bg-accent-tint border-l-4 border-l-accent" : "border-l-4 border-l-transparent"
+                          isFocused ? "bg-accent-tint border-l-4 border-l-accent" : `border-l-4 border-l-transparent ${zebra ? ZEBRA.row : ""}`
                         }`}
                       >
                         <td
                           className={`sticky left-0 border-r-2 border-border-heavy p-3 font-bold text-muted-foreground ${
-                            isFocused ? "bg-accent-tint" : "bg-card"
+                            isFocused ? "bg-accent-tint" : zebra ? ZEBRA.label : "bg-card"
                           }`}
                         >
                           <span className="inline-flex items-center gap-1.5">
@@ -99,29 +115,27 @@ export default function DesktopTable({
                         {filledProducts.map((p, i) => {
                           const v = vals[i];
                           const empty = isSpecEmpty(v);
+                          // The bar keys every cell to its product column. The
+                          // wash is the Highlight: it only tints rows where the
+                          // products differ, so matching rows stay plain.
                           return (
-                            <td key={p.id} className="p-3 whitespace-pre-line">
-                              {/*
-                                One span in both states, with the badge's box
-                                metrics always applied and only its colours
-                                toggling. Swapping between a bare span and a
-                                bordered/padded one changed every differing
-                                cell's size, so flipping Highlight reflowed row
-                                heights and column widths — that jolt was the
-                                "wacky" part, not the transition itself.
-                                Applied to every value cell, not just differing
-                                ones, so columns stay aligned.
-                              */}
+                            <td
+                              key={p.id}
+                              className={`p-3 whitespace-pre-line transition-colors duration-200 ${productAccent(i).bar} ${markDiff ? productAccent(i).wash : ""}`}
+                            >
+                              {/* Plain text in both states: weight is the only
+                                  thing Highlight changes, so rows never reflow
+                                  their box metrics when it's flipped. */}
                               <span
-                                className={`inline-flex items-center rounded-none border-2 px-2 py-0.5 font-semibold transition-colors duration-200 ease-out ${
-                                  highlightDiff && differs && !empty
-                                    ? "border-border-heavy bg-accent-2 text-on-accent-2"
-                                    : `border-transparent ${
-                                        empty ? "text-muted-foreground" : "text-foreground"
-                                      }`
+                                className={`text-sm leading-relaxed ${
+                                  empty
+                                    ? "text-muted-foreground"
+                                    : markDiff
+                                      ? "font-bold text-foreground"
+                                      : "font-medium text-foreground"
                                 }`}
                               >
-                                {empty ? "—" : String(v)}
+                                {empty ? "—" : cellText(f, v)}
                               </span>
                             </td>
                           );
