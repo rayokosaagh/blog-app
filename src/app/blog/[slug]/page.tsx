@@ -89,9 +89,18 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
   const modifiedHtml = html.replace(
     /<(h[1-4])([^>]*?)>([\s\S]*?)<\/h[1-4]>/gi,
     (match, tag, attributes, content) => {
-      const cleanText = content
+      const rawText = content
         .replace(/<[^>]*>/g, "")
         .replace(/&nbsp;/g, " ")
+        .trim();
+      // Plain text for the ToC, which React renders as text — so entities have
+      // to be decoded here or "Camera &amp; Software" shows the "&amp;".
+      const cleanText = rawText
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&amp;/g, "&")
         .trim();
 
       // An empty h3 is left out of the ToC but still bumps the CSS counter,
@@ -108,7 +117,9 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
       // run and consumed its own headings (see the call site).
       const level = (tag.toLowerCase() === "h1" ? "h2" : tag.toLowerCase()) as TocItem["level"];
 
-      const baseId = cleanText
+      // From the undecoded text, so ids (and shared #links) stay exactly as
+      // they were before the ToC started decoding entities.
+      const baseId = rawText
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
         .replace(/\s+/g, "-")
