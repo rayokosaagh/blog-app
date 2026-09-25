@@ -742,7 +742,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 .rich-text-render h2 {
   display: block;
   /* Page-title role, not display: at display size the section titles out-shouted the article title itself. */
-  font-size: calc(var(--h-page-title-size) * 1.15);
+  font-size: calc(var(--h-page-title-size) * 1.05);
   font-weight: var(--h-page-title-weight);
   letter-spacing: var(--h-page-title-tracking);
   text-transform: var(--h-page-title-case);
