@@ -646,7 +646,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {/* TOC Sidebar — from 1440, the first width with room for a usable rail */}
         {toc.length > 0 && (
           <div className="article-rail absolute inset-y-0 left-6 hidden min-[1440px]:block z-20">
-            <FadeIn className="sticky top-28">
+            <FadeIn className="sticky top-[5.25rem]">
               <TocSidebar toc={toc} title={post.title} />
             </FadeIn>
           </div>
@@ -1072,7 +1072,7 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
             rows are min-w-0/flex-1 with truncation, and SpotlightAdRail is
             w-full with only a min-height. */}
         <div className="article-rail absolute inset-y-0 right-6 hidden min-[1440px]:block z-20">
-          <FadeIn delay={0.2} className="sticky top-28">
+          <FadeIn delay={0.2} className="sticky top-[5.25rem]">
             <SocialSidebar compact />
             {spotlightAds.length > 0 && (
               <div className="mt-8 h-[420px]">

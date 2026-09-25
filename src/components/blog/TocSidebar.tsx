@@ -247,7 +247,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
   );
 
   return (
-    <aside className="sticky top-6 self-start w-full flex flex-col bg-card surface-border shadow-brutal px-5 py-8 min-[1600px]:px-8 max-h-[calc(100dvh-3rem)]">
+    <aside className="sticky top-6 self-start w-full flex flex-col bg-card surface-border shadow-brutal px-5 py-8 min-[1600px]:px-8 max-h-[calc(100dvh-6.25rem)]">
       <div
         className={`shrink-0 overflow-hidden border-border transition-all duration-300 ease-in-out ${
           showBreadcrumb ? "max-h-20 opacity-100 mb-5 pb-4 border-b-2" : "max-h-0 opacity-0 pointer-events-none"
