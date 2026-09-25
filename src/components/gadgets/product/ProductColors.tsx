@@ -1,5 +1,6 @@
 import { Palette } from "lucide-react";
 import type { ProductColor } from "@/lib/gadgets/colors";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 /**
  * Color-variant swatches for the product hero. Each swatch shows the color; on
@@ -31,12 +32,18 @@ export default function ProductColors({ colors }: { colors: ProductColor[] }) {
               <div className="rounded-none border-2 border-border-heavy bg-card p-2 shadow-brutal">
                 {color.image && (
                   <div className="mb-2 flex h-36 w-36 items-center justify-center border-2 border-border-heavy bg-white p-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async"
-                      src={color.image}
-                      alt={color.name}
-                      className="h-full w-full object-contain"
-                    />
+                    {/* Inner box so `fill` covers the content area, not the
+                        padding; sized to it so the optimizer sends ~136px, not
+                        the full upload. */}
+                    <div className="relative h-full w-full">
+                      <OptimizedImage
+                        src={color.image}
+                        alt={color.name}
+                        fill
+                        sizes="136px"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">

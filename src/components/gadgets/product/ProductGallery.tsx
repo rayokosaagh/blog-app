@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { ChevronLeft, ChevronRight, Expand } from "lucide-react";
 import Lightbox from "@/components/ui/Lightbox";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 const arrow =
   "flex h-9 w-9 shrink-0 items-center justify-center rounded-none border-2 border-border-heavy bg-accent text-on-accent shadow-brutal-sm brutal-press disabled:opacity-40";
@@ -50,10 +51,20 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
             type="button"
             onClick={() => setLightbox(true)}
             aria-label="View full screen"
-            className="block h-full w-full cursor-zoom-in"
+            className="relative block h-full w-full cursor-zoom-in"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={alt} className="h-full w-full object-contain" />
+            {/* Through the optimizer at the frame's size (the box minus its
+                p-4): uploads are often multi-megapixel press shots, and a raw
+                <img> shipped all of it into a ~200px frame. It's the page's
+                LCP, so priority. The Lightbox keeps the original for zoom. */}
+            <OptimizedImage
+              src={src}
+              alt={alt}
+              fill
+              sizes="(min-width: 640px) 208px, 176px"
+              priority
+              className="h-full w-full object-contain"
+            />
           </button>
 
           <span className="pointer-events-none absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-none border-2 border-border-heavy bg-card text-foreground opacity-0 shadow-brutal-sm transition-opacity duration-150 group-hover:opacity-100">
@@ -83,12 +94,11 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
               onClick={() => setIndex(i)}
               aria-label={`Show image ${i + 1}`}
               aria-current={i === index}
-              className={`h-12 w-12 shrink-0 overflow-hidden rounded-none border-2 bg-white transition-all duration-100 ${
+              className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-none border-2 bg-white transition-all duration-100 ${
                 i === index ? "border-accent" : "border-border-heavy opacity-50 hover:opacity-100"
               }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={thumb} alt="" className="h-full w-full object-contain" />
+              <OptimizedImage src={thumb} alt="" fill sizes="48px" className="h-full w-full object-contain" />
             </button>
           ))}
         </div>

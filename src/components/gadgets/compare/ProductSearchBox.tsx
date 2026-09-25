@@ -2,6 +2,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductLite } from "./types";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 export interface ProductSearchBoxHandle {
   focus: () => void;
@@ -85,11 +86,13 @@ const ProductSearchBox = forwardRef<
                   className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-border/20 text-xs"
                 >
                   {p.image ? (
-                    <img loading="lazy" decoding="async"
-                      src={p.image}
-                      alt=""
-                      className="h-7 w-7 object-contain rounded bg-white p-0.5 ring-1 ring-black/5 dark:ring-white/10 shrink-0"
-                    />
+                    // Frame styles on the wrapper, image filling an inner box,
+                    // so `fill` sits inside the p-0.5 like the old <img> did.
+                    <span className="h-7 w-7 shrink-0 rounded bg-white p-0.5 ring-1 ring-black/5 dark:ring-white/10">
+                      <span className="relative block h-full w-full">
+                        <OptimizedImage src={p.image} alt="" fill sizes="24px" className="h-full w-full object-contain" />
+                      </span>
+                    </span>
                   ) : (
                     <span className="h-7 w-7 rounded bg-border/30 shrink-0" />
                   )}

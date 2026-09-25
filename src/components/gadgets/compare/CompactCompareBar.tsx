@@ -4,6 +4,7 @@ import ToggleSwitch from "./ToggleSwitch";
 import { PlusIcon } from "./icons";
 import { LABEL_COL_PX, productAccent } from "./columns";
 import { Product, SpecGroupLike } from "./types";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 /**
  * The sticky strip over the spec table: a compact product row (thumbnail,
@@ -99,13 +100,16 @@ export default function CompactCompareBar({
                     </button>
                     {product.image && (
                       <div className="h-9 w-9 shrink-0 rounded-none border-2 border-border-heavy bg-card p-0.5 sm:h-10 sm:w-10">
-                        <img
-                          loading="lazy"
-                          decoding="async"
-                          src={product.image}
-                          alt=""
-                          className="h-full w-full object-contain"
-                        />
+                        {/* Inner box so `fill` covers the content area. */}
+                        <div className="relative h-full w-full">
+                          <OptimizedImage
+                            src={product.image}
+                            alt=""
+                            fill
+                            sizes="(min-width: 640px) 32px, 28px"
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
                       </div>
                     )}
                     <p className="w-full truncate px-4 text-[11px] font-bold text-foreground sm:text-sm">

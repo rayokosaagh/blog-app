@@ -4,6 +4,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { PlusIcon } from "./icons";
 import ProductSearchBox, { ProductSearchBoxHandle } from "./ProductSearchBox";
 import { Product, ProductLite } from "./types";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 const slotContainerVariants: Variants = {
   hidden: {},
@@ -117,11 +118,16 @@ export default function ProductSlots({
                     >
                       {current.image && (
                         <div className="h-14 sm:h-16 w-14 sm:w-16 mx-auto mb-2 rounded-none border-2 border-border-heavy bg-card p-1.5">
-                          <img loading="lazy" decoding="async"
-                            src={current.image}
-                            alt={current.name}
-                            className="h-full w-full object-contain"
-                          />
+                          {/* Inner box so `fill` covers the content area. */}
+                          <div className="relative h-full w-full">
+                            <OptimizedImage
+                              src={current.image}
+                              alt={current.name}
+                              fill
+                              sizes="(min-width: 640px) 48px, 40px"
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
                         </div>
                       )}
                       <p className="text-xs sm:text-sm font-bold text-foreground truncate">
