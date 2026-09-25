@@ -3,6 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductLite } from "./types";
 import OptimizedImage from "@/components/ui/OptimizedImage";
+import { productLabel } from "@/lib/gadgets/productLabel";
 
 export interface ProductSearchBoxHandle {
   focus: () => void;
@@ -97,7 +98,7 @@ const ProductSearchBox = forwardRef<
                     <span className="h-7 w-7 rounded bg-border/30 shrink-0" />
                   )}
                   <span className="truncate text-foreground">
-                    {p.brand} {p.name}
+                    {productLabel(p.brand, p.name)}
                   </span>
                 </button>
               </li>
