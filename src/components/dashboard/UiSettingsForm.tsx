@@ -1492,11 +1492,11 @@ export default function UiSettingsForm({
                 </span>
                 <div>
                   <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                    Homepage animated background
+                    Animated background
                   </h2>
                   <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    The moving neo-brutalist shapes that fly across the homepage
-                    behind the content. Turn this off for a plain, static backdrop.
+                    The moving neo-brutalist shapes that fly behind the homepage
+                    and the sign-in page. Turn this off for a plain, static backdrop.
                   </p>
                   <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-zinc-500">
                     Status:{" "}
