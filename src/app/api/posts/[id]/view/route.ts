@@ -17,10 +17,13 @@ export async function POST(
       return NextResponse.json({ counted: false });
     }
 
-    await prisma.post.update({
-      where: { id },
-      data: { views: { increment: 1 } },
-    });
+    // Raw SQL on purpose: prisma.post.update() stamps @updatedAt, which made
+    // every view look like an edit ("Last updated" and dateModified tracked
+    // the latest reader, not the latest change). Tagged template = bound param.
+    const updated = await prisma.$executeRaw`UPDATE "Post" SET "views" = "views" + 1 WHERE "id" = ${id}`;
+    if (updated === 0) {
+      return NextResponse.json({ counted: false });
+    }
 
     cookieStore.set(cookieName, "1", {
       maxAge: 60 * 60 * 12, // 12 hours
