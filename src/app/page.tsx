@@ -11,7 +11,7 @@ import BackToTop from "@/components/ui/BackToTop";
 import { FadeIn } from "@/components/ui/AnimatedSection";
 import HeroBanner from "@/components/home/HeroBanner";
 import AdCarousel from "@/components/ads/AdCarousel";
-import ValueProps from "@/components/home/ValueProps";
+import HomeStart from "@/components/home/HomeStart";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import Poll from "@/components/polls/Poll";
 import SocialSidebar from "@/components/layout/SocialSidebar";
@@ -201,26 +201,18 @@ const mosaicStories = topStories.map((p) => ({
       <PopupAd />
 
       <main className={`flex flex-col ${SECTION_GAP} ${SECTION_TOP_PADDING} ${SECTION_BOTTOM_PADDING}`}>
-        {/* The homepage had no h1 at all — its first heading was an h2 inside
-            the promo carousel, so screen readers and crawlers got no statement
-            of what this page is. Visually hidden because the hero carousel is
-            the intended visual opener; the design is unchanged. */}
-        <h1 className="sr-only">
-          Blog — tech news, gadget reviews and spec comparisons
-        </h1>
         {/*
           Above the fold: banner hero (copy over artwork) with the
           auto-cycling ad rail beside it, then Top Stories as
-          a ranked mosaic, then the value-props band. The hero and the mosaic
+          a ranked mosaic. The hero and the mosaic
           each hide themselves when they have nothing to show; the ad rail
           collapses and the hero takes the full width when no ad is active.
         */}
-        {(banners.length > 0 || mosaicStories.length > 0) && (
-          <section className="max-w-[1600px] mx-auto px-6 w-full">
+          <section className="max-w-[1600px] mx-auto px-4 sm:px-6 w-full">
             {banners.length > 0 && (
               <FadeIn>
                 <div
-                  className={`grid gap-4 lg:items-stretch ${
+                  className={`grid auto-rows-fr items-stretch gap-5 ${ads.length > 1 ? "mb-14" : ""} ${
                     ads.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""
                   }`}
                 >
@@ -229,6 +221,8 @@ const mosaicStories = topStories.map((p) => ({
                 </div>
               </FadeIn>
             )}
+
+            <HomeStart />
 
             {mosaicStories.length > 0 && (
               <>
@@ -245,15 +239,7 @@ const mosaicStories = topStories.map((p) => ({
               </>
             )}
 
-            <FadeIn>
-              <div className="mt-6">
-                <ValueProps />
-              </div>
-            </FadeIn>
           </section>
-        )}
-
-        {banners.length > 0}
 
 
         <section className="max-w-[1600px] mx-auto px-6 w-full">
