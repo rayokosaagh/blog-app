@@ -1,5 +1,9 @@
 # blog-app
 
+For a complete implementation reference covering the website architecture,
+features, routes, APIs, database models, dashboard, SEO, PWA behavior, and
+deployment, see [WEBSITE_DOCUMENTATION.md](WEBSITE_DOCUMENTATION.md).
+
 A tech publication and gadget database: long-form reviews and news alongside a
 structured spec catalogue for phones, laptops, smartwatches and earbuds, with a
 side-by-side comparison tool. Everything — articles, products, ads, polls,
