@@ -8,6 +8,8 @@ interface TocItem {
   text: string;
   id: string;
   level: "h1" | "h2" | "h3" | "h4";
+  /** The number the article prints on this heading ("01", "1.2"), if any. */
+  number?: string;
 }
 
 interface TocSidebarProps {
@@ -24,17 +26,38 @@ const SCROLL_OFFSET = 100;
 // control is just noise on a list you can already take in at a glance.
 const FILTER_THRESHOLD = 10;
 
-// Square, hard-toggled marker instead of a soft scaling/fading circle —
-// brutalism switches state, it doesn't ease into it. Rounds to a dot in
-// modern, where the rest of the UI is soft.
-function ActiveDot({ active }: { active: boolean }) {
+// Each row is marked the way the article marks that heading, so the list
+// reads as the article's own outline: a Section heading's "01" chip (tinted
+// accent, like the article's), a sub-heading's outlined "1.2", and a short
+// rule for the unnumbered titles in between. The chip column has a fixed
+// width so titles line up whichever marker a row has. Radii come from
+// --radius like the article's chips: square in brutalist, soft in modern.
+// The active row's marker fills in — a hard state switch, no easing.
+function HeadingMarker({ number, isSub, active }: { number?: string; isSub: boolean; active: boolean }) {
+  if (!number) {
+    return (
+      <span aria-hidden className="flex w-[1.6rem] shrink-0 justify-center pt-[9px]">
+        <span className={`h-[3px] w-3 ${active ? "bg-accent" : "bg-border-heavy/50"}`} />
+      </span>
+    );
+  }
   return (
-    <span
-      className={`shrink-0 w-2 h-2 mt-[7px] border-2 border-border-heavy ${
-        active ? "bg-accent-2" : "bg-transparent"
-      }`}
-      style={{ borderRadius: "var(--radius-pill, 0)" }}
-    />
+    <span aria-hidden className="flex w-[1.6rem] shrink-0 justify-center">
+      <span
+        className={`inline-flex min-w-[1.45rem] items-center justify-center border-[1.5px] px-1 font-extrabold tabular-nums leading-none ${
+          isSub ? "h-5 text-[10px]" : "h-[22px] text-[11px]"
+        } ${
+          active
+            ? "border-accent bg-accent text-on-accent"
+            : isSub
+            ? "border-border-heavy text-muted-foreground"
+            : "border-[color-mix(in_oklab,var(--accent)_45%,var(--card))] bg-accent-tint text-accent"
+        }`}
+        style={{ borderRadius: `calc(var(--radius) * ${isSub ? 0.5 : 0.6})` }}
+      >
+        {number}
+      </span>
+    </span>
   );
 }
 
@@ -193,7 +216,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
   );
 
   return (
-    <aside className="sticky top-6 self-start w-full flex flex-col bg-card surface-border shadow-brutal px-6 py-8 md:px-8 max-h-[calc(100dvh-3rem)]">
+    <aside className="sticky top-6 self-start w-full flex flex-col bg-card surface-border shadow-brutal px-5 py-8 min-[1600px]:px-8 max-h-[calc(100dvh-3rem)]">
       <div
         className={`shrink-0 overflow-hidden border-border transition-all duration-300 ease-in-out ${
           showBreadcrumb ? "max-h-20 opacity-100 mb-5 pb-4 border-b-2" : "max-h-0 opacity-0 pointer-events-none"
@@ -333,16 +356,16 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
                               href={`#${item.id}`}
                               onClick={(e) => jumpTo(e, item.id)}
                               aria-current={isActive ? "location" : undefined}
-                              className={`group flex items-start gap-3 rounded-none px-3 py-[11px] text-sm transition-colors duration-150 ${
-                                isSub ? "pl-8 text-[13px]" : "font-bold"
+                              className={`group flex items-start gap-1.5 rounded-none px-2.5 py-[9px] text-sm transition-colors duration-150 ${
+                                isSub ? "pl-5 text-[13px]" : "font-bold"
                               } ${
                                 isActive
                                   ? "text-foreground bg-accent-tint"
                                   : "text-muted-foreground hover:text-on-accent-2 hover:bg-accent-2"
                               }`}
                             >
-                              <ActiveDot active={isActive} />
-                              <span className="leading-tight pt-0.5">{item.text}</span>
+                              <HeadingMarker number={item.number} isSub={isSub} active={isActive} />
+                              <span className="min-w-0 break-words leading-tight pt-[3px]">{item.text}</span>
                             </a>
                           </li>
                         );

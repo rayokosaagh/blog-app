@@ -59,6 +59,8 @@ interface TocItem {
   text: string;
   id: string;
   level: "h1" | "h2" | "h3" | "h4";
+  /** The number the article prints on this heading ("01", "1.2"), if any. */
+  number?: string;
 }
 
 function formatDate(date: Date) {
@@ -77,6 +79,12 @@ function splitIntoParagraphs(html: string): string[] {
 function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: TocItem[] } {
   const toc: TocItem[] = [];
   const seenIds = new Map<string, number>();
+  // Mirrors the article's CSS counters (see the style block below): a
+  // Section heading (h1, shipped as h2[data-was-h1]) is "01" and resets the
+  // sub-count; an h3 is "section.sub". Plain h2/h4 are unnumbered. Counted
+  // here so the ToC shows the same numbers the reader sees on the headings.
+  let section = 0;
+  let subsection = 0;
 
   const modifiedHtml = html.replace(
     /<(h[1-4])([^>]*?)>([\s\S]*?)<\/h[1-4]>/gi,
@@ -86,7 +94,12 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
         .replace(/&nbsp;/g, " ")
         .trim();
 
-      if (!cleanText) return match;
+      // An empty h3 is left out of the ToC but still bumps the CSS counter,
+      // so it has to bump ours too or every later number would be off by one.
+      if (!cleanText) {
+        if (tag.toLowerCase() === "h3") subsection++;
+        return match;
+      }
 
       // The page title is the h1. Older posts were written with the editor's
       // H1 button, so their body headings shipped as competing h1s — demote
@@ -106,11 +119,21 @@ function parseContentAndGenerateToc(html: string): { modifiedHtml: string; toc: 
       seenIds.set(baseId, seenCount + 1);
       const id = seenCount === 0 ? baseId : `${baseId}-${seenCount + 1}`;
 
-      toc.push({ text: cleanText, id, level });
-
       // data-was-h1 carries the original size through the demotion, so the
       // outline is fixed without every published post's headings shrinking.
       const demoted = level !== tag.toLowerCase() ? " data-was-h1" : "";
+
+      let number: string | undefined;
+      if (demoted) {
+        section++;
+        subsection = 0;
+        number = String(section).padStart(2, "0");
+      } else if (level === "h3") {
+        subsection++;
+        number = `${section}.${subsection}`;
+      }
+
+      toc.push({ text: cleanText, id, level, number });
 
       return `<${level}${attributes ? " " + attributes.trim() : ""} id="${id}"${demoted}>${content}</${level}>`;
     }
