@@ -14,7 +14,10 @@ export interface AdCarouselItem {
 
 /**
  * Edge-to-edge artwork in a themed card, with controls below the image.
- * Shares the hero grid's row height on desktop and mobile.
+ * Shares the hero grid's row height on desktop and mobile. On desktop the
+ * row sets its width from the height at the ad artwork's 1070x1470 ratio
+ * (see the hero row in app/page.tsx), so ads uploaded at that size show
+ * whole; other ratios are cropped by object-cover.
  *
  * Whole card is a link to the current ad. Pauses while hovered or focused,
  * never autoplays under prefers-reduced-motion, and the dots are real buttons
@@ -48,7 +51,7 @@ export default function AdCarousel({
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
-      className="relative h-full min-h-[23rem] min-w-0 text-foreground sm:min-h-[28rem] lg:min-h-[32rem]"
+      className="relative h-full min-h-[23rem] min-w-0 text-foreground sm:min-h-[28rem] lg:min-h-0"
     >
       <div className="absolute inset-0 overflow-hidden surface-border border-border-heavy bg-card shadow-brutal">
         <Link
@@ -70,7 +73,7 @@ export default function AdCarousel({
                 src={ad.image}
                 alt={ad.title}
                 fill
-                sizes="(min-width: 1024px) 320px, 100vw"
+                sizes="(min-width: 1024px) 440px, 100vw"
                 className="absolute inset-0 h-full w-full object-cover"
               />
             </motion.div>

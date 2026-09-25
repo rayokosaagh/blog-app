@@ -211,10 +211,16 @@ const mosaicStories = topStories.map((p) => ({
           <section className="max-w-[1600px] mx-auto px-4 sm:px-6 w-full">
             {banners.length > 0 && (
               <FadeIn>
+                {/* Desktop: the row takes whatever height leaves the navbar,
+                    this row and HomeStart all on the first screen (20rem is the
+                    navbar, the gaps and HomeStart), held between 28rem and
+                    38rem. --hero-h also drives the ad column's width, at the
+                    hero ads' 1070x1470 artwork ratio so they show uncropped,
+                    and the hero title's size (see HeroBanner). */}
                 <div
                   className={`grid auto-rows-fr items-stretch gap-5 ${ads.length > 1 ? "mb-14" : ""} ${
-                    ads.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""
-                  }`}
+                    ads.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_calc(var(--hero-h)*1070/1470)]" : ""
+                  } lg:h-[var(--hero-h)] lg:[--hero-h:clamp(28rem,calc(100svh_-_20rem),38rem)]`}
                 >
                   <HeroBanner banners={banners} />
                   {ads.length > 0 && <AdCarousel ads={ads} interval={5000} />}
