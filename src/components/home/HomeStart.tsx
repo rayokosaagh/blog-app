@@ -7,6 +7,12 @@ const destinations = [
   { href: "/compare", label: "Compare", description: "See specifications side by side", Icon: GitCompareArrows },
 ];
 
+/**
+ * The homepage's opening section, straight under the hero: the page's one h1
+ * plus three starting points. The links use the site's card vocabulary
+ * (surface border, hard/soft shadow, brutal-press, icon chip), so they follow
+ * the active theme like every other homepage section.
+ */
 export default function HomeStart() {
   return (
     <div className="mt-6 border-t border-border pt-5 sm:mt-8 sm:pt-6">
@@ -19,14 +25,22 @@ export default function HomeStart() {
           <Link
             key={href}
             href={href}
-            className="group flex min-w-0 flex-col items-start gap-2 surface-border border-border-heavy bg-card p-3 text-foreground shadow-brutal-sm transition-colors hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:flex-row sm:items-center sm:gap-3 sm:p-4"
+            className="group flex min-w-0 flex-col items-start gap-2.5 surface-border border-border-heavy bg-card p-3 text-foreground shadow-brutal-sm brutal-press focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:flex-row sm:items-center sm:gap-3.5 sm:p-4"
           >
-            <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-accent" />
+            <span
+              aria-hidden
+              className="flex h-8 w-8 shrink-0 items-center justify-center surface-border border-border-heavy bg-accent-tint text-accent transition-colors group-hover:bg-accent group-hover:text-on-accent sm:h-10 sm:w-10"
+            >
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.5} />
+            </span>
             <span className="min-w-0">
               <span className="block break-words text-sm font-extrabold">{label}</span>
-              <span className="mt-1 hidden text-xs text-muted-foreground sm:block">{description}</span>
+              <span className="mt-0.5 hidden text-xs text-muted-foreground sm:block">{description}</span>
             </span>
-            <ArrowRight aria-hidden="true" className="ml-auto hidden h-4 w-4 shrink-0 sm:block" />
+            <ArrowRight
+              aria-hidden
+              className="ml-auto hidden h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-accent sm:block"
+            />
           </Link>
         ))}
       </nav>
