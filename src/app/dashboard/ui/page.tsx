@@ -24,6 +24,8 @@ export default async function UiSettingsPage() {
       initialBrutalistBorder={theme.brutalistBorder}
       initialAccentText={theme.accentText}
       initialBranding={theme.branding}
+      initialCustomFonts={theme.customFonts}
+      initialBodyFont={theme.bodyFont}
     />
   );
 }

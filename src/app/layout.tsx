@@ -5,7 +5,8 @@ import "./globals.css";
 import Providers from "./providers";
 import { getThemeSettings } from "@/lib/settings";
 import { modernAccentCss, brutalistAccentCss, darkSurfaceCss } from "@/lib/color";
-import { headingTypeCss } from "@/lib/typography";
+import { bodyFontCss, headingTypeCss } from "@/lib/typography";
+import { fontFaceCss, fontRefsIn, googleFontsInUse, googleHref } from "@/lib/fontLibrary";
 import { articleTypeCss } from "@/lib/articleType";
 import { brutalistBorderCss } from "@/lib/brutalistBorder";
 import { accentTextCss } from "@/lib/accentText";
@@ -135,6 +136,8 @@ export default async function RootLayout({
     brutalistBorder,
     accentText,
     branding,
+    customFonts,
+    bodyFont,
   } = await loadThemeSettings();
 
   // Admin-chosen accent colours for both themes, injected as scoped overrides
@@ -143,6 +146,9 @@ export default async function RootLayout({
   // inactive theme's rules never match — emitting both keeps the switch a
   // pure attribute flip with no second round-trip for colours.
   const accentCss =
+    // Admin-uploaded faces. Declared for every library font: a browser only
+    // downloads a face when some text actually uses it.
+    fontFaceCss(customFonts) +
     brutalistAccentCss(brutalistAccents) +
     // Pass the dark trio only when the admin has taken it over; otherwise it
     // stays derived from the light one.
@@ -163,12 +169,19 @@ export default async function RootLayout({
     // Heading type tokens. Emitted for both themes for the same reason as the
     // palettes above: only the active [data-theme] block matches, so switching
     // theme stays a pure attribute flip.
-    headingTypeCss("brutalist", headingType.brutalist) +
-    headingTypeCss("modern", headingType.modern) +
+    headingTypeCss("brutalist", headingType.brutalist, customFonts) +
+    headingTypeCss("modern", headingType.modern, customFonts) +
     // Blog post typography — only the values an admin changed; the article
     // CSS falls back to the heading roles above for everything else.
-    articleTypeCss("brutalist", articleType.brutalist) +
-    articleTypeCss("modern", articleType.modern);
+    articleTypeCss("brutalist", articleType.brutalist, customFonts) +
+    articleTypeCss("modern", articleType.modern, customFonts) +
+    // Site-wide body font per theme (see bodyFontCss in typography.ts).
+    bodyFontCss(bodyFont, customFonts);
+
+  // Google Fonts: one request, only for families some setting uses right now.
+  const googleFontsHref = googleHref(
+    googleFontsInUse(customFonts, fontRefsIn([headingType, articleType, bodyFont])),
+  );
 
   return (
     <html
@@ -184,6 +197,12 @@ export default async function RootLayout({
           title={`${SITE_NAME} — all articles`}
           href="/rss.xml"
         />
+        {googleFontsHref && (
+          <>
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+            <link rel="stylesheet" href={googleFontsHref} />
+          </>
+        )}
         <style id="modern-accents" dangerouslySetInnerHTML={{ __html: accentCss }} />
       </head>
       <body className="min-h-full flex flex-col">

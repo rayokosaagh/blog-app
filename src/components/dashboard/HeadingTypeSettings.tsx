@@ -14,9 +14,9 @@ import {
   HEADING_ROLE_LABELS,
   HEADING_ROLE_HINTS,
   HEADING_FONTS,
-  HEADING_FONT_LABELS,
-  HEADING_FONT_STACKS,
-  HEADING_FONT_WEIGHTS,
+  fontStack,
+  fontWeights,
+  fontLabel,
   headingDefault,
   sizeExpression,
   SIZE_MIN,
@@ -28,6 +28,8 @@ import {
   type HeadingType,
   type HeadingFont,
 } from "@/lib/typography";
+import type { CustomFont } from "@/lib/fontLibrary";
+import { FontOptions, useFontLibrary } from "@/components/dashboard/FontLibraryContext";
 
 /**
  * Heading typography editor — one panel per theme, mirroring how the accent
@@ -55,6 +57,7 @@ export default function HeadingTypeSettings({
   onError: (message: string | null) => void;
 }) {
   const router = useRouter();
+  const library = useFontLibrary();
   const [saving, setSaving] = useState(false);
   const [openRole, setOpenRole] = useState<HeadingRole | null>("display");
 
@@ -66,7 +69,7 @@ export default function HeadingTypeSettings({
     // Changing face can strand the weight on a step the new face can't render
     // (Bebas Neue has only 400), so snap it the same way the server does.
     if (patch.font) {
-      const allowed = HEADING_FONT_WEIGHTS[patch.font];
+      const allowed = fontWeights(patch.font, library);
       next.weight = allowed.reduce((best, w) =>
         Math.abs(w - next.weight) < Math.abs(best - next.weight) ? w : best,
       );
@@ -241,6 +244,7 @@ export function RoleFields({
   onPatch: (patch: Partial<HeadingStyle>) => void;
   compact?: boolean;
 }) {
+  const library = useFontLibrary();
   return (
     <div className={compact ? "grid grid-cols-2 gap-3" : "grid gap-4 sm:grid-cols-2"}>
       <NumberField
@@ -273,11 +277,7 @@ export function RoleFields({
           }
           className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         >
-          {HEADING_FONTS.map((f) => (
-            <option key={f} value={f}>
-              {HEADING_FONT_LABELS[f]}
-            </option>
-          ))}
+          <FontOptions builtIns={HEADING_FONTS} value={style.font} />
         </select>
       </div>
 
@@ -290,7 +290,7 @@ export function RoleFields({
           }
           className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
         >
-          {HEADING_FONT_WEIGHTS[style.font].map((w) => (
+          {fontWeights(style.font, library).map((w) => (
             <option key={w} value={w}>
               {w}
             </option>
@@ -298,9 +298,9 @@ export function RoleFields({
         </select>
         {/* Bebas Neue ships one weight; saying so beats
             offering steps the browser would only fake. */}
-        {HEADING_FONT_WEIGHTS[style.font].length === 1 && (
+        {fontWeights(style.font, library).length === 1 && (
           <p className="mt-1 text-xs text-zinc-400">
-            {HEADING_FONT_LABELS[style.font]} has only one weight.
+            {fontLabel(style.font, library)} has only one weight.
           </p>
         )}
       </div>
@@ -396,7 +396,7 @@ const SAMPLE: Record<HeadingRole, string> = {
  * the clamp(), so it scales with the viewport exactly as the real heading
  * does. Pair with the `heading-preview` class.
  */
-export function headingCss(style: HeadingStyle): React.CSSProperties {
+export function headingCss(style: HeadingStyle, library: readonly CustomFont[] = []): React.CSSProperties {
   return {
     fontSize: sizeExpression(style),
     fontWeight: style.weight,
@@ -406,7 +406,7 @@ export function headingCss(style: HeadingStyle): React.CSSProperties {
     // --font-sans with !important, so the face is handed over as a custom
     // property that .heading-preview reads back with the same weight. Setting
     // it inline here would simply be ignored.
-    ["--preview-font" as string]: HEADING_FONT_STACKS[style.font],
+    ["--preview-font" as string]: fontStack(style.font, library),
     lineHeight: 1.1,
     margin: 0,
     color: "inherit",
@@ -414,10 +414,11 @@ export function headingCss(style: HeadingStyle): React.CSSProperties {
 }
 
 function Preview({ role, style }: { role: HeadingRole; style: HeadingStyle }) {
+  const library = useFontLibrary();
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-5 dark:border-zinc-700 dark:bg-zinc-950">
       <p
-        style={headingCss(style)}
+        style={headingCss(style, library)}
         className="heading-preview truncate text-zinc-900 dark:text-zinc-100"
       >
         {SAMPLE[role]}
@@ -438,10 +439,11 @@ function PreviewHeading({
   targetProps: React.HTMLAttributes<HTMLElement>;
   children: React.ReactNode;
 }) {
+  const library = useFontLibrary();
   return (
     <Tag
       {...targetProps}
-      style={headingCss(style)}
+      style={headingCss(style, library)}
       className={`heading-preview break-words ${TARGET_CLASS}`}
     >
       {children}

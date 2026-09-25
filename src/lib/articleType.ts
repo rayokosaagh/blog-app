@@ -20,8 +20,9 @@
  */
 
 import type { UiThemeName } from "@/lib/color";
+import { isCustomRef, type CustomFont, type CustomFontRef } from "@/lib/fontLibrary";
 import {
-  HEADING_FONT_STACKS,
+  fontStack,
   headingDefault,
   headingStyleFrom,
   sizeExpression,
@@ -99,7 +100,8 @@ export const BODY_LEADING_MIN = 1.3;
 export const BODY_LEADING_MAX = 2.2;
 
 export type ArticleBody = {
-  font: ArticleBodyFont;
+  /** A built-in body face, or a library font (`custom:<id>`). */
+  font: ArticleBodyFont | CustomFontRef;
   /** rem; null keeps the article's own sizes (paragraphs 1.0625, list items 1). */
   size: number | null;
   /** unitless; null keeps the article's own (paragraphs 1.85, list items 1.8). */
@@ -128,8 +130,9 @@ export function articleTypeFrom(input: unknown, theme: UiThemeName): ArticleType
   const bodySrc = (src.body && typeof src.body === "object" ? src.body : {}) as Record<string, unknown>;
   const body: ArticleBody = {
     font:
-      typeof bodySrc.font === "string" && (ARTICLE_BODY_FONTS as readonly string[]).includes(bodySrc.font)
-        ? (bodySrc.font as ArticleBodyFont)
+      typeof bodySrc.font === "string" &&
+      ((ARTICLE_BODY_FONTS as readonly string[]).includes(bodySrc.font) || isCustomRef(bodySrc.font))
+        ? (bodySrc.font as ArticleBody["font"])
         : "theme",
     size: isNum(bodySrc.size) ? clampNum(bodySrc.size, BODY_SIZE_MIN, BODY_SIZE_MAX) : null,
     leading: isNum(bodySrc.leading) ? clampNum(bodySrc.leading, BODY_LEADING_MIN, BODY_LEADING_MAX) : null,
@@ -167,10 +170,10 @@ const round = (n: number) => Math.round(n * 1000) / 1000;
  * an absent variable means "as before". Scoped to the theme attribute like
  * headingTypeCss, so both themes' blocks ship and only the active one matches.
  */
-export function articleTypeCss(theme: UiThemeName, type: ArticleType): string {
+export function articleTypeCss(theme: UiThemeName, type: ArticleType, library: readonly CustomFont[] = []): string {
   let vars = "";
   const { body, headings } = type;
-  if (body.font !== "theme") vars += `--a-body-font:${HEADING_FONT_STACKS[body.font]};`;
+  if (body.font !== "theme") vars += `--a-body-font:${fontStack(body.font, library)};`;
   if (body.size !== null) vars += `--a-body-size:${round(body.size)}rem;`;
   if (body.leading !== null) vars += `--a-body-leading:${round(body.leading)};`;
   for (const h of ARTICLE_HEADINGS) {
@@ -181,7 +184,7 @@ export function articleTypeCss(theme: UiThemeName, type: ArticleType): string {
       `--a-${h}-weight:${s.weight};` +
       `--a-${h}-tracking:${round(s.tracking)}em;` +
       `--a-${h}-case:${s.uppercase ? "uppercase" : "none"};` +
-      `--a-${h}-font:${HEADING_FONT_STACKS[s.font]};`;
+      `--a-${h}-font:${fontStack(s.font, library)};`;
   }
   return vars ? `html[data-theme='${theme}']{${vars}}` : "";
 }

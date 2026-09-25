@@ -19,6 +19,7 @@
  */
 
 import type { UiThemeName } from "@/lib/color";
+import { customStack, customWeights, findFont, isCustomRef, type CustomFont, type CustomFontRef } from "@/lib/fontLibrary";
 
 export const HEADING_ROLES = ["display", "pageTitle", "section", "card", "eyebrow"] as const;
 export type HeadingRole = (typeof HEADING_ROLES)[number];
@@ -32,9 +33,11 @@ export type HeadingRole = (typeof HEADING_ROLES)[number];
  * article typography settings, where long-form body text is the use case.
  */
 export const HEADING_FONTS = ["theme", "jakarta", "grotesk", "condensed", "geist", "serif"] as const;
-export type HeadingFont = (typeof HEADING_FONTS)[number];
+export type BuiltInFont = (typeof HEADING_FONTS)[number];
+/** A built-in face, or a font from the admin's library (`custom:<id>`, see fontLibrary.ts). */
+export type HeadingFont = BuiltInFont | CustomFontRef;
 
-export const HEADING_FONT_STACKS: Record<HeadingFont, string> = {
+export const HEADING_FONT_STACKS: Record<BuiltInFont, string> = {
   theme: "var(--font-sans)",
   jakarta: 'var(--font-modern), "Inter", ui-sans-serif, system-ui, sans-serif',
   grotesk: '"Space Grotesk", Arial, Helvetica, sans-serif',
@@ -43,7 +46,7 @@ export const HEADING_FONT_STACKS: Record<HeadingFont, string> = {
   serif: 'var(--font-serif), Georgia, "Times New Roman", serif',
 };
 
-export const HEADING_FONT_LABELS: Record<HeadingFont, string> = {
+export const HEADING_FONT_LABELS: Record<BuiltInFont, string> = {
   theme: "Theme default",
   jakarta: "Plus Jakarta Sans",
   grotesk: "Space Grotesk",
@@ -58,7 +61,7 @@ export const HEADING_FONT_LABELS: Record<HeadingFont, string> = {
  * promise steps the browser can only fake. The dashboard narrows its weight
  * control to this list.
  */
-export const HEADING_FONT_WEIGHTS: Record<HeadingFont, number[]> = {
+export const HEADING_FONT_WEIGHTS: Record<BuiltInFont, number[]> = {
   theme: [400, 500, 600, 700, 800, 900],
   jakarta: [200, 300, 400, 500, 600, 700, 800],
   grotesk: [500, 700],
@@ -66,6 +69,55 @@ export const HEADING_FONT_WEIGHTS: Record<HeadingFont, number[]> = {
   geist: [100, 200, 300, 400, 500, 600, 700, 800, 900],
   serif: [200, 300, 400, 500, 600, 700, 800, 900],
 };
+
+export const isBuiltInFont = (v: unknown): v is BuiltInFont =>
+  typeof v === "string" && (HEADING_FONTS as readonly string[]).includes(v);
+export const isHeadingFont = (v: unknown): v is HeadingFont => isBuiltInFont(v) || isCustomRef(v);
+
+const ALL_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+
+/** CSS font-family for any font setting. A custom font that was deleted resolves to the theme font. */
+export function fontStack(font: HeadingFont, library: readonly CustomFont[] = []): string {
+  if (isBuiltInFont(font)) return HEADING_FONT_STACKS[font];
+  const f = findFont(font, library);
+  return f ? customStack(f) : HEADING_FONT_STACKS.theme;
+}
+
+export function fontWeights(font: HeadingFont, library: readonly CustomFont[] = []): number[] {
+  if (isBuiltInFont(font)) return HEADING_FONT_WEIGHTS[font];
+  const f = findFont(font, library);
+  return f ? customWeights(f) : HEADING_FONT_WEIGHTS.theme;
+}
+
+/** A font setting as it will actually render: a custom font that no longer exists becomes "theme". */
+export function resolveFont(font: HeadingFont, library: readonly CustomFont[] = []): HeadingFont {
+  return isBuiltInFont(font) || findFont(font, library) ? font : "theme";
+}
+
+/**
+ * Each theme's body-text font replaces that theme's --font-sans. The
+ * html[data-theme] selector outranks globals.css' [data-theme] default in
+ * any load order. "theme" — including a deleted custom font, via
+ * resolveFont — emits nothing. It must: "theme" resolves to var(--font-sans),
+ * and `--font-sans:var(--font-sans)` is a cycle that invalidates the variable
+ * and drops the whole site to the browser's system font.
+ */
+export function bodyFontCss(
+  bodyFont: { brutalist: HeadingFont; modern: HeadingFont },
+  library: readonly CustomFont[] = [],
+): string {
+  return (["brutalist", "modern"] as const)
+    .map((t) => {
+      const font = resolveFont(bodyFont[t], library);
+      return font === "theme" ? "" : `html[data-theme='${t}']{--font-sans:${fontStack(font, library)}}`;
+    })
+    .join("");
+}
+
+export function fontLabel(font: HeadingFont, library: readonly CustomFont[] = []): string {
+  if (isBuiltInFont(font)) return HEADING_FONT_LABELS[font];
+  return findFont(font, library)?.name ?? "Deleted font";
+}
 
 export type HeadingStyle = {
   /** rem, at the small end of the viewport */
@@ -166,15 +218,14 @@ export function headingStyleFrom(input: unknown, fallback: HeadingStyle): Headin
     ? clampNum(src.maxSize, SIZE_MIN, SIZE_MAX)
     : fallback.maxSize;
 
-  const font =
-    typeof src.font === "string" && (HEADING_FONTS as readonly string[]).includes(src.font)
-      ? (src.font as HeadingFont)
-      : fallback.font;
+  const font = isHeadingFont(src.font) ? src.font : fallback.font;
 
   // A weight the chosen face can't render would be synthesised by the browser,
-  // so snap to the nearest one it actually has.
+  // so snap to the nearest one it actually has. Custom faces aren't known here
+  // (this runs without the library), so they snap to the nearest hundred; the
+  // dashboard narrows the picker to the font's real weights.
   const rawWeight = isFiniteNumber(src.weight) ? src.weight : fallback.weight;
-  const allowed = HEADING_FONT_WEIGHTS[font];
+  const allowed = isBuiltInFont(font) ? HEADING_FONT_WEIGHTS[font] : ALL_WEIGHTS;
   const weight = allowed.reduce((best, w) =>
     Math.abs(w - rawWeight) < Math.abs(best - rawWeight) ? w : best,
   );
@@ -233,7 +284,7 @@ export function sizeExpression({ minSize, maxSize }: HeadingStyle): string {
 
 const round = (n: number) => Math.round(n * 1000) / 1000;
 
-function roleVars(type: HeadingType): string {
+function roleVars(type: HeadingType, library: readonly CustomFont[]): string {
   return HEADING_ROLES.map((role) => {
     const s = type[role];
     const v = roleVar(role);
@@ -242,7 +293,7 @@ function roleVars(type: HeadingType): string {
       `${v}-weight:${s.weight};` +
       `${v}-tracking:${round(s.tracking)}em;` +
       `${v}-case:${s.uppercase ? "uppercase" : "none"};` +
-      `${v}-font:${HEADING_FONT_STACKS[s.font]};`
+      `${v}-font:${fontStack(s.font, library)};`
     );
   }).join("");
 }
@@ -253,6 +304,6 @@ function roleVars(type: HeadingType): string {
  * and dark-surface CSS uses, which keeps the theme switch a pure attribute
  * flip with no second round-trip.
  */
-export function headingTypeCss(theme: UiThemeName, type: HeadingType): string {
-  return `html[data-theme='${theme}']{${roleVars(type)}}`;
+export function headingTypeCss(theme: UiThemeName, type: HeadingType, library: readonly CustomFont[] = []): string {
+  return `html[data-theme='${theme}']{${roleVars(type, library)}}`;
 }

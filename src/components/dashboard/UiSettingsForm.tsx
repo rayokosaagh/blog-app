@@ -15,10 +15,15 @@ import {
   Type,
   Bookmark,
   BadgeCheck,
+  CaseSensitive,
 } from "lucide-react";
 import { Toggle, SuccessToast } from "@/components/dashboard/DashboardUI";
 import HeadingTypeSettings from "@/components/dashboard/HeadingTypeSettings";
 import ArticleTypeSettings from "@/components/dashboard/ArticleTypeSettings";
+import BodyFontSettings from "@/components/dashboard/BodyFontSettings";
+import FontLibrarySettings from "@/components/dashboard/FontLibrarySettings";
+import { FontLibraryProvider, FontAssets } from "@/components/dashboard/FontLibraryContext";
+import type { CustomFont } from "@/lib/fontLibrary";
 import { ARTICLE_TYPE_DEFAULT } from "@/lib/articleType";
 import BrutalistBorderSettings from "@/components/dashboard/BrutalistBorderSettings";
 import BrandingSettings from "@/components/dashboard/BrandingSettings";
@@ -44,6 +49,7 @@ import type {
   HeadingTypeByTheme,
   ArticleTypeByTheme,
   Branding,
+  BodyFontByTheme,
 } from "@/lib/settings";
 import { BRUTALIST_HEADING_DEFAULT, MODERN_HEADING_DEFAULT } from "@/lib/typography";
 import {
@@ -66,7 +72,7 @@ import {
 
 type Scheme = "light" | "dark";
 
-type SettingsTab = "theme" | "branding" | "colors" | "borders" | "typography" | "effects";
+type SettingsTab = "theme" | "branding" | "colors" | "borders" | "typography" | "fonts" | "effects";
 
 // What a click in the accent preview can edit. Each preview element maps to
 // the accent it's coloured with on the real site (checked against the actual
@@ -121,6 +127,7 @@ const SETTINGS_TABS: { value: SettingsTab; label: string; Icon: typeof Sun }[] =
   { value: "colors", label: "Colors", Icon: Droplet },
   { value: "borders", label: "Borders", Icon: Square },
   { value: "typography", label: "Typography", Icon: Type },
+  { value: "fonts", label: "Fonts", Icon: CaseSensitive },
   { value: "effects", label: "Effects", Icon: Sparkles },
 ];
 
@@ -469,6 +476,8 @@ export default function UiSettingsForm({
   initialBrutalistBorder = BRUTALIST_BORDER_DEFAULT,
   initialAccentText = ACCENT_TEXT_DEFAULT,
   initialBranding = { logo: null, logoDark: null, siteIcon: null },
+  initialCustomFonts = [],
+  initialBodyFont = { brutalist: "theme", modern: "theme" },
 }: {
   initialEnabled: boolean;
   initialTheme: UiTheme;
@@ -480,6 +489,8 @@ export default function UiSettingsForm({
   initialBrutalistBorder?: BrutalistBorder;
   initialAccentText?: AccentText;
   initialBranding?: Branding;
+  initialCustomFonts?: CustomFont[];
+  initialBodyFont?: BodyFontByTheme;
 }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -516,6 +527,12 @@ export default function UiSettingsForm({
   // survives switching tabs until it's saved or discarded.
   const [branding, setBranding] = useState<Branding>(initialBranding);
   const [savedBranding, setSavedBranding] = useState<Branding>(initialBranding);
+
+  // Custom font library (saved on every change by the Fonts tab) and each
+  // theme's body-text font (saved from the Typography tab).
+  const [customFonts, setCustomFonts] = useState<CustomFont[]>(initialCustomFonts);
+  const [bodyFont, setBodyFont] = useState<BodyFontByTheme>(initialBodyFont);
+  const [savedBodyFont, setSavedBodyFont] = useState<BodyFontByTheme>(initialBodyFont);
   const brandingDirty =
     branding.logo !== savedBranding.logo ||
     branding.logoDark !== savedBranding.logoDark ||
@@ -905,7 +922,7 @@ export default function UiSettingsForm({
           branding: brandingDirty,
           colors: colorsDirty,
           borders: bordersDirty,
-          typography: headingsDirty,
+          typography: headingsDirty || bodyFont[theme] !== savedBodyFont[theme],
         }}
       />
 
@@ -915,6 +932,10 @@ export default function UiSettingsForm({
         aria-labelledby={`ui-tab-${tab}`}
         className="mt-6"
       >
+        {/* Every font picker and preview below reads the library from here, and
+            FontAssets loads the library's faces so previews render in them. */}
+        <FontLibraryProvider fonts={customFonts}>
+        <FontAssets fonts={customFonts} />
         {tab === "theme" && (
           <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
             <div className="flex items-start gap-3">
@@ -1591,6 +1612,20 @@ export default function UiSettingsForm({
         )}
 
         {tab === "typography" && (
+          <BodyFontSettings
+            theme={theme}
+            value={bodyFont[theme]}
+            saved={savedBodyFont[theme]}
+            onChange={(next) => setBodyFont((prev) => ({ ...prev, [theme]: next }))}
+            onSaved={(next) => {
+              setSavedBodyFont((prev) => ({ ...prev, [theme]: next }));
+              setToast("Site font updated");
+            }}
+            onError={setError}
+          />
+        )}
+
+        {tab === "typography" && (
           <HeadingTypeSettings
             theme={theme}
             value={headingType[theme]}
@@ -1618,6 +1653,19 @@ export default function UiSettingsForm({
             onError={setError}
           />
         )}
+
+        {tab === "fonts" && (
+          <FontLibrarySettings
+            value={customFonts}
+            usage={{ headingType: savedHeadingType, articleType: savedArticleType, bodyFont: savedBodyFont }}
+            onSaved={(next, message) => {
+              setCustomFonts(next);
+              setToast(message);
+            }}
+            onError={setError}
+          />
+        )}
+        </FontLibraryProvider>
       </div>
 
       {toast && <SuccessToast message={toast} onClose={() => setToast(null)} />}

@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { FileText, RotateCcw } from "lucide-react";
 import type { UiTheme } from "@/lib/settings";
 import { RoleFields, NumberField, FieldLabel, headingCss } from "@/components/dashboard/HeadingTypeSettings";
+import { FontOptions, useFontLibrary } from "@/components/dashboard/FontLibraryContext";
+import type { CustomFont } from "@/lib/fontLibrary";
 import {
-  HEADING_FONT_LABELS,
-  HEADING_FONT_STACKS,
-  HEADING_FONT_WEIGHTS,
+  fontStack,
+  fontWeights,
   HEADING_ROLE_LABELS,
   type HeadingStyle,
   type HeadingType,
@@ -28,7 +29,6 @@ import {
   BODY_LEADING_MAX,
   followedStyle,
   type ArticleBody,
-  type ArticleBodyFont,
   type ArticleHeading,
   type ArticleType,
 } from "@/lib/articleType";
@@ -58,6 +58,7 @@ export default function ArticleTypeSettings({
   onError: (message: string | null) => void;
 }) {
   const router = useRouter();
+  const library = useFontLibrary();
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState<ArticleHeading | null>(null);
 
@@ -115,26 +116,25 @@ export default function ArticleTypeSettings({
             </div>
 
             <div className="min-w-0 space-y-4">
-              {/* Body text */}
+              {/* Article text */}
               <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Body text</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Article text</p>
                 <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                   Paragraphs, lists and tables in the article.
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <FieldLabel>Font</FieldLabel>
+                    <FieldLabel>Article font</FieldLabel>
                     <select
                       value={value.body.font}
-                      onChange={(e) => setBody({ font: e.target.value as ArticleBodyFont })}
+                      onChange={(e) => setBody({ font: e.target.value as ArticleBody["font"] })}
                       className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
                     >
-                      {ARTICLE_BODY_FONTS.map((f) => (
-                        <option key={f} value={f}>
-                          {HEADING_FONT_LABELS[f]}
-                        </option>
-                      ))}
+                      <FontOptions builtIns={ARTICLE_BODY_FONTS} value={value.body.font} />
                     </select>
+                    <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                      Leave on Theme default to use the site font.
+                    </p>
                   </div>
                   <DefaultableNumber
                     label="Size"
@@ -209,7 +209,7 @@ export default function ArticleTypeSettings({
                           </label>
                           {custom && (
                             <div className="mt-4">
-                              <RoleFields style={custom} onPatch={(patch) => setHeading(h, withFont(custom, patch))} />
+                              <RoleFields style={custom} onPatch={(patch) => setHeading(h, withFont(custom, patch, library))} />
                             </div>
                           )}
                         </div>
@@ -248,10 +248,10 @@ export default function ArticleTypeSettings({
 }
 
 /** Same weight snapping as HeadingTypeSettings.setRole when the face changes. */
-function withFont(style: HeadingStyle, patch: Partial<HeadingStyle>): HeadingStyle {
+function withFont(style: HeadingStyle, patch: Partial<HeadingStyle>, library: readonly CustomFont[]): HeadingStyle {
   const next = { ...style, ...patch };
   if (patch.font) {
-    const allowed = HEADING_FONT_WEIGHTS[patch.font];
+    const allowed = fontWeights(patch.font, library);
     next.weight = allowed.reduce((best, w) => (Math.abs(w - next.weight) < Math.abs(best - next.weight) ? w : best));
   }
   return next;
@@ -323,8 +323,9 @@ function ArticlePreview({
   active: ArticleHeading | null;
   onPick: (h: ArticleHeading) => void;
 }) {
+  const library = useFontLibrary();
   const bodyStyle = {
-    ["--preview-font" as string]: HEADING_FONT_STACKS[body.font],
+    ["--preview-font" as string]: fontStack(body.font, library),
     fontSize: `${body.size ?? BODY_SIZE_DEFAULT}rem`,
     lineHeight: body.leading ?? BODY_LEADING_DEFAULT,
   } as React.CSSProperties;
@@ -338,7 +339,7 @@ function ArticlePreview({
       className={`heading-preview cursor-pointer rounded outline-offset-4 outline-amber-500 hover:outline-2 hover:outline-dashed ${
         active === h ? "outline-2 outline-dashed" : ""
       }`}
-      style={{ ...headingCss(effective(h)), ...extra }}
+      style={{ ...headingCss(effective(h), library), ...extra }}
     >
       {children}
     </div>

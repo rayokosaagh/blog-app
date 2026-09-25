@@ -22,8 +22,14 @@ import {
   isUploadPath,
   type Branding,
   type UiTheme,
+  setCustomFonts,
+  setBodyFont,
 } from "@/lib/settings";
 import { isValidHex, type AccentTrio, type DarkSurfaces } from "@/lib/color";
+import { customFontsFrom, type CustomFont } from "@/lib/fontLibrary";
+import { isHeadingFont } from "@/lib/typography";
+import { deleteRemovedFiles } from "@/lib/fontFiles";
+import { checkGoogleFont } from "@/lib/googleFonts";
 
 async function readAll() {
   const [homepageAnimatedBackground, spotlightAdsHeader, spotlightAdsTitle, theme] =
@@ -46,6 +52,8 @@ async function readAll() {
     brutalistBorder: theme.brutalistBorder,
     accentText: theme.accentText,
     branding: theme.branding,
+    customFonts: theme.customFonts,
+    bodyFont: theme.bodyFont,
   };
 }
 
@@ -208,6 +216,41 @@ export async function PUT(request: Request) {
     if (Object.keys(patch).length > 0) {
       await setBranding(patch);
       touched = true;
+    }
+  }
+
+  // Custom font library — the whole list, strictly validated. Google families
+  // that are new or changed are checked with Google; uploaded files dropped
+  // from the library are deleted from disk.
+  if (body.customFonts !== undefined) {
+    const result = customFontsFrom(body.customFonts);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    const before: CustomFont[] = (await readAll()).customFonts;
+    for (const font of result.fonts) {
+      if (font.source !== "google") continue;
+      const prev = before.find((f) => f.id === font.id);
+      const unchanged =
+        prev?.source === "google" &&
+        prev.family === font.family &&
+        prev.italic === font.italic &&
+        prev.weights.join() === font.weights.join();
+      if (unchanged) continue;
+      const check = await checkGoogleFont(font);
+      if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+    }
+    await setCustomFonts(result.fonts);
+    await deleteRemovedFiles(before, result.fonts);
+    touched = true;
+  }
+
+  // Body text font per theme; anything that isn't a font reference is ignored.
+  const bodyFont = body.bodyFont;
+  if (bodyFont && typeof bodyFont === "object") {
+    for (const t of ["brutalist", "modern"] as const) {
+      if (isHeadingFont(bodyFont[t])) {
+        await setBodyFont(t, bodyFont[t]);
+        touched = true;
+      }
     }
   }
 

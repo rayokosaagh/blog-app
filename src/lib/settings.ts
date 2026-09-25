@@ -2,8 +2,11 @@ import { prisma } from "@/lib/prisma";
 import {
   parseHeadingType,
   headingTypeFrom,
+  isHeadingFont,
+  type HeadingFont,
   type HeadingType,
 } from "@/lib/typography";
+import { parseCustomFonts, type CustomFont } from "@/lib/fontLibrary";
 import {
   isValidHex,
   normalizeHex,
@@ -51,6 +54,17 @@ export const HEADING_TYPE_KEYS = {
   brutalist: "headingTypeBrutalist",
   modern: "headingTypeModern",
 } as const;
+
+// Custom font library (fontLibrary.ts) and each theme's body-text font. The
+// body font replaces the theme's --font-sans; "theme" (the default) is no change.
+export const CUSTOM_FONTS_KEY = "customFonts";
+export const BODY_FONT_KEYS = { brutalist: "bodyFontBrutalist", modern: "bodyFontModern" } as const;
+export type BodyFontByTheme = { brutalist: HeadingFont; modern: HeadingFont };
+
+function bodyFontFrom(map: Record<string, string>): BodyFontByTheme {
+  const pick = (key: string): HeadingFont => (isHeadingFont(map[key]) ? (map[key] as HeadingFont) : "theme");
+  return { brutalist: pick(BODY_FONT_KEYS.brutalist), modern: pick(BODY_FONT_KEYS.modern) };
+}
 
 // Article typography (blog post body + heading levels), one JSON blob per
 // theme for the same reason as the heading type. See articleType.ts.
@@ -428,6 +442,15 @@ export async function setAccentText(value: unknown): Promise<void> {
   await setSetting(ACCENT_TEXT_KEY, JSON.stringify(accentTextFrom(value)));
 }
 
+/** Persist an already-validated font library (customFontsFrom). */
+export async function setCustomFonts(fonts: CustomFont[]): Promise<void> {
+  await setSetting(CUSTOM_FONTS_KEY, JSON.stringify(fonts));
+}
+
+export async function setBodyFont(theme: UiTheme, font: HeadingFont): Promise<void> {
+  await setSetting(BODY_FONT_KEYS[theme], font);
+}
+
 /**
  * Everything the root layout needs to render themed HTML, in ONE query.
  * The layout runs on every page, so this deliberately avoids the
@@ -443,6 +466,8 @@ export async function getThemeSettings(): Promise<{
   brutalistBorder: BrutalistBorder;
   accentText: AccentText;
   branding: Branding;
+  customFonts: CustomFont[];
+  bodyFont: BodyFontByTheme;
 }> {
   const map = await getSettingsMap([
     UI_THEME_KEY,
@@ -460,6 +485,8 @@ export async function getThemeSettings(): Promise<{
     BRUTALIST_BORDER_KEY,
     ACCENT_TEXT_KEY,
     ...Object.values(BRANDING_KEYS),
+    CUSTOM_FONTS_KEY,
+    ...Object.values(BODY_FONT_KEYS),
   ]);
   return {
     uiTheme: map[UI_THEME_KEY] === "modern" ? "modern" : UI_THEME_DEFAULT,
@@ -474,5 +501,7 @@ export async function getThemeSettings(): Promise<{
     brutalistBorder: parseBrutalistBorder(map[BRUTALIST_BORDER_KEY]),
     accentText: parseAccentText(map[ACCENT_TEXT_KEY]),
     branding: brandingFrom(map),
+    customFonts: parseCustomFonts(map[CUSTOM_FONTS_KEY]),
+    bodyFont: bodyFontFrom(map),
   };
 }
