@@ -33,6 +33,9 @@ import BookmarkButton from "@/components/bookmarks/BookmarkButton";
 import AuthorCard from "@/components/blog/AuthorCard";
 import ShareButtons from "@/components/blog/ShareButtons";
 import VerdictCard from "@/components/blog/VerdictCard";
+import ArticleEndCarousel, { type ArticleEndSlide } from "@/components/blog/ArticleEndCarousel";
+import SpecLinkCard from "@/components/blog/SpecLinkCard";
+import TrendingPostsCard from "@/components/blog/TrendingPostsCard";
 import ReadingHistoryTracker from "@/components/blog/ReadingHistoryTracker";
 import { readVerdict, VERDICT_MAX } from "@/lib/verdict";
 import { parseKeyHighlightsBlock } from "@/components/feeds/KeyHighlights";
@@ -343,6 +346,50 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         take: 6,
       })
     : [];
+
+  // End-of-article cards. The linked product only counts once it is
+  // published — its page would 404 otherwise. Trending is by views, the one
+  // engagement signal with real spread; the current post is left out.
+  const [linkedProduct, trendingPosts] = await Promise.all([
+    post.productId
+      ? prisma.product.findFirst({
+          where: { id: post.productId, published: true },
+          select: { slug: true, name: true, brand: true, image: true, category: { select: { name: true } } },
+        })
+      : null,
+    prisma.post.findMany({
+      where: { published: true, NOT: { id: post.id } },
+      orderBy: { views: "desc" },
+      take: 5,
+      select: { id: true, slug: true, title: true, featuredImage: true, views: true },
+    }),
+  ]);
+
+  // Swipe order on small screens: verdict, trending, specs. Wide screens
+  // place them by column instead — specs left, verdict centre, trending right
+  // — and never put a side card in the centre, even when there is no verdict.
+  const endSlides: ArticleEndSlide[] = [
+    ...(verdict
+      ? [{
+          key: "verdict",
+          label: "Verdict",
+          place: "center" as const,
+          // The card brings its own vertical margin for the stand-alone
+          // layout; here the section supplies the spacing.
+          node: (
+            <div className="[&>section]:my-0">
+              <VerdictCard verdict={verdict} productName={reviewedItemName(post.title)} />
+            </div>
+          ),
+        }]
+      : []),
+    ...(trendingPosts.length > 0
+      ? [{ key: "trending", label: "Trending", place: "right" as const, node: <TrendingPostsCard posts={trendingPosts} /> }]
+      : []),
+    ...(linkedProduct
+      ? [{ key: "specs", label: "Specs", place: "left" as const, node: <SpecLinkCard product={linkedProduct} /> }]
+      : []),
+  ];
 
   const readingTime = Math.max(
     1,
@@ -1006,13 +1053,16 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
         </div>
       </main>
 
-      {/* EDITORIAL VERDICT — only on posts an editor actually scored. Sits
-          above the reader rating so the two read as claim then response. */}
-      {verdict && (
-        <FadeIn>
-          <div className="max-w-4xl mx-auto px-6">
-            <VerdictCard verdict={verdict} productName={reviewedItemName(post.title)} />
-          </div>
+      {/* EDITORIAL VERDICT — only on posts an editor actually scored — with
+          the linked product's spec card and the trending list beside it on
+          wide screens, or as a swipeable carousel below 1440px. Sits above
+          the reader rating so the two read as claim then response. */}
+      {endSlides.length > 0 && (
+        // Above the sections that follow: without a verdict the side cards
+        // hang in the gutters beside the poll and rating, whose full-width
+        // FadeIn wrappers would otherwise paint over them and eat clicks.
+        <FadeIn className="relative z-20">
+          <ArticleEndCarousel slides={endSlides} />
         </FadeIn>
       )}
 
