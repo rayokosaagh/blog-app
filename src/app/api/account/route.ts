@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { Prisma } from "@/generated/prisma";
+import { validateAuthorProfile } from "@/lib/authorProfile";
 
 // Self-service account endpoint, scoped to the signed-in user only. Unlike
 // /api/users/[id] (ADMIN-only, can change anyone's role/email), this never
@@ -22,6 +24,8 @@ export async function GET() {
         image: true,
         role: true,
         createdAt: true,
+        bio: true,
+        socials: true,
         _count: { select: { bookmarks: true, comments: true } },
       },
     });
@@ -45,7 +49,12 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, image } = body as { name?: string; image?: string | null };
+    const { name, image, bio, socials } = body as {
+      name?: string;
+      image?: string | null;
+      bio?: unknown;
+      socials?: unknown;
+    };
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -54,11 +63,21 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Name is too long" }, { status: 400 });
     }
 
+    // Author profile fields are only meaningful for staff, who write posts;
+    // a reader's request carrying them is saved without them.
+    const isStaff = session.user.role === "ADMIN" || session.user.role === "EDITOR";
+    const profile = isStaff ? validateAuthorProfile({ bio, socials }) : { ok: true as const };
+    if (!profile.ok) {
+      return NextResponse.json({ error: profile.error }, { status: 400 });
+    }
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         name: name.trim(),
         image: image ?? null,
+        ...("bio" in profile && { bio: profile.bio }),
+        ...("socials" in profile && { socials: profile.socials ?? Prisma.DbNull }),
       },
       select: {
         id: true,
@@ -67,6 +86,8 @@ export async function PATCH(req: Request) {
         image: true,
         role: true,
         createdAt: true,
+        bio: true,
+        socials: true,
         _count: { select: { bookmarks: true, comments: true } },
       },
     });

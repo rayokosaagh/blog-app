@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@/generated/prisma";
+import { validateAuthorProfile } from "@/lib/authorProfile";
 
 export async function PATCH(
   req: Request,
@@ -15,7 +17,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { name, email, password, role, image } = await req.json();
+    const { name, email, password, role, image, bio, socials } = await req.json();
 
     if (!name?.trim() || !email?.trim() || !role) {
       return NextResponse.json(
@@ -32,6 +34,14 @@ export async function PATCH(
       image: image ?? null,
     };
 
+    // Author profile: absent fields are left alone, empty ones cleared.
+    const profile = validateAuthorProfile({ bio, socials });
+    if (!profile.ok) {
+      return NextResponse.json({ error: profile.error }, { status: 400 });
+    }
+    if ("bio" in profile) data.bio = profile.bio;
+    if ("socials" in profile) data.socials = profile.socials ?? Prisma.DbNull;
+
     if (password?.trim()) {
       data.password = await bcrypt.hash(password.trim(), 10);
     }
@@ -46,6 +56,8 @@ export async function PATCH(
         role: true,
         image: true,
         createdAt: true,
+        bio: true,
+        socials: true,
       },
     });
 

@@ -16,6 +16,10 @@ model User {
   role      Role       @default(EDITOR)
   updatedAt DateTime   @updatedAt
   image     String?
+  // Public author profile, shown in the "About the author" card on posts.
+  // `socials` is a { platform: url } map validated by src/lib/authorProfile.ts.
+  bio       String?
+  socials   Json?
   comments  Comment[]
   pollVotes PollVote[]
   posts     Post[]

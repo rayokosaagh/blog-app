@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bookmark, MessageCircle, Loader2, CheckCircle2, Upload } from "lucide-react";
+import AuthorProfileFields, {
+  authorProfileFrom,
+  authorProfileErrors,
+  type AuthorProfileValue,
+} from "@/components/account/AuthorProfileFields";
 
 interface Account {
   id: string;
@@ -13,7 +18,25 @@ interface Account {
   image: string | null;
   role: string;
   createdAt: string;
+  bio: string | null;
+  socials: unknown;
   _count: { bookmarks: number; comments: number };
+}
+
+// Only staff write posts, so only they get an author profile to edit.
+const isStaffRole = (role: string) => role === "ADMIN" || role === "EDITOR";
+
+/** Compare two profiles the way the server will store them. */
+function sameProfile(a: AuthorProfileValue, b: AuthorProfileValue) {
+  const norm = (v: AuthorProfileValue) =>
+    JSON.stringify([
+      v.bio.trim(),
+      Object.entries(v.socials)
+        .map(([k, url]) => [k, url?.trim() ?? ""])
+        .filter(([, url]) => url)
+        .sort(),
+    ]);
+  return norm(a) === norm(b);
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -36,6 +59,7 @@ export default function AccountClient() {
 
   const [name, setName] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [profile, setProfile] = useState<AuthorProfileValue>({ bio: "", socials: {} });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -54,6 +78,7 @@ export default function AccountClient() {
         setAccount(data);
         setName(data.name ?? "");
         setImage(data.image ?? null);
+        setProfile(authorProfileFrom(data));
       } catch {
         setFetchError("Failed to load account");
       } finally {
@@ -85,7 +110,13 @@ export default function AccountClient() {
     }
   }
 
-  const dirty = account && (name.trim() !== (account.name ?? "") || image !== account.image);
+  const staff = account ? isStaffRole(account.role) : false;
+  const profileInvalid = staff && Object.keys(authorProfileErrors(profile)).length > 0;
+  const dirty =
+    account &&
+    (name.trim() !== (account.name ?? "") ||
+      image !== account.image ||
+      (staff && !sameProfile(profile, authorProfileFrom(account))));
 
   async function handleSave() {
     if (!name.trim()) {
@@ -98,7 +129,11 @@ export default function AccountClient() {
       const res = await fetch("/api/account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), image }),
+        body: JSON.stringify({
+          name: name.trim(),
+          image,
+          ...(staff && { bio: profile.bio, socials: profile.socials }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -106,6 +141,8 @@ export default function AccountClient() {
         return;
       }
       setAccount(data);
+      // Show what the server stored (it normalises links, e.g. adds https://).
+      setProfile(authorProfileFrom(data));
       // Push the change into the JWT session so the navbar avatar/name
       // update immediately, without needing a re-login.
       await updateSession({ name: data.name, image: data.image });
@@ -215,6 +252,25 @@ export default function AccountClient() {
               </span>
             </div>
 
+            {staff && (
+              <div className="border-t-2 border-border-heavy pt-5">
+                <h2 className="text-sm font-extrabold uppercase tracking-wide text-foreground">
+                  Author profile
+                </h2>
+                <p className="mt-1 mb-4 text-xs text-muted-foreground">
+                  Readers see this in the &ldquo;About the author&rdquo; box at the end of your posts.
+                </p>
+                <AuthorProfileFields
+                  value={profile}
+                  onChange={setProfile}
+                  inputClass="w-full bg-muted border-2 border-border rounded-none px-3 py-2 text-sm text-foreground focus:outline-none focus:border-border-heavy focus:shadow-brutal-sm transition-colors"
+                  labelClass="block text-xs font-extrabold uppercase tracking-wide text-muted-foreground mb-1.5"
+                  hintClass="text-xs text-muted-foreground"
+                  errorClass="text-xs font-bold text-danger"
+                />
+              </div>
+            )}
+
             <AnimatePresence>
               {error && (
                 <motion.p
@@ -232,7 +288,7 @@ export default function AccountClient() {
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={!dirty || saving}
+                disabled={!dirty || saving || profileInvalid}
                 className="px-4 py-2 border-2 border-border-heavy text-sm font-extrabold bg-accent text-on-accent disabled:opacity-40 disabled:cursor-not-allowed shadow-brutal-sm brutal-press inline-flex items-center gap-1.5"
               >
                 {saving && <Loader2 size={14} className="animate-spin" />}

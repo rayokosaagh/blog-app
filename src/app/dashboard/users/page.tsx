@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import AuthorProfileFields, {
+  authorProfileFrom,
+  authorProfileErrors,
+  type AuthorProfileValue,
+} from "@/components/account/AuthorProfileFields";
 import { useSession } from "next-auth/react";
 import { Users as UsersIcon, CheckCircle2, Plus } from "lucide-react";
 import FilterSelect from "@/components/dashboard/FilterSelect";
@@ -21,9 +26,14 @@ interface User {
   email: string;
   role: Role;
   image: string | null;
+  bio: string | null;
+  socials: unknown;
   createdAt: string;
   _count: { posts: number };
 }
+
+const FIELD_CLASS =
+  "w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all";
 
 const ROLE_FILTERS = [
   { value: "ALL", label: "All roles" },
@@ -52,6 +62,10 @@ export default function UsersPage() {
     role: "EDITOR" as Role,
     image: "",
   });
+  // Bio + social links. Edit-only: creating a user goes through POST
+  // /api/users, which doesn't take them, so they're filled in afterwards.
+  const [profile, setProfile] = useState<AuthorProfileValue>({ bio: "", socials: {} });
+  const profileInvalid = Object.keys(authorProfileErrors(profile)).length > 0;
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -108,6 +122,7 @@ export default function UsersPage() {
       role: user.role,
       image: user.image ?? "",
     });
+    setProfile(authorProfileFrom(user));
     setError("");
     setShowModal(true);
   }
@@ -164,6 +179,7 @@ export default function UsersPage() {
         body: JSON.stringify({
           ...form,
           image: form.image || null,
+          ...(editingUser && { bio: profile.bio, socials: profile.socials }),
         }),
       });
 
@@ -510,10 +526,31 @@ export default function UsersPage() {
                   </select>
                 </div>
 
+                {editingUser && (
+                  <details
+                    className="group rounded-xl border border-zinc-200 dark:border-zinc-700"
+                    open={Boolean(profile.bio || Object.values(profile.socials).some(Boolean))}
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Author profile
+                      <span className="text-xs font-normal text-zinc-400 group-open:hidden">Bio &amp; social links</span>
+                    </summary>
+                    <div className="border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
+                      <AuthorProfileFields
+                        value={profile}
+                        onChange={setProfile}
+                        inputClass={FIELD_CLASS}
+                        labelClass="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5"
+                        hintClass="text-xs text-zinc-400 dark:text-zinc-500"
+                      />
+                    </div>
+                  </details>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <button
                     type="submit"
-                    disabled={saving || uploading}
+                    disabled={saving || uploading || (Boolean(editingUser) && profileInvalid)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-70"
                   >
                     {saving ? "Saving..." : editingUser ? "Save changes" : "Add user"}

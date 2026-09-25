@@ -30,6 +30,7 @@ import ParallaxHeroImage from "@/components/ui/ParallaxHeroImage";
 import ArticleImageLightbox from "@/components/blog/ArticleImageLightbox";
 import { auth } from "@/auth";
 import BookmarkButton from "@/components/bookmarks/BookmarkButton";
+import AuthorCard from "@/components/blog/AuthorCard";
 import ShareButtons from "@/components/blog/ShareButtons";
 import VerdictCard from "@/components/blog/VerdictCard";
 import ReadingHistoryTracker from "@/components/blog/ReadingHistoryTracker";
@@ -274,10 +275,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const post = await prisma.post.findUnique({
     where: { slug },
-    include: { author: true, tags: true },
+    include: {
+      // Public fields only: the full row would also load the author's email
+      // and password hash into this render for no reason.
+      author: { select: { id: true, name: true, image: true, bio: true, socials: true } },
+      tags: true,
+    },
   });
 
   if (!post || !post.published) notFound();
+
+  const authorArticleCount = await prisma.post.count({
+    where: { authorId: post.authorId, published: true },
+  });
 
   const session = await auth();
   const isBookmarked = session?.user
@@ -950,55 +960,26 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
             <SpecificationsMount />
             <GalleryMount />
 
-            <div className="mt-10 pt-6 border-t-[1.5px] border-border-heavy">
-              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-4 justify-between bg-background border-[1.5px] border-border-heavy px-5 py-4 sm:px-6 sm:py-5">
+            <div className="mt-10 space-y-4 border-t-[1.5px] border-border-heavy pt-6">
+              {/* Sharing lives in the hero row at the top of the post only. */}
+              <div className="flex items-center justify-between gap-4">
                 <Link href="/blog" className="group inline-flex items-center gap-2 text-accent hover:underline font-bold text-sm transition-colors shrink-0">
                   <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
                   All posts
                 </Link>
-
-                <div className="hidden sm:block h-8 w-px bg-border" />
-
-                {/* Author-bio position. Sharing lives in the hero row at the
-                    top of the post only — the duplicate set that used to sit
-                    here was removed. */}
-                <div className="flex items-center gap-3 shrink-0">
-                  <BookmarkButton
-                    postId={post.id}
-                    initialBookmarked={isBookmarked}
-                    showLabel
-                    className="px-3 py-1.5 border-[1.5px] shrink-0"
-                  />
-                </div>
-
-                <div className="hidden sm:block h-8 w-px bg-border" />
-
-                <div className="flex items-center gap-3.5 w-full sm:w-auto justify-center sm:justify-end">
-                  <div className="w-11 h-11 overflow-hidden bg-card border-[1.5px] border-border-heavy shrink-0">
-                    {post.author.image ? (
-                      <img loading="lazy" decoding="async"
-                        src={post.author.image}
-                        alt={post.author.name || "Author"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-accent flex items-center justify-center text-on-accent font-bold text-lg">
-                        {post.author.name?.charAt(0).toUpperCase() || "?"}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-left sm:text-right leading-tight">
-                    <p className="text-xs text-muted-foreground">Written by</p>
-                    <p className="text-sm font-semibold text-foreground">{post.author.name}</p>
-                    {wasUpdated && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Last updated {formatDate(post.updatedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                <BookmarkButton
+                  postId={post.id}
+                  initialBookmarked={isBookmarked}
+                  showLabel
+                  className="px-3 py-1.5 border-[1.5px] shrink-0"
+                />
               </div>
+
+              <AuthorCard
+                author={post.author}
+                articleCount={authorArticleCount}
+                updatedLabel={wasUpdated ? `Updated ${formatDate(post.updatedAt)}` : null}
+              />
             </div>
           </div>
         </FadeIn>
