@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { cache } from "react";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -8,6 +9,11 @@ import { headingTypeCss } from "@/lib/typography";
 import { brutalistBorderCss } from "@/lib/brutalistBorder";
 import { accentTextCss } from "@/lib/accentText";
 import { APP_URL } from "@/lib/appUrl";
+import { BrandingProvider } from "@/components/layout/BrandingContext";
+
+// Read once per request: generateMetadata (for the favicon) and the layout
+// both need these, and without the cache each would run its own query.
+const loadThemeSettings = cache(getThemeSettings);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +49,7 @@ const SITE_DESCRIPTION =
   "In-depth phone, laptop, smartwatch and earbud reviews, launch news and " +
   "side-by-side spec comparisons for Nepal.";
 
-export const metadata: Metadata = {
+const BASE_METADATA: Metadata = {
   // Makes every relative canonical/OG URL below resolve to an absolute one.
   // Without it Next emits relative og:url/og:image, which crawlers and social
   // scrapers ignore.
@@ -79,6 +85,22 @@ export const metadata: Metadata = {
   // they'd all claim to be "/". Each page sets its own.
 };
 
+// The admin-uploaded site icon, or the bundled one. The default favicon lives
+// in public/, not app/: file-based metadata overrides `icons`, so an
+// app/favicon.ico would win over the uploaded icon on every page.
+export async function generateMetadata(): Promise<Metadata> {
+  const { branding } = await loadThemeSettings();
+  return {
+    ...BASE_METADATA,
+    icons: {
+      icon: branding.siteIcon ?? "/favicon.ico",
+      // iOS ignores the manifest's icon list when adding to the home screen;
+      // this is the only one it reads.
+      apple: branding.siteIcon ?? "/icons/apple-touch-icon.png",
+    },
+  };
+}
+
 // Tells the mobile browser chrome (address bar / status bar) what color to
 // use, per color scheme, instead of falling back to a mismatched default —
 // this is what was causing the stray magenta line above the navbar.
@@ -102,7 +124,8 @@ export default async function RootLayout({
     headingType,
     brutalistBorder,
     accentText,
-  } = await getThemeSettings();
+    branding,
+  } = await loadThemeSettings();
 
   // Admin-chosen accent colours for both themes, injected as scoped overrides
   // of the palette tokens. Server-rendered into the initial HTML so there's no
@@ -147,15 +170,14 @@ export default async function RootLayout({
           title={`${SITE_NAME} — all articles`}
           href="/rss.xml"
         />
-        {/* iOS ignores the manifest's icon list when adding to the home
-            screen; this is the only one it reads. */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <style id="modern-accents" dangerouslySetInnerHTML={{ __html: accentCss }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <Providers>
-          {children}
-        </Providers>
+        <BrandingProvider branding={branding}>
+          <Providers>
+            {children}
+          </Providers>
+        </BrandingProvider>
       </body>
     </html>
   );

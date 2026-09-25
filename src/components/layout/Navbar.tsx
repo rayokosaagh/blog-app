@@ -10,6 +10,7 @@ import SignOutButton from "@/components/layout/SignOutButton";
 import NavbarSearch from "@/components/layout/NavbarSearch";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ExploreMenu from "@/components/layout/ExploreMenu";
+import SiteLogo from "@/components/layout/SiteLogo";
 import { Newspaper, Award, LayoutGrid, Smartphone, Scale, Gauge, LogOut, X, Bookmark, User } from "lucide-react";
 
 // The two article categories with the most traffic get their own links, so a
@@ -122,9 +123,11 @@ export default function Navbar() {
           <motion.div className="flex-shrink-0" whileTap={{ scale: 0.97 }}>
             <Link
               href="/"
-              className="text-xl font-black tracking-tight hover:text-accent transition-colors duration-100"
+              className="flex items-center text-xl font-black tracking-tight hover:text-accent transition-colors duration-100"
             >
-              Blog
+              {/* Capped narrower on phones, where the search field shares the
+                  row and a 200px logo squeezes it to an empty box. */}
+              <SiteLogo imgClassName="h-7 max-w-[120px] sm:h-9 sm:max-w-[200px]" />
             </Link>
           </motion.div>
 
@@ -328,7 +331,10 @@ export default function Navbar() {
                       </div>
                     </div>
                   ) : (
-                    <span className="text-lg font-black tracking-tight text-foreground">Blog</span>
+                    <SiteLogo
+                      imgClassName="h-8 max-w-[180px]"
+                      textClassName="text-lg font-black tracking-tight text-foreground"
+                    />
                   )}
                   <button
                     onClick={() => setIsOpen(false)}

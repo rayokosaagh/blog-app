@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FadeIn } from "@/components/ui/AnimatedSection";
 import Underline from "@/components/ui/Underline";
 import FooterNewsletter from "@/components/newsletter/FooterNewsletter";
+import SiteLogo from "@/components/layout/SiteLogo";
 
 // ── Footer content config ───────────────────────────────────────────
 // Edit labels/hrefs here. `#` entries are placeholders for pages that
@@ -104,9 +105,10 @@ export default function Footer() {
             </div>
 
             <div className="col-span-2 lg:col-span-3">
-              <span className="text-2xl font-black tracking-tight text-foreground">
-                Blog
-              </span>
+              <SiteLogo
+                imgClassName="h-10 max-w-[240px]"
+                textClassName="text-2xl font-black tracking-tight text-foreground"
+              />
               <p className="mt-2 text-sm font-bold text-muted-foreground max-w-[16rem]">
                 Reviews, comparisons and news on the gadgets you care about.
               </p>
