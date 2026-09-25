@@ -15,7 +15,11 @@ import {
   setHeadingType,
   setBrutalistBorder,
   setAccentText,
+  setBranding,
   getThemeSettings,
+  BRANDING_FIELDS,
+  isUploadPath,
+  type Branding,
   type UiTheme,
 } from "@/lib/settings";
 import { isValidHex, type AccentTrio, type DarkSurfaces } from "@/lib/color";
@@ -39,6 +43,7 @@ async function readAll() {
     headingType: theme.headingType,
     brutalistBorder: theme.brutalistBorder,
     accentText: theme.accentText,
+    branding: theme.branding,
   };
 }
 
@@ -173,6 +178,23 @@ export async function PUT(request: Request) {
   if (body.accentText && typeof body.accentText === "object") {
     await setAccentText(body.accentText);
     touched = true;
+  }
+
+  // Branding images — partial: each field present is either an upload path to
+  // store or null/"" to clear. Anything else is dropped, not stored.
+  const branding = body.branding;
+  if (branding && typeof branding === "object") {
+    const patch: Partial<Branding> = {};
+    for (const field of BRANDING_FIELDS) {
+      if (!(field in branding)) continue;
+      const v = branding[field];
+      if (v === null || v === "") patch[field] = null;
+      else if (typeof v === "string" && isUploadPath(v)) patch[field] = v;
+    }
+    if (Object.keys(patch).length > 0) {
+      await setBranding(patch);
+      touched = true;
+    }
   }
 
   if (!touched) {

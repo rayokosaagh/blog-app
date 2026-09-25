@@ -59,6 +59,62 @@ export const BRUTALIST_BORDER_KEY = "brutalistBorder";
 // entries mean "auto contrast".
 export const ACCENT_TEXT_KEY = "accentText";
 
+// Branding images, each a path returned by /api/upload. Empty/absent means
+// "not set": the site falls back to the "Blog" wordmark and the bundled icons.
+export const BRANDING_KEYS = {
+  logo: "brandLogo",
+  logoDark: "brandLogoDark",
+  siteIcon: "siteIcon",
+} as const;
+
+export type BrandingField = keyof typeof BRANDING_KEYS;
+export type Branding = Record<BrandingField, string | null>;
+
+export const BRANDING_FIELDS = Object.keys(BRANDING_KEYS) as BrandingField[];
+
+/**
+ * Only files our own upload route wrote are accepted. The value ends up in
+ * `<img src>`, `<link href>` and the manifest, so an arbitrary URL would let a
+ * compromised admin session hotlink or track visitors from every page.
+ */
+export function isUploadPath(v: string): boolean {
+  return /^\/uploads\/[^/\\?#"'<>\s]+$/.test(v) && !v.includes("..");
+}
+
+function brandingFrom(map: Record<string, string>): Branding {
+  const pick = (key: string) => {
+    const v = map[key];
+    return v && isUploadPath(v) ? v : null;
+  };
+  return {
+    logo: pick(BRANDING_KEYS.logo),
+    logoDark: pick(BRANDING_KEYS.logoDark),
+    siteIcon: pick(BRANDING_KEYS.siteIcon),
+  };
+}
+
+export async function getBranding(): Promise<Branding> {
+  return brandingFrom(await getSettingsMap(Object.values(BRANDING_KEYS)));
+}
+
+/**
+ * Persist a partial branding patch. `null` or "" clears a slot; anything that
+ * isn't one of our upload paths is ignored rather than stored.
+ */
+export async function setBranding(patch: Partial<Branding>): Promise<void> {
+  await Promise.all(
+    BRANDING_FIELDS.flatMap((field): Promise<unknown>[] => {
+      if (!(field in patch)) return [];
+      const v = patch[field];
+      const key = BRANDING_KEYS[field];
+      if (v === null || v === "") {
+        return [prisma.siteSetting.deleteMany({ where: { key } })];
+      }
+      return typeof v === "string" && isUploadPath(v) ? [setSetting(key, v)] : [];
+    }),
+  );
+}
+
 export type UiTheme = "brutalist" | "modern";
 export const UI_THEME_DEFAULT: UiTheme = "brutalist";
 
@@ -362,6 +418,7 @@ export async function getThemeSettings(): Promise<{
   headingType: HeadingTypeByTheme;
   brutalistBorder: BrutalistBorder;
   accentText: AccentText;
+  branding: Branding;
 }> {
   const map = await getSettingsMap([
     UI_THEME_KEY,
@@ -376,6 +433,7 @@ export async function getThemeSettings(): Promise<{
     HEADING_TYPE_KEYS.modern,
     BRUTALIST_BORDER_KEY,
     ACCENT_TEXT_KEY,
+    ...Object.values(BRANDING_KEYS),
   ]);
   return {
     uiTheme: map[UI_THEME_KEY] === "modern" ? "modern" : UI_THEME_DEFAULT,
@@ -388,5 +446,6 @@ export async function getThemeSettings(): Promise<{
     headingType: headingFrom(map),
     brutalistBorder: parseBrutalistBorder(map[BRUTALIST_BORDER_KEY]),
     accentText: parseAccentText(map[ACCENT_TEXT_KEY]),
+    branding: brandingFrom(map),
   };
 }
