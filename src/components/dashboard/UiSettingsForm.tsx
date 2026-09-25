@@ -11,9 +11,28 @@ import {
   Check,
   Sun,
   Moon,
+  Square,
+  Type,
+  Bookmark,
 } from "lucide-react";
 import { Toggle, SuccessToast } from "@/components/dashboard/DashboardUI";
 import HeadingTypeSettings from "@/components/dashboard/HeadingTypeSettings";
+import BrutalistBorderSettings from "@/components/dashboard/BrutalistBorderSettings";
+import {
+  usePreviewEditor,
+  PreviewEditPopover,
+  PopoverColorField,
+  PopoverTextColorField,
+  TARGET_CLASS,
+} from "@/components/dashboard/PreviewEditor";
+import { BRUTALIST_BORDER_DEFAULT, type BrutalistBorder } from "@/lib/brutalistBorder";
+import {
+  ACCENT_KEYS,
+  ACCENT_TEXT_DEFAULT,
+  type AccentKey,
+  type AccentText,
+  type AccentTextSet,
+} from "@/lib/accentText";
 import type {
   UiTheme,
   ModernAccents,
@@ -40,6 +59,134 @@ import {
 } from "@/lib/color";
 
 type Scheme = "light" | "dark";
+
+type SettingsTab = "theme" | "colors" | "borders" | "typography" | "effects";
+
+// What a click in the accent preview can edit. Each preview element maps to
+// the accent it's coloured with on the real site (checked against the actual
+// components), and whether it carries text on that fill. Dark surfaces are
+// separate targets, shown in the dark preview only.
+type AccentElement =
+  | "readMore"
+  | "featured"
+  | "category"
+  | "tint"
+  | "link"
+  | "navHover"
+  | "toggle"
+  | "focusInput"
+  | "bookmark";
+type AccentTarget = AccentElement | "background" | "card" | "foreground";
+
+const ACCENT_ELEMENTS: Record<
+  AccentElement,
+  { label: string; accent: AccentKey; withText: boolean; usedFor: string }
+> = {
+  readMore: { label: "Primary button", accent: "accent", withText: true, usedFor: "Primary buttons, active controls" },
+  featured: { label: "Secondary button", accent: "accent2", withText: true, usedFor: "Featured badges, highlights" },
+  category: { label: "Category badge", accent: "accent3", withText: true, usedFor: "Category badges on cards and articles" },
+  tint: { label: "Tint surface", accent: "accent", withText: false, usedFor: "The tint is generated from the primary accent" },
+  link: { label: "Text link", accent: "accent", withText: false, usedFor: "Inline links (“Back to blog”, comment links)" },
+  navHover: { label: "Nav item (hover)", accent: "accent2", withText: true, usedFor: "Navbar links on hover, menu buttons" },
+  toggle: { label: "Theme toggle", accent: "accent2", withText: true, usedFor: "The light/dark switch in the navbar" },
+  focusInput: { label: "Focused input", accent: "accent", withText: false, usedFor: "Sign-in fields and hover rows use the primary tint" },
+  bookmark: { label: "Bookmark", accent: "accent", withText: false, usedFor: "The saved-bookmark outline and icon" },
+};
+
+const FILL_TOKEN: Record<AccentKey, string> = {
+  accent: "--accent",
+  accent2: "--accent-2",
+  accent3: "--accent-3",
+};
+const ON_ACCENT_TOKEN: Record<AccentKey, string> = {
+  accent: "--on-accent",
+  accent2: "--on-accent-2",
+  accent3: "--on-accent-3",
+};
+const ACCENT_NAMES: Record<AccentKey, string> = {
+  accent: "Primary",
+  accent2: "Secondary",
+  accent3: "Tertiary",
+};
+
+const SETTINGS_TABS: { value: SettingsTab; label: string; Icon: typeof Sun }[] = [
+  { value: "theme", label: "Theme", Icon: Palette },
+  { value: "colors", label: "Colors", Icon: Droplet },
+  { value: "borders", label: "Borders", Icon: Square },
+  { value: "typography", label: "Typography", Icon: Type },
+  { value: "effects", label: "Effects", Icon: Sparkles },
+];
+
+/**
+ * Tab bar for the settings groups. WAI-ARIA tabs pattern: only the active tab
+ * is in the tab order, arrow keys / Home / End move between tabs. Tabs holding
+ * unsaved edits get a dot, since their Save button may be off screen.
+ */
+function SettingsTabs({
+  active,
+  onChange,
+  dirty,
+}: {
+  active: SettingsTab;
+  onChange: (tab: SettingsTab) => void;
+  dirty: Partial<Record<SettingsTab, boolean>>;
+}) {
+  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const i = SETTINGS_TABS.findIndex((t) => t.value === active);
+    const last = SETTINGS_TABS.length - 1;
+    const next =
+      e.key === "ArrowRight" ? (i === last ? 0 : i + 1)
+      : e.key === "ArrowLeft" ? (i === 0 ? last : i - 1)
+      : e.key === "Home" ? 0
+      : e.key === "End" ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    const tab = SETTINGS_TABS[next].value;
+    onChange(tab);
+    document.getElementById(`ui-tab-${tab}`)?.focus();
+  }
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Appearance settings"
+      onKeyDown={onKeyDown}
+      // Scrolls sideways on narrow screens rather than wrapping to two rows.
+      className="-mx-1 flex gap-1 overflow-x-auto border-b border-zinc-200 px-1 dark:border-zinc-800"
+    >
+      {SETTINGS_TABS.map(({ value, label, Icon }) => {
+        const selected = value === active;
+        return (
+          <button
+            key={value}
+            id={`ui-tab-${value}`}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            aria-controls={`ui-panel-${value}`}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(value)}
+            className={`relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2.5 text-sm font-medium transition ${
+              selected
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200"
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+            {dirty[value] && (
+              <>
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Unsaved changes" />
+                <span className="sr-only">(unsaved changes)</span>
+              </>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // Every colour here has to survive onColor() in lib/color, which picks white
 // text once white clears 3:1 and dark ink below that. That leaves a trap: an
@@ -311,6 +458,8 @@ export default function UiSettingsForm({
     brutalist: BRUTALIST_HEADING_DEFAULT,
     modern: MODERN_HEADING_DEFAULT,
   },
+  initialBrutalistBorder = BRUTALIST_BORDER_DEFAULT,
+  initialAccentText = ACCENT_TEXT_DEFAULT,
 }: {
   initialEnabled: boolean;
   initialTheme: UiTheme;
@@ -318,6 +467,8 @@ export default function UiSettingsForm({
   initialBrutalistAccents?: ThemeAccents;
   initialDarkSurfaces?: DarkSurfacesByTheme;
   initialHeadingType?: HeadingTypeByTheme;
+  initialBrutalistBorder?: BrutalistBorder;
+  initialAccentText?: AccentText;
 }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -340,6 +491,19 @@ export default function UiSettingsForm({
   const [headingType, setHeadingType] = useState<HeadingTypeByTheme>(initialHeadingType);
   const [savedHeadingType, setSavedHeadingType] =
     useState<HeadingTypeByTheme>(initialHeadingType);
+
+  // Brutalist outline/shadow. Same saved/editing split for the dirty state.
+  const [border, setBorder] = useState<BrutalistBorder>(initialBrutalistBorder);
+  const [savedBorder, setSavedBorder] = useState<BrutalistBorder>(initialBrutalistBorder);
+
+  // Text colours on accent fills (null = auto contrast). Saved with the
+  // accents, so they share the Colors panel's dirty state and Save button.
+  const [accentText, setAccentText] = useState<AccentText>(initialAccentText);
+  const [savedAccentText, setSavedAccentText] = useState<AccentText>(initialAccentText);
+
+  // Which settings group is on screen. All edit state lives above, so switching
+  // tabs never drops unsaved changes — the tab bar flags them instead.
+  const [tab, setTab] = useState<SettingsTab>("theme");
 
   // Dark-mode base surfaces, per theme.
   const [surfaces, setSurfaces] = useState<DarkSurfacesByTheme>(initialDarkSurfaces);
@@ -372,14 +536,30 @@ export default function UiSettingsForm({
       ? [{ items: BRUTALIST_LIGHT_PRESETS }]
       : [{ items: BRUTALIST_DARK_PRESETS }];
 
-  const accentsDirty = isModern
-    ? !modernEqual(modern, savedModern)
-    : !themeAccentsEqual(brutalist, savedBrutalist);
+  const accentTextDirty =
+    JSON.stringify(accentText[theme]) !== JSON.stringify(savedAccentText[theme]);
+  const accentsDirty =
+    accentTextDirty ||
+    (isModern ? !modernEqual(modern, savedModern) : !themeAccentsEqual(brutalist, savedBrutalist));
 
-  // Derived tokens for the live preview, in whichever scheme is on screen.
-  const preview: TokenSet = isModern
+  // Derived tokens for the live preview, in whichever scheme is on screen,
+  // with any text-on-accent overrides laid over the auto contrast colours.
+  const derivedPreview: TokenSet = isModern
     ? buildModernAccentVars(modern.light, modern.darkAuto ? null : modern.dark)[scheme]
     : buildBrutalistAccentVars(brutalist)[scheme];
+  const textOverrides = accentText[theme][scheme];
+  const preview: TokenSet = { ...derivedPreview };
+  for (const k of ACCENT_KEYS) {
+    const v = textOverrides[k];
+    if (v && isValidHex(v)) preview[ON_ACCENT_TOKEN[k]] = normalizeHex(v);
+  }
+
+  function setAccentTextField(key: AccentKey, value: string | null) {
+    setAccentText((prev) => ({
+      ...prev,
+      [theme]: { ...prev[theme], [scheme]: { ...prev[theme][scheme], [key]: value } },
+    }));
+  }
   // Preview framing: border weight / radius / shadow always come from the
   // theme, but in dark mode the actual colours come from the admin's chosen
   // surfaces (and their derived muted text) rather than the hardcoded ones.
@@ -390,12 +570,90 @@ export default function UiSettingsForm({
       ? {
           ...SURFACES[theme].dark,
           bg: derivedDark["--background"],
+          card: derivedDark["--card"],
           fg: derivedDark["--foreground"],
           muted: derivedDark["--muted-foreground"],
           border: derivedDark["--border-heavy"],
         }
-      : SURFACES[theme].light;
+      : { ...SURFACES[theme].light, card: SURFACES[theme].light.bg };
+
+  // Click-to-edit in the accent preview. Accent targets edit the trio on
+  // screen; surface targets (dark only) edit the dark-mode surfaces, which
+  // save with their own panel below.
+  const {
+    containerRef: accentPreviewRef,
+    editing: accentEditing,
+    close: closeAccentEditor,
+    target: accentTarget,
+  } = usePreviewEditor<AccentTarget>();
+
+  /**
+   * The accent an element is painted with *in the scheme on screen*. Only the
+   * bookmark varies: light follows the primary; brutalist dark re-points it at
+   * the tertiary (buildBrutalistAccentVars), and modern dark hardcodes it in
+   * globals.css — no setting drives it there, so it isn't a target.
+   */
+  function elementAccent(el: AccentElement): AccentKey | null {
+    if (el === "bookmark" && scheme === "dark") return isModern ? null : "accent3";
+    return ACCENT_ELEMENTS[el].accent;
+  }
+
+  function accentEditorBody(key: AccentTarget) {
+    if (key === "background" || key === "card" || key === "foreground") {
+      const f = SURFACE_FIELDS.find((s) => s.key === key)!;
+      return {
+        title: `Dark ${f.label.toLowerCase()}`,
+        hint: `${f.hint}. Saved with Dark mode colors below.`,
+        body: (
+          <PopoverColorField
+            value={editingSurfaces[key]}
+            onChange={(v) => setSurfaceField(key, v)}
+          />
+        ),
+      };
+    }
+    const el = ACCENT_ELEMENTS[key];
+    const accent = elementAccent(key) ?? el.accent;
+    const fill = isValidHex(editing[accent]) ? normalizeHex(editing[accent]) : derivedPreview[FILL_TOKEN[accent]];
+    return {
+      title: `${el.label} · ${scheme}`,
+      hint: modernDarkLocked
+        ? "Generated from the light palette. Turn off “Generate dark colors from light” to pick it."
+        : `${ACCENT_NAMES[accent]} accent — applies everywhere it's used. ${el.usedFor}.`,
+      body: (
+        <div className="space-y-3">
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              {el.withText ? "Fill" : "Color"} · {ACCENT_NAMES[accent]}
+            </p>
+            <PopoverColorField
+              value={editing[accent]}
+              disabled={modernDarkLocked}
+              onChange={(v) => setAccentField(accent, v)}
+            />
+          </div>
+          {el.withText && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                Text on {ACCENT_NAMES[accent].toLowerCase()}
+              </p>
+              <PopoverTextColorField
+                value={textOverrides[accent]}
+                auto={derivedPreview[ON_ACCENT_TOKEN[accent]]}
+                fill={fill}
+                onChange={(v) => setAccentTextField(accent, v)}
+              />
+            </div>
+          )}
+        </div>
+      ),
+    };
+  }
   const surfacesDirty = !surfacesEqual(editingSurfaces, savedSurfaces[theme]);
+  const colorsDirty = accentsDirty || surfacesDirty;
+  const bordersDirty = !isModern && JSON.stringify(border) !== JSON.stringify(savedBorder);
+  const headingsDirty =
+    JSON.stringify(headingType[theme]) !== JSON.stringify(savedHeadingType[theme]);
   const surfaceDefault =
     theme === "modern" ? MODERN_DARK_SURFACES_DEFAULT : BRUTALIST_DARK_SURFACES_DEFAULT;
 
@@ -534,6 +792,22 @@ export default function UiSettingsForm({
       body = { brutalistAccents: nextBrutalist };
     }
 
+    // Text overrides: a half-typed hex snaps back to what's saved rather than
+    // reaching the server, which would read it as "auto".
+    const cleanText = (set: AccentTextSet, saved: AccentTextSet): AccentTextSet => ({
+      accent: set.accent === null || isValidHex(set.accent) ? set.accent : saved.accent,
+      accent2: set.accent2 === null || isValidHex(set.accent2) ? set.accent2 : saved.accent2,
+      accent3: set.accent3 === null || isValidHex(set.accent3) ? set.accent3 : saved.accent3,
+    });
+    const nextAccentText: AccentText = {
+      ...accentText,
+      [theme]: {
+        light: cleanText(accentText[theme].light, savedAccentText[theme].light),
+        dark: cleanText(accentText[theme].dark, savedAccentText[theme].dark),
+      },
+    };
+    if (accentTextDirty) body.accentText = nextAccentText;
+
     try {
       const res = await fetch("/api/settings/ui", {
         method: "PUT",
@@ -548,6 +822,8 @@ export default function UiSettingsForm({
         setBrutalist(nextBrutalist);
         setSavedBrutalist(nextBrutalist);
       }
+      setAccentText(nextAccentText);
+      setSavedAccentText(nextAccentText);
       setToast("Accent colors updated");
       router.refresh(); // re-render the layout so the new colors apply site-wide
     } catch {
@@ -573,8 +849,8 @@ export default function UiSettingsForm({
   ];
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-8">
+    <div className="max-w-5xl">
+      <div className="mb-6">
         <h1
           className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50"
           style={{ fontFamily: "var(--font-display)" }}
@@ -593,503 +869,697 @@ export default function UiSettingsForm({
         </div>
       )}
 
-      <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
-            <Palette className="h-5 w-5" />
-          </span>
-          <div className="flex-1">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Site theme
-            </h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Switch the entire site&apos;s visual style. Applies to every page immediately.
-            </p>
+      <SettingsTabs
+        active={tab}
+        onChange={(next) => {
+          setTab(next);
+          closeAccentEditor();
+        }}
+        dirty={{ colors: colorsDirty, borders: bordersDirty, typography: headingsDirty }}
+      />
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {themeOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={themeSaving}
-                  onClick={() => handleThemeChange(opt.value)}
-                  className={`rounded-xl border p-3 text-left transition ${
-                    theme === opt.value
-                      ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500"
-                      : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
-                  } disabled:opacity-60`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {opt.label}
-                    </p>
-                    {/* Each theme carries its own palette — show it here so the
-                        choice reads as "which look", not just "which name". */}
-                    <span className="flex -space-x-1">
-                      {[opt.swatch.accent, opt.swatch.accent2, opt.swatch.accent3].map((c, i) => (
-                        <span
-                          key={i}
-                          className="h-3.5 w-3.5 rounded-full ring-1 ring-white dark:ring-zinc-900"
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
+      <div
+        role="tabpanel"
+        id={`ui-panel-${tab}`}
+        aria-labelledby={`ui-tab-${tab}`}
+        className="mt-6"
+      >
+        {tab === "theme" && (
+          <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
+                <Palette className="h-5 w-5" />
+              </span>
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  Site theme
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  Switch the entire site&apos;s visual style. Applies to every page immediately.
+                </p>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {themeOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={themeSaving}
+                      onClick={() => handleThemeChange(opt.value)}
+                      className={`rounded-xl border p-3 text-left transition ${
+                        theme === opt.value
+                          ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500"
+                          : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
+                      } disabled:opacity-60`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {opt.label}
+                        </p>
+                        {/* Each theme carries its own palette — show it here so the
+                            choice reads as "which look", not just "which name". */}
+                        <span className="flex -space-x-1">
+                          {[opt.swatch.accent, opt.swatch.accent2, opt.swatch.accent3].map((c, i) => (
+                            <span
+                              key={i}
+                              className="h-3.5 w-3.5 rounded-full ring-1 ring-white dark:ring-zinc-900"
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+                {themeSaving && (
+                  <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                    saving…
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "colors" && (
+          <>
+            <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/10 text-fuchsia-500">
+                  <Droplet className="h-5 w-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Accent colors
+                    </h2>
+                    <span className="shrink-0 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                      Editing {isModern ? "Modern" : "Neo-Brutalist"}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{opt.desc}</p>
-                </button>
-              ))}
-            </div>
-            {themeSaving && (
-              <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-zinc-500">
-                saving…
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    {isModern
+                      ? "Set the Modern theme's accent colors. Text contrast, tints and dark-mode variants are generated automatically."
+                      : "Set the Neo-Brutalist theme's accent colors. Light and dark keep separate palettes — the theme's dark mode is neon-on-charcoal by design, so it isn't derived from light. Text contrast and tints are generated."}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                    These edit the theme chosen on the Theme tab. Switch themes there to edit the other palette.
+                  </p>
 
-      <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-fuchsia-500/10 text-fuchsia-500">
-            <Droplet className="h-5 w-5" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Accent colors
-              </h2>
-              <span className="shrink-0 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
-                Editing {isModern ? "Modern" : "Neo-Brutalist"}
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {isModern
-                ? "Set the Modern theme's accent colors. Text contrast, tints and dark-mode variants are generated automatically."
-                : "Set the Neo-Brutalist theme's accent colors. Light and dark keep separate palettes — the theme's dark mode is neon-on-charcoal by design, so it isn't derived from light. Text contrast and tints are generated."}
-            </p>
-            <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-              These edit the theme selected above. Switch themes to edit the other palette.
-            </p>
+                  {/* Controls left, preview right on wide screens; stacked below lg. */}
+                  <div className="mt-5 grid gap-6 lg:grid-cols-2">
+                    <div className="min-w-0">
+                      {/* Light / dark switch — picks the edited trio for brutalist, and
+                          the preview scheme for both themes. */}
+                      <div className="inline-flex rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-700">
+                        {(
+                          [
+                            { value: "light", label: "Light", Icon: Sun },
+                            { value: "dark", label: "Dark", Icon: Moon },
+                          ] as { value: Scheme; label: string; Icon: typeof Sun }[]
+                        ).map(({ value, label, Icon }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => {
+                              setScheme(value);
+                              closeAccentEditor();
+                            }}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                              scheme === value
+                                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                                : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Modern can either derive its dark palette from light or let you
+                          pick it outright. Brutalist always stores both, so it needs no
+                          switch here. */}
+                      {isModern && scheme === "dark" && (
+                        <div className="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-700">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                Generate dark colors from light
+                              </p>
+                              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                {modern.darkAuto
+                                  ? "Dark mode lightens your light accents automatically. Turn this off to pick them yourself."
+                                  : "You're picking dark mode's colors directly. Turn this back on to derive them from light again."}
+                              </p>
+                            </div>
+                            <Toggle checked={modern.darkAuto} onChange={() => setDarkAuto(!modern.darkAuto)} />
+                          </div>
+                        </div>
+                      )}
 
-            {/* Light / dark switch — picks the edited trio for brutalist, and
-                the preview scheme for both themes. */}
-            <div className="mt-4 inline-flex rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-700">
-              {(
-                [
-                  { value: "light", label: "Light", Icon: Sun },
-                  { value: "dark", label: "Dark", Icon: Moon },
-                ] as { value: Scheme; label: string; Icon: typeof Sun }[]
-              ).map(({ value, label, Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setScheme(value)}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    scheme === value
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
-            </div>
-            {/* Modern can either derive its dark palette from light or let you
-                pick it outright. Brutalist always stores both, so it needs no
-                switch here. */}
-            {isModern && scheme === "dark" && (
-              <div className="mt-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-700">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      Generate dark colors from light
-                    </p>
-                    <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                      {modern.darkAuto
-                        ? "Dark mode lightens your light accents automatically. Turn this off to pick them yourself."
-                        : "You're picking dark mode's colors directly. Turn this back on to derive them from light again."}
-                    </p>
+                      <div className={`mt-4 space-y-3 ${modernDarkLocked ? "pointer-events-none opacity-50" : ""}`}>
+                        {presetGroups.map((group, gi) => (
+                          <div key={group.heading ?? `group-${gi}`}>
+                            {group.heading && (
+                              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">
+                                {group.heading}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {group.items.map((p) => {
+                                const active = trioEqual(editing, p.trio);
+                                return (
+                                  <button
+                                    key={p.label}
+                                    type="button"
+                                    disabled={modernDarkLocked}
+                                    onClick={() => setEditingTrio(p.trio)}
+                                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                      active
+                                        ? "border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100"
+                                        : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
+                                    }`}
+                                  >
+                                    <span className="flex -space-x-1">
+                                      {[p.trio.accent, p.trio.accent2, p.trio.accent3].map((c, i) => (
+                                        <span
+                                          key={i}
+                                          className="h-3.5 w-3.5 rounded-full ring-1 ring-white dark:ring-zinc-900"
+                                          style={{ backgroundColor: c }}
+                                        />
+                                      ))}
+                                    </span>
+                                    {p.label}
+                                    {active && <Check className="h-3 w-3" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className={`mt-4 space-y-3 ${modernDarkLocked ? "opacity-50" : ""}`}>
+                        {ACCENT_FIELDS.map((f) => {
+                          const value = editing[f.key];
+                          const valid = isValidHex(value);
+                          return (
+                            <div key={f.key} className="flex items-center gap-3">
+                              <label
+                                className="relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
+                                style={{ backgroundColor: valid ? value : "transparent" }}
+                              >
+                                <input
+                                  type="color"
+                                  value={valid ? normalizeHex(value) : "#000000"}
+                                  disabled={modernDarkLocked}
+                                  onChange={(e) => setAccentField(f.key, e.target.value)}
+                                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                                  aria-label={`${f.label} color`}
+                                />
+                              </label>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                  {f.label}
+                                </p>
+                                <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                                  {f.hint}
+                                </p>
+                              </div>
+                              <input
+                                type="text"
+                                value={value}
+                                disabled={modernDarkLocked}
+                                onChange={(e) => setAccentField(f.key, e.target.value)}
+                                spellCheck={false}
+                                className={`w-28 rounded-lg border bg-transparent px-2.5 py-1.5 font-mono text-xs uppercase text-zinc-900 outline-none dark:text-zinc-100 ${
+                                  valid
+                                    ? "border-zinc-200 focus:border-zinc-400 dark:border-zinc-700 dark:focus:border-zinc-500"
+                                    : "border-red-400 focus:border-red-500"
+                                }`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                    </div>
+
+                    {/* Live preview — rendered in the real theme's framing (border
+                        weight, radius, shadow, surface) so you can see how the colors
+                        actually land, not just the swatches. Sticks while the preset
+                        list scrolls past on wide screens. */}
+                    <div
+                      ref={accentPreviewRef}
+                      className="relative min-w-0 lg:sticky lg:top-6 lg:self-start"
+                    >
+                      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+                        <div className="flex items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50 px-3 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            Preview · click to edit
+                          </span>
+                          <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+                            {isModern ? "Modern" : "Neo-Brutalist"} · {scheme}
+                          </span>
+                        </div>
+
+                        {/* Surface targets exist only in the dark preview —
+                            light mode's surfaces aren't configurable. */}
+                        <div
+                          className={`p-4 ${scheme === "dark" ? TARGET_CLASS : ""}`}
+                          style={{ backgroundColor: surface.bg }}
+                          {...(scheme === "dark" ? accentTarget("background", "dark background") : {})}
+                        >
+                          <div
+                            className={`p-4 ${scheme === "dark" ? TARGET_CLASS : ""}`}
+                            style={{
+                              backgroundColor: surface.card,
+                              color: surface.fg,
+                              border: `${surface.borderWidth}px solid ${surface.border}`,
+                              borderRadius: surface.radius,
+                              boxShadow: surface.shadow,
+                            }}
+                            {...(scheme === "dark" ? accentTarget("card", "dark card surface") : {})}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span
+                                {...accentTarget("category", "category badge")}
+                                className={`inline-flex items-center px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ${TARGET_CLASS}`}
+                                style={{
+                                  backgroundColor: preview["--accent-3"],
+                                  color: preview["--on-accent-3"],
+                                  border: `${surface.borderWidth}px solid ${surface.border}`,
+                                  borderRadius: surface.pill,
+                                }}
+                              >
+                                Category
+                              </span>
+                              <span className="text-[11px] font-semibold" style={{ color: surface.muted }}>
+                                5 min read
+                              </span>
+                            </div>
+
+                            <p
+                              className={`mt-3 text-base font-extrabold tracking-tight ${scheme === "dark" ? `inline-block ${TARGET_CLASS}` : ""}`}
+                              {...(scheme === "dark" ? accentTarget("foreground", "dark text") : {})}
+                            >
+                              The quick brown fox
+                            </p>
+                            <p className="mt-1 text-xs" style={{ color: surface.muted }}>
+                              Body copy sits on the surface, with links picking up the primary accent.
+                            </p>
+
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                              <span
+                                {...accentTarget("readMore", "primary button")}
+                                className={`inline-flex items-center px-3 py-2 text-xs font-extrabold uppercase tracking-wide ${TARGET_CLASS}`}
+                                style={{
+                                  backgroundColor: preview["--accent"],
+                                  color: preview["--on-accent"],
+                                  border: `${surface.borderWidth}px solid ${surface.border}`,
+                                  borderRadius: surface.pill,
+                                  boxShadow: surface.shadow,
+                                }}
+                              >
+                                Read more
+                              </span>
+                              <span
+                                {...accentTarget("featured", "secondary button")}
+                                className={`inline-flex items-center px-3 py-2 text-xs font-extrabold uppercase tracking-wide ${TARGET_CLASS}`}
+                                style={{
+                                  backgroundColor: preview["--accent-2"],
+                                  color: preview["--on-accent-2"],
+                                  border: `${surface.borderWidth}px solid ${surface.border}`,
+                                  borderRadius: surface.pill,
+                                }}
+                              >
+                                Featured
+                              </span>
+                              <span
+                                // The tint is generated from the primary accent.
+                                {...accentTarget("tint", "tint surface")}
+                                className={`inline-flex items-center px-3 py-2 text-xs font-bold ${TARGET_CLASS}`}
+                                style={{
+                                  backgroundColor: preview["--accent-tint"],
+                                  color: preview["--accent"],
+                                  borderRadius: surface.radius,
+                                }}
+                              >
+                                Tint surface
+                              </span>
+                            </div>
+                            {/* More accent-coloured parts, painted the way the
+                                real components are (see ACCENT_ELEMENTS). */}
+                            <div
+                              className="mt-4 flex flex-wrap items-center gap-3 pt-4"
+                              style={{ borderTop: `1px dashed ${surface.muted}` }}
+                            >
+                              <span
+                                {...accentTarget("link", "text link")}
+                                className={`text-xs font-bold underline-offset-2 hover:underline ${TARGET_CLASS}`}
+                                style={{ color: preview["--accent"] }}
+                              >
+                                Back to blog →
+                              </span>
+                              <span
+                                {...accentTarget("navHover", "nav item on hover")}
+                                className={`inline-flex items-center px-3 py-2 text-xs font-extrabold uppercase tracking-wide ${TARGET_CLASS}`}
+                                style={{
+                                  backgroundColor: preview["--accent-2"],
+                                  color: preview["--on-accent-2"],
+                                  border: `${Math.min(surface.borderWidth, 2)}px solid ${surface.border}`,
+                                  borderRadius: surface.pill,
+                                }}
+                              >
+                                News
+                              </span>
+                              {/* The navbar toggle only wears the secondary in
+                                  light mode; its dark track is the text colour. */}
+                              {scheme === "light" && (
+                                <span
+                                  {...accentTarget("toggle", "theme toggle")}
+                                  className={`relative inline-flex h-5 w-10 items-center p-0.5 ${TARGET_CLASS}`}
+                                  style={{
+                                    backgroundColor: preview["--accent-2"],
+                                    border: `1.5px solid ${surface.border}`,
+                                    borderRadius: surface.pill || 0,
+                                  }}
+                                >
+                                  <span
+                                    className="flex h-4 w-4 items-center justify-center"
+                                    style={{
+                                      backgroundColor: surface.bg,
+                                      border: `1.5px solid ${surface.border}`,
+                                      borderRadius: surface.pill || 0,
+                                    }}
+                                  >
+                                    <Sun className="h-2.5 w-2.5" style={{ color: preview["--on-accent-2"] }} />
+                                  </span>
+                                </span>
+                              )}
+                              <span
+                                {...accentTarget("focusInput", "focused input")}
+                                className={`inline-flex items-center px-3 py-2 text-xs ${TARGET_CLASS}`}
+                                style={{
+                                  backgroundColor: preview["--accent-tint"],
+                                  color: surface.fg,
+                                  border: `${Math.min(surface.borderWidth, 2)}px solid ${surface.border}`,
+                                  borderRadius: surface.radius,
+                                }}
+                              >
+                                you@example.com
+                              </span>
+                              {(() => {
+                                const bm = elementAccent("bookmark");
+                                // Modern dark hardcodes the bookmark colour in
+                                // globals.css, so it's shown but not editable.
+                                const color = bm ? preview[FILL_TOKEN[bm]] : "#ff2ec4";
+                                return (
+                                  <span
+                                    {...(bm ? accentTarget("bookmark", "bookmark") : { title: "Fixed in Modern dark mode" })}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold ${bm ? TARGET_CLASS : ""}`}
+                                    style={{ color, border: `2px solid ${color}`, borderRadius: surface.radius }}
+                                  >
+                                    <Bookmark className="h-3.5 w-3.5" />
+                                    Saved
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {accentEditing && (() => {
+                        const { title, hint, body } = accentEditorBody(accentEditing.key);
+                        return (
+                          <PreviewEditPopover
+                            anchor={accentEditing.anchor}
+                            title={title}
+                            hint={hint}
+                            onClose={closeAccentEditor}
+                          >
+                            {body}
+                          </PreviewEditPopover>
+                        );
+                      })()}
+                    </div>
                   </div>
-                  <Toggle checked={modern.darkAuto} onChange={() => setDarkAuto(!modern.darkAuto)} />
+
+                  <div className="mt-5 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={saveAccents}
+                      disabled={accentSaving || !accentsDirty}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                    >
+                      {accentSaving ? "Saving…" : accentsDirty ? "Save colors" : "Saved"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTrio(editingDefault);
+                        // Text colours go back to auto along with the fills.
+                        setAccentText((prev) => ({
+                          ...prev,
+                          [theme]: { ...prev[theme], [scheme]: ACCENT_TEXT_DEFAULT[theme][scheme] },
+                        }));
+                      }}
+                      disabled={
+                        accentSaving ||
+                        (trioEqual(editing, editingDefault) &&
+                          ACCENT_KEYS.every((k) => textOverrides[k] === null))
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition hover:border-zinc-300 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reset {isModern ? "" : scheme}
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            <div className={`mt-4 space-y-3 ${modernDarkLocked ? "pointer-events-none opacity-50" : ""}`}>
-              {presetGroups.map((group, gi) => (
-                <div key={group.heading ?? `group-${gi}`}>
-                  {group.heading && (
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">
-                      {group.heading}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    {group.items.map((p) => {
-                      const active = trioEqual(editing, p.trio);
+            <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-500">
+                  <Moon className="h-5 w-5" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Dark mode colors
+                    </h2>
+                    <span className="shrink-0 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                      Editing {isModern ? "Modern" : "Neo-Brutalist"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    The base colors dark mode is built from. Muted text, the footer and
+                    heavier outlines are generated from these, so you only set four.
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {DARK_SURFACE_PRESETS.map((p) => {
+                      const active = surfacesEqual(editingSurfaces, p.value);
                       return (
                         <button
                           key={p.label}
                           type="button"
-                          disabled={modernDarkLocked}
-                          onClick={() => setEditingTrio(p.trio)}
+                          onClick={() => setSurfaceSet(p.value)}
                           className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                             active
                               ? "border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100"
                               : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
                           }`}
                         >
-                          <span className="flex -space-x-1">
-                            {[p.trio.accent, p.trio.accent2, p.trio.accent3].map((c, i) => (
-                              <span
-                                key={i}
-                                className="h-3.5 w-3.5 rounded-full ring-1 ring-white dark:ring-zinc-900"
-                                style={{ backgroundColor: c }}
-                              />
-                            ))}
-                          </span>
+                          <span
+                            className="h-3.5 w-3.5 rounded-full ring-1 ring-zinc-300 dark:ring-zinc-600"
+                            style={{ backgroundColor: p.value.background }}
+                          />
                           {p.label}
                           {active && <Check className="h-3 w-3" />}
                         </button>
                       );
                     })}
                   </div>
-                </div>
-              ))}
-            </div>
 
-            <div className={`mt-4 space-y-3 ${modernDarkLocked ? "opacity-50" : ""}`}>
-              {ACCENT_FIELDS.map((f) => {
-                const value = editing[f.key];
-                const valid = isValidHex(value);
-                return (
-                  <div key={f.key} className="flex items-center gap-3">
-                    <label
-                      className="relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
-                      style={{ backgroundColor: valid ? value : "transparent" }}
-                    >
-                      <input
-                        type="color"
-                        value={valid ? normalizeHex(value) : "#000000"}
-                        disabled={modernDarkLocked}
-                        onChange={(e) => setAccentField(f.key, e.target.value)}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
-                        aria-label={`${f.label} color`}
-                      />
-                    </label>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {f.label}
-                      </p>
-                      <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                        {f.hint}
-                      </p>
-                    </div>
-                    <input
-                      type="text"
-                      value={value}
-                      disabled={modernDarkLocked}
-                      onChange={(e) => setAccentField(f.key, e.target.value)}
-                      spellCheck={false}
-                      className={`w-28 rounded-lg border bg-transparent px-2.5 py-1.5 font-mono text-xs uppercase text-zinc-900 outline-none dark:text-zinc-100 ${
-                        valid
-                          ? "border-zinc-200 focus:border-zinc-400 dark:border-zinc-700 dark:focus:border-zinc-500"
-                          : "border-red-400 focus:border-red-500"
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Live preview — rendered in the real theme's framing (border
-                weight, radius, shadow, surface) so you can see how the colors
-                actually land, not just the swatches. */}
-            <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
-              <div className="flex items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50 px-3 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Preview
-                </span>
-                <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                  {isModern ? "Modern" : "Neo-Brutalist"} · {scheme}
-                </span>
-              </div>
-
-              <div className="p-4" style={{ backgroundColor: surface.bg }}>
-                <div
-                  className="p-4"
-                  style={{
-                    backgroundColor: surface.bg,
-                    color: surface.fg,
-                    border: `${surface.borderWidth}px solid ${surface.border}`,
-                    borderRadius: surface.radius,
-                    boxShadow: surface.shadow,
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span
-                      className="inline-flex items-center px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider"
-                      style={{
-                        backgroundColor: preview["--accent-3"],
-                        color: preview["--on-accent-3"],
-                        border: `${surface.borderWidth}px solid ${surface.border}`,
-                        borderRadius: surface.pill,
-                      }}
-                    >
-                      Category
-                    </span>
-                    <span className="text-[11px] font-semibold" style={{ color: surface.muted }}>
-                      5 min read
-                    </span>
+                  <div className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                    {SURFACE_FIELDS.map((f) => {
+                      const value = editingSurfaces[f.key];
+                      const valid = isValidHex(value);
+                      return (
+                        // min-w-0: grid items default to their content width,
+                        // which let the long hints push the hex field out.
+                        <div key={f.key} className="flex min-w-0 items-center gap-3">
+                          <label
+                            className="relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
+                            style={{ backgroundColor: valid ? value : "transparent" }}
+                          >
+                            <input
+                              type="color"
+                              value={valid ? normalizeHex(value) : "#000000"}
+                              onChange={(e) => setSurfaceField(f.key, e.target.value)}
+                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                              aria-label={`${f.label} color`}
+                            />
+                          </label>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                              {f.label}
+                            </p>
+                            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                              {f.hint}
+                            </p>
+                          </div>
+                          <input
+                            type="text"
+                            value={value}
+                            onChange={(e) => setSurfaceField(f.key, e.target.value)}
+                            spellCheck={false}
+                            className={`w-28 rounded-lg border bg-transparent px-2.5 py-1.5 font-mono text-xs uppercase text-zinc-900 outline-none dark:text-zinc-100 ${
+                              valid
+                                ? "border-zinc-200 focus:border-zinc-400 dark:border-zinc-700 dark:focus:border-zinc-500"
+                                : "border-red-400 focus:border-red-500"
+                            }`}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  <p className="mt-3 text-base font-extrabold tracking-tight">
-                    The quick brown fox
-                  </p>
-                  <p className="mt-1 text-xs" style={{ color: surface.muted }}>
-                    Body copy sits on the surface, with links picking up the primary accent.
+                  {/* Derived values — shown read-only so it's clear what the four
+                      pickers above are driving. */}
+                  <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 dark:border-zinc-700">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                      Generated
+                    </span>
+                    {(
+                      [
+                        { label: "Muted text", value: derivedDark["--muted-foreground"] },
+                        { label: "Outline", value: derivedDark["--border-heavy"] },
+                        { label: "Footer", value: derivedDark["--footer-bg"] },
+                      ] as { label: string; value: string }[]
+                    ).map((d) => (
+                      <span key={d.label} className="inline-flex items-center gap-1.5">
+                        <span
+                          className="h-4 w-4 rounded ring-1 ring-zinc-300 dark:ring-zinc-600"
+                          style={{ backgroundColor: d.value }}
+                        />
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{d.label}</span>
+                        <span className="font-mono text-[11px] uppercase text-zinc-400 dark:text-zinc-500">
+                          {d.value}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+
+                  <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+                    Switch the accent preview above to <strong>Dark</strong> to see these applied.
                   </p>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span
-                      className="inline-flex items-center px-3 py-2 text-xs font-extrabold uppercase tracking-wide"
-                      style={{
-                        backgroundColor: preview["--accent"],
-                        color: preview["--on-accent"],
-                        border: `${surface.borderWidth}px solid ${surface.border}`,
-                        borderRadius: surface.pill,
-                        boxShadow: surface.shadow,
-                      }}
+                  <div className="mt-4 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={saveSurfaces}
+                      disabled={surfaceSaving || !surfacesDirty}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
                     >
-                      Read more
-                    </span>
-                    <span
-                      className="inline-flex items-center px-3 py-2 text-xs font-extrabold uppercase tracking-wide"
-                      style={{
-                        backgroundColor: preview["--accent-2"],
-                        color: preview["--on-accent-2"],
-                        border: `${surface.borderWidth}px solid ${surface.border}`,
-                        borderRadius: surface.pill,
-                      }}
+                      {surfaceSaving ? "Saving…" : surfacesDirty ? "Save dark colors" : "Saved"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSurfaceSet(surfaceDefault)}
+                      disabled={surfaceSaving || surfacesEqual(editingSurfaces, surfaceDefault)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition hover:border-zinc-300 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
                     >
-                      Featured
-                    </span>
-                    <span
-                      className="inline-flex items-center px-3 py-2 text-xs font-bold"
-                      style={{
-                        backgroundColor: preview["--accent-tint"],
-                        color: preview["--accent"],
-                        borderRadius: surface.radius,
-                      }}
-                    >
-                      Tint surface
-                    </span>
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reset
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
+          </>
+        )}
 
-            <div className="mt-4 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={saveAccents}
-                disabled={accentSaving || !accentsDirty}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-              >
-                {accentSaving ? "Saving…" : accentsDirty ? "Save colors" : "Saved"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingTrio(editingDefault)}
-                disabled={accentSaving || trioEqual(editing, editingDefault)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition hover:border-zinc-300 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Reset {isModern ? "" : scheme}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-5 rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-500">
-            <Moon className="h-5 w-5" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Dark mode colors
-              </h2>
-              <span className="shrink-0 rounded-full bg-zinc-500/10 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
-                Editing {isModern ? "Modern" : "Neo-Brutalist"}
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              The base colors dark mode is built from. Muted text, the footer and
-              heavier outlines are generated from these, so you only set four.
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {DARK_SURFACE_PRESETS.map((p) => {
-                const active = surfacesEqual(editingSurfaces, p.value);
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => setSurfaceSet(p.value)}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      active
-                        ? "border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100"
-                        : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
-                    }`}
-                  >
-                    <span
-                      className="h-3.5 w-3.5 rounded-full ring-1 ring-zinc-300 dark:ring-zinc-600"
-                      style={{ backgroundColor: p.value.background }}
-                    />
-                    {p.label}
-                    {active && <Check className="h-3 w-3" />}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {SURFACE_FIELDS.map((f) => {
-                const value = editingSurfaces[f.key];
-                const valid = isValidHex(value);
-                return (
-                  <div key={f.key} className="flex items-center gap-3">
-                    <label
-                      className="relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
-                      style={{ backgroundColor: valid ? value : "transparent" }}
-                    >
-                      <input
-                        type="color"
-                        value={valid ? normalizeHex(value) : "#000000"}
-                        onChange={(e) => setSurfaceField(f.key, e.target.value)}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        aria-label={`${f.label} color`}
-                      />
-                    </label>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {f.label}
-                      </p>
-                      <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                        {f.hint}
-                      </p>
-                    </div>
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => setSurfaceField(f.key, e.target.value)}
-                      spellCheck={false}
-                      className={`w-28 rounded-lg border bg-transparent px-2.5 py-1.5 font-mono text-xs uppercase text-zinc-900 outline-none dark:text-zinc-100 ${
-                        valid
-                          ? "border-zinc-200 focus:border-zinc-400 dark:border-zinc-700 dark:focus:border-zinc-500"
-                          : "border-red-400 focus:border-red-500"
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Derived values — shown read-only so it's clear what the four
-                pickers above are driving. */}
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 dark:border-zinc-700">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-                Generated
-              </span>
-              {(
-                [
-                  { label: "Muted text", value: derivedDark["--muted-foreground"] },
-                  { label: "Outline", value: derivedDark["--border-heavy"] },
-                  { label: "Footer", value: derivedDark["--footer-bg"] },
-                ] as { label: string; value: string }[]
-              ).map((d) => (
-                <span key={d.label} className="inline-flex items-center gap-1.5">
-                  <span
-                    className="h-4 w-4 rounded ring-1 ring-zinc-300 dark:ring-zinc-600"
-                    style={{ backgroundColor: d.value }}
-                  />
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{d.label}</span>
-                  <span className="font-mono text-[11px] uppercase text-zinc-400 dark:text-zinc-500">
-                    {d.value}
-                  </span>
+        {tab === "effects" && (
+          <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                  <Sparkles className="h-5 w-5" />
                 </span>
-              ))}
-            </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                    Homepage animated background
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    The moving neo-brutalist shapes that fly across the homepage
+                    behind the content. Turn this off for a plain, static backdrop.
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                    Status:{" "}
+                    <span className={enabled ? "text-emerald-500" : "text-zinc-400"}>
+                      {enabled ? "On" : "Off"}
+                    </span>
+                    {saving && " · saving…"}
+                  </p>
+                </div>
+              </div>
 
-            <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
-              Switch the preview above to <strong>Dark</strong> to see these applied.
-            </p>
-
-            <div className="mt-4 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={saveSurfaces}
-                disabled={surfaceSaving || !surfacesDirty}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-              >
-                {surfaceSaving ? "Saving…" : surfacesDirty ? "Save dark colors" : "Saved"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSurfaceSet(surfaceDefault)}
-                disabled={surfaceSaving || surfacesEqual(editingSurfaces, surfaceDefault)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 transition hover:border-zinc-300 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Reset
-              </button>
+              <Toggle checked={enabled} onChange={handleToggle} />
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-800/80 dark:bg-zinc-900">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                Homepage animated background
-              </h2>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                The moving neo-brutalist shapes that fly across the homepage
-                behind the content. Turn this off for a plain, static backdrop.
-              </p>
-              <p className="mt-2 text-xs font-medium text-zinc-400 dark:text-zinc-500">
-                Status:{" "}
-                <span className={enabled ? "text-emerald-500" : "text-zinc-400"}>
-                  {enabled ? "On" : "Off"}
-                </span>
-                {saving && " · saving…"}
-              </p>
+        {tab === "borders" && isModern && (
+            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
+              Borders &amp; shadows only apply to the{" "}
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">Neo-Brutalist</span>{" "}
+              theme — Modern uses hairline borders and soft shadows. Switch themes on the{" "}
+              <button
+                type="button"
+                onClick={() => setTab("theme")}
+                className="font-medium text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400"
+              >
+                Theme
+              </button>{" "}
+              tab to edit them.
             </div>
-          </div>
+        )}
 
-          <Toggle checked={enabled} onChange={handleToggle} />
-        </div>
+        {tab === "borders" && !isModern && (
+            <BrutalistBorderSettings
+              value={border}
+              saved={savedBorder}
+              // From the *saved* surfaces: that's what the site's dark outline
+              // currently derives from, until the surfaces above are saved too.
+              darkBorderDefault={darkSurfaceVars(savedSurfaces.brutalist, "brutalist")["--border-heavy"]}
+              darkBackground={savedSurfaces.brutalist.background}
+              onChange={setBorder}
+              onSaved={(next) => {
+                setSavedBorder(next);
+                setToast("Borders & shadows updated");
+              }}
+              onError={setError}
+            />
+        )}
+
+        {tab === "typography" && (
+          <HeadingTypeSettings
+            theme={theme}
+            value={headingType[theme]}
+            saved={savedHeadingType[theme]}
+            onChange={(next) => setHeadingType((prev) => ({ ...prev, [theme]: next }))}
+            onSaved={(next) => {
+              setSavedHeadingType((prev) => ({ ...prev, [theme]: next }));
+              setToast("Heading styles updated");
+            }}
+            onError={setError}
+          />
+        )}
       </div>
-
-      <HeadingTypeSettings
-        theme={theme}
-        value={headingType[theme]}
-        saved={savedHeadingType[theme]}
-        onChange={(next) => setHeadingType((prev) => ({ ...prev, [theme]: next }))}
-        onSaved={(next) => {
-          setSavedHeadingType((prev) => ({ ...prev, [theme]: next }));
-          setToast("Heading styles updated");
-        }}
-        onError={setError}
-      />
 
       {toast && <SuccessToast message={toast} onClose={() => setToast(null)} />}
     </div>

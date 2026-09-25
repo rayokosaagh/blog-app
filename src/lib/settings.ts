@@ -17,6 +17,12 @@ import {
   type ThemeAccents,
   type DarkSurfaces,
 } from "@/lib/color";
+import {
+  brutalistBorderFrom,
+  parseBrutalistBorder,
+  type BrutalistBorder,
+} from "@/lib/brutalistBorder";
+import { accentTextFrom, parseAccentText, type AccentText } from "@/lib/accentText";
 
 // Re-exported for existing importers; the values live in @/lib/color so the
 // dashboard's client components can read them without pulling in Prisma.
@@ -44,6 +50,14 @@ export const HEADING_TYPE_KEYS = {
   brutalist: "headingTypeBrutalist",
   modern: "headingTypeModern",
 } as const;
+
+// Brutalist outline/shadow colours per scheme + shadow blur, one JSON blob for
+// the same reason as the heading type above.
+export const BRUTALIST_BORDER_KEY = "brutalistBorder";
+
+// Optional text colours on accent fills, per theme + scheme. One blob; null
+// entries mean "auto contrast".
+export const ACCENT_TEXT_KEY = "accentText";
 
 export type UiTheme = "brutalist" | "modern";
 export const UI_THEME_DEFAULT: UiTheme = "brutalist";
@@ -325,6 +339,16 @@ export async function setHeadingType(theme: UiTheme, value: unknown): Promise<vo
   await setSetting(HEADING_TYPE_KEYS[theme], JSON.stringify(headingTypeFrom(value, theme)));
 }
 
+/** Persist the brutalist border settings, coerced to a complete valid blob. */
+export async function setBrutalistBorder(value: unknown): Promise<void> {
+  await setSetting(BRUTALIST_BORDER_KEY, JSON.stringify(brutalistBorderFrom(value)));
+}
+
+/** Persist the accent text overrides, coerced to a complete valid blob. */
+export async function setAccentText(value: unknown): Promise<void> {
+  await setSetting(ACCENT_TEXT_KEY, JSON.stringify(accentTextFrom(value)));
+}
+
 /**
  * Everything the root layout needs to render themed HTML, in ONE query.
  * The layout runs on every page, so this deliberately avoids the
@@ -336,6 +360,8 @@ export async function getThemeSettings(): Promise<{
   brutalistAccents: ThemeAccents;
   darkSurfaces: DarkSurfacesByTheme;
   headingType: HeadingTypeByTheme;
+  brutalistBorder: BrutalistBorder;
+  accentText: AccentText;
 }> {
   const map = await getSettingsMap([
     UI_THEME_KEY,
@@ -348,6 +374,8 @@ export async function getThemeSettings(): Promise<{
     ...MODERN_SURFACE_KEYS,
     HEADING_TYPE_KEYS.brutalist,
     HEADING_TYPE_KEYS.modern,
+    BRUTALIST_BORDER_KEY,
+    ACCENT_TEXT_KEY,
   ]);
   return {
     uiTheme: map[UI_THEME_KEY] === "modern" ? "modern" : UI_THEME_DEFAULT,
@@ -358,5 +386,7 @@ export async function getThemeSettings(): Promise<{
     },
     darkSurfaces: surfacesByThemeFrom(map),
     headingType: headingFrom(map),
+    brutalistBorder: parseBrutalistBorder(map[BRUTALIST_BORDER_KEY]),
+    accentText: parseAccentText(map[ACCENT_TEXT_KEY]),
   };
 }

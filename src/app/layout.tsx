@@ -5,6 +5,8 @@ import Providers from "./providers";
 import { getThemeSettings } from "@/lib/settings";
 import { modernAccentCss, brutalistAccentCss, darkSurfaceCss } from "@/lib/color";
 import { headingTypeCss } from "@/lib/typography";
+import { brutalistBorderCss } from "@/lib/brutalistBorder";
+import { accentTextCss } from "@/lib/accentText";
 import { APP_URL } from "@/lib/appUrl";
 
 const geistSans = Geist({
@@ -92,8 +94,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { uiTheme, modernAccents, brutalistAccents, darkSurfaces, headingType } =
-    await getThemeSettings();
+  const {
+    uiTheme,
+    modernAccents,
+    brutalistAccents,
+    darkSurfaces,
+    headingType,
+    brutalistBorder,
+    accentText,
+  } = await getThemeSettings();
 
   // Admin-chosen accent colours for both themes, injected as scoped overrides
   // of the palette tokens. Server-rendered into the initial HTML so there's no
@@ -108,10 +117,16 @@ export default async function RootLayout({
       modernAccents.light,
       modernAccents.darkAuto ? null : modernAccents.dark,
     ) +
+    // Admin text colours on accent fills. Must follow the accent blocks: the
+    // dark rules share a selector and the later one wins.
+    accentTextCss(accentText) +
     // Dark-mode base surfaces (background/card/border/text) per theme. Emitted
     // after the accents; they touch a disjoint set of custom properties.
     darkSurfaceCss("brutalist", darkSurfaces.brutalist) +
     darkSurfaceCss("modern", darkSurfaces.modern) +
+    // Brutalist outline/shadow overrides. Must follow darkSurfaceCss — both
+    // set --border-heavy on the same dark selector and the later one wins.
+    brutalistBorderCss(brutalistBorder) +
     // Heading type tokens. Emitted for both themes for the same reason as the
     // palettes above: only the active [data-theme] block matches, so switching
     // theme stays a pure attribute flip.

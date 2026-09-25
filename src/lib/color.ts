@@ -76,6 +76,13 @@ function contrast(a: RGB, b: RGB): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
+/** WCAG contrast ratio between two hex colours; null if either is invalid. */
+export function contrastRatio(a: string, b: string): number | null {
+  const ra = hexToRgb(a);
+  const rb = hexToRgb(b);
+  return ra && rb ? contrast(ra, rb) : null;
+}
+
 // Minimum contrast white text must clear before we fall back to dark ink. 3.0
 // is the WCAG AA threshold for large/bold text, which is what these accent
 // fills always carry — bold uppercase button labels, badges and pills.

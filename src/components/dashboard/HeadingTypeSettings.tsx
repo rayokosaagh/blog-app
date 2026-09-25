@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Type, RotateCcw } from "lucide-react";
+import { Type, RotateCcw, Sun, Moon } from "lucide-react";
 import type { UiTheme } from "@/lib/settings";
+import {
+  usePreviewEditor,
+  PreviewEditPopover,
+  TARGET_CLASS,
+} from "@/components/dashboard/PreviewEditor";
 import {
   HEADING_ROLES,
   HEADING_ROLE_LABELS,
@@ -113,154 +118,88 @@ export default function HeadingTypeSettings({
             theme only.
           </p>
 
-          <div className="mt-4 space-y-2">
-            {HEADING_ROLES.map((role) => {
-              const style = value[role];
-              const isOpen = openRole === role;
-              const changed =
-                JSON.stringify(style) !== JSON.stringify(defaults[role]);
-              return (
-                <div
-                  key={role}
-                  className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenRole(isOpen ? null : role)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+          <div className="mt-5 grid gap-6 lg:grid-cols-2">
+            {/* First in the DOM so it sits above the list on phones; moved to
+                the right column on wide screens. */}
+            <div className="min-w-0 lg:order-last lg:sticky lg:top-6 lg:self-start">
+              <PagePreview
+                theme={theme}
+                value={value}
+                activeRole={openRole}
+                onPick={setOpenRole}
+                onPatch={setRole}
+              />
+            </div>
+
+            <div className="min-w-0 space-y-2">
+              {HEADING_ROLES.map((role) => {
+                const style = value[role];
+                const isOpen = openRole === role;
+                const changed =
+                  JSON.stringify(style) !== JSON.stringify(defaults[role]);
+                return (
+                  <div
+                    key={role}
+                    className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700"
                   >
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          {HEADING_ROLE_LABELS[role]}
-                        </span>
-                        {changed && (
-                          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                            Custom
+                    <button
+                      type="button"
+                      onClick={() => setOpenRole(isOpen ? null : role)}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                            {HEADING_ROLE_LABELS[role]}
                           </span>
-                        )}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
-                        {HEADING_ROLE_HINTS[role]}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-xs tabular-nums text-zinc-400">
-                      {style.minSize === style.maxSize
-                        ? `${style.minSize}rem`
-                        : `${style.minSize}–${style.maxSize}rem`}
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div className="border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
-                      <Preview role={role} style={style} />
-
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        <NumberField
-                          label="Min size"
-                          suffix="rem"
-                          hint="At narrow viewports"
-                          value={style.minSize}
-                          min={SIZE_MIN}
-                          max={SIZE_MAX}
-                          step={0.0625}
-                          onChange={(minSize) => setRole(role, { minSize })}
-                        />
-                        <NumberField
-                          label="Max size"
-                          suffix="rem"
-                          hint="At wide viewports"
-                          value={style.maxSize}
-                          min={SIZE_MIN}
-                          max={SIZE_MAX}
-                          step={0.0625}
-                          onChange={(maxSize) => setRole(role, { maxSize })}
-                        />
-
-                        <div>
-                          <FieldLabel>Font</FieldLabel>
-                          <select
-                            value={style.font}
-                            onChange={(e) =>
-                              setRole(role, { font: e.target.value as HeadingFont })
-                            }
-                            className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-                          >
-                            {HEADING_FONTS.map((f) => (
-                              <option key={f} value={f}>
-                                {HEADING_FONT_LABELS[f]}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <FieldLabel>Weight</FieldLabel>
-                          <select
-                            value={style.weight}
-                            onChange={(e) =>
-                              setRole(role, { weight: Number(e.target.value) })
-                            }
-                            className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
-                          >
-                            {HEADING_FONT_WEIGHTS[style.font].map((w) => (
-                              <option key={w} value={w}>
-                                {w}
-                              </option>
-                            ))}
-                          </select>
-                          {/* Bebas Neue ships one weight; saying so beats
-                              offering steps the browser would only fake. */}
-                          {HEADING_FONT_WEIGHTS[style.font].length === 1 && (
-                            <p className="mt-1 text-xs text-zinc-400">
-                              {HEADING_FONT_LABELS[style.font]} has only one weight.
-                            </p>
+                          {changed && (
+                            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                              Custom
+                            </span>
                           )}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                          {HEADING_ROLE_HINTS[role]}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-zinc-400">
+                        {style.minSize === style.maxSize
+                          ? `${style.minSize}rem`
+                          : `${style.minSize}–${style.maxSize}rem`}
+                      </span>
+                    </button>
+
+                    {isOpen && (
+                      <div className="border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
+                        {/* Wide screens have the page preview beside the list;
+                            phones would have to scroll up to it, so they keep
+                            this one inline. */}
+                        <div className="lg:hidden">
+                          <Preview role={role} style={style} />
                         </div>
 
-                        <NumberField
-                          label="Letter spacing"
-                          suffix="em"
-                          hint="Negative tightens"
-                          value={style.tracking}
-                          min={TRACKING_MIN}
-                          max={TRACKING_MAX}
-                          step={0.005}
-                          onChange={(tracking) => setRole(role, { tracking })}
-                        />
+                        <div className="mt-4 lg:mt-0">
+                          <RoleFields style={style} onPatch={(patch) => setRole(role, patch)} />
+                        </div>
 
-                        <label className="flex cursor-pointer items-center gap-2.5 self-end pb-2">
-                          <input
-                            type="checkbox"
-                            checked={style.uppercase}
-                            onChange={(e) =>
-                              setRole(role, { uppercase: e.target.checked })
-                            }
-                            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
-                          />
-                          <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                            Uppercase
-                          </span>
-                        </label>
+                        <button
+                          type="button"
+                          onClick={() => onChange({ ...value, [role]: defaults[role] })}
+                          disabled={!changed}
+                          className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 transition hover:text-zinc-800 disabled:opacity-40 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          Reset this heading
+                        </button>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => onChange({ ...value, [role]: defaults[role] })}
-                        disabled={!changed}
-                        className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 transition hover:text-zinc-800 disabled:opacity-40 dark:text-zinc-400 dark:hover:text-zinc-200"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        Reset this heading
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-5 flex items-center gap-3">
             <button
               type="button"
               onClick={save}
@@ -284,6 +223,112 @@ export default function HeadingTypeSettings({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The per-role controls, shared by the list row and the page preview's
+ * click-to-edit popover. `compact` keeps two columns at any width, since the
+ * popover is narrow regardless of the viewport.
+ */
+function RoleFields({
+  style,
+  onPatch,
+  compact = false,
+}: {
+  style: HeadingStyle;
+  onPatch: (patch: Partial<HeadingStyle>) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "grid grid-cols-2 gap-3" : "grid gap-4 sm:grid-cols-2"}>
+      <NumberField
+        label="Min size"
+        suffix="rem"
+        hint="At narrow viewports"
+        value={style.minSize}
+        min={SIZE_MIN}
+        max={SIZE_MAX}
+        step={0.0625}
+        onChange={(minSize) => onPatch({ minSize })}
+      />
+      <NumberField
+        label="Max size"
+        suffix="rem"
+        hint="At wide viewports"
+        value={style.maxSize}
+        min={SIZE_MIN}
+        max={SIZE_MAX}
+        step={0.0625}
+        onChange={(maxSize) => onPatch({ maxSize })}
+      />
+
+      <div>
+        <FieldLabel>Font</FieldLabel>
+        <select
+          value={style.font}
+          onChange={(e) =>
+            onPatch({ font: e.target.value as HeadingFont })
+          }
+          className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        >
+          {HEADING_FONTS.map((f) => (
+            <option key={f} value={f}>
+              {HEADING_FONT_LABELS[f]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <FieldLabel>Weight</FieldLabel>
+        <select
+          value={style.weight}
+          onChange={(e) =>
+            onPatch({ weight: Number(e.target.value) })
+          }
+          className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+        >
+          {HEADING_FONT_WEIGHTS[style.font].map((w) => (
+            <option key={w} value={w}>
+              {w}
+            </option>
+          ))}
+        </select>
+        {/* Bebas Neue ships one weight; saying so beats
+            offering steps the browser would only fake. */}
+        {HEADING_FONT_WEIGHTS[style.font].length === 1 && (
+          <p className="mt-1 text-xs text-zinc-400">
+            {HEADING_FONT_LABELS[style.font]} has only one weight.
+          </p>
+        )}
+      </div>
+
+      <NumberField
+        label="Letter spacing"
+        suffix="em"
+        hint="Negative tightens"
+        value={style.tracking}
+        min={TRACKING_MIN}
+        max={TRACKING_MAX}
+        step={0.005}
+        onChange={(tracking) => onPatch({ tracking })}
+      />
+
+      <label className="flex cursor-pointer items-center gap-2.5 self-end pb-2">
+        <input
+          type="checkbox"
+          checked={style.uppercase}
+          onChange={(e) =>
+            onPatch({ uppercase: e.target.checked })
+          }
+          className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+        />
+        <span className="text-sm text-zinc-700 dark:text-zinc-300">
+          Uppercase
+        </span>
+      </label>
     </div>
   );
 }
@@ -346,31 +391,214 @@ const SAMPLE: Record<HeadingRole, string> = {
   eyebrow: "Scored & tested",
 };
 
+/**
+ * Inline so a preview uses the same resolved values the site will — including
+ * the clamp(), so it scales with the viewport exactly as the real heading
+ * does. Pair with the `heading-preview` class.
+ */
+function headingCss(style: HeadingStyle): React.CSSProperties {
+  return {
+    fontSize: sizeExpression(style),
+    fontWeight: style.weight,
+    letterSpacing: `${style.tracking}em`,
+    textTransform: style.uppercase ? "uppercase" : "none",
+    // Not fontFamily directly: the global `html body *` rule forces
+    // --font-sans with !important, so the face is handed over as a custom
+    // property that .heading-preview reads back with the same weight. Setting
+    // it inline here would simply be ignored.
+    ["--preview-font" as string]: HEADING_FONT_STACKS[style.font],
+    lineHeight: 1.1,
+    margin: 0,
+    color: "inherit",
+  } as React.CSSProperties;
+}
+
 function Preview({ role, style }: { role: HeadingRole; style: HeadingStyle }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-5 dark:border-zinc-700 dark:bg-zinc-950">
       <p
-        // Inline so the preview uses the same resolved values the site will —
-        // including the clamp(), so it scales with the panel exactly as the
-        // real heading scales with the page.
-        style={{
-          fontSize: sizeExpression(style),
-          fontWeight: style.weight,
-          letterSpacing: `${style.tracking}em`,
-          textTransform: style.uppercase ? "uppercase" : "none",
-          // Not fontFamily directly: the global `html body *` rule forces
-          // --font-sans with !important, so the face is handed over as a
-          // custom property that .heading-preview reads back with the same
-          // weight. Setting it inline here would simply be ignored.
-          ["--preview-font" as string]: HEADING_FONT_STACKS[style.font],
-          lineHeight: 1.1,
-          margin: 0,
-          color: "inherit",
-        } as React.CSSProperties}
+        style={headingCss(style)}
         className="heading-preview truncate text-zinc-900 dark:text-zinc-100"
       >
         {SAMPLE[role]}
       </p>
+    </div>
+  );
+}
+
+function PreviewHeading({
+  as: Tag = "p",
+  style,
+  targetProps,
+  children,
+}: {
+  as?: "h1" | "h2" | "h3" | "p";
+  style: HeadingStyle;
+  /** Click-to-edit wiring from usePreviewEditor().target(). */
+  targetProps: React.HTMLAttributes<HTMLElement>;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tag
+      {...targetProps}
+      style={headingCss(style)}
+      className={`heading-preview break-words ${TARGET_CLASS}`}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+type Scheme = "light" | "dark";
+
+// Theme framing for the page preview. Mirrors globals.css' default tokens —
+// the point is to show the headings in the right *kind* of surface, not to
+// reproduce every admin colour choice.
+const FRAME: Record<UiTheme, Record<Scheme, {
+  bg: string; card: string; fg: string; muted: string; border: string;
+  borderWidth: number; radius: number; shadow: string;
+}>> = {
+  brutalist: {
+    light: {
+      bg: "#ffffff", card: "#ffffff", fg: "#0e1116", muted: "#4b5566", border: "#000000",
+      borderWidth: 3, radius: 0, shadow: "4px 4px 0 0 #000000",
+    },
+    dark: {
+      bg: "#0f0f0f", card: "#16181d", fg: "#ffffff", muted: "#a3a3a3", border: "#3f3f3f",
+      borderWidth: 3, radius: 0, shadow: "4px 4px 0 0 #bbbbbb",
+    },
+  },
+  modern: {
+    light: {
+      bg: "#fafafa", card: "#ffffff", fg: "#0e1116", muted: "#6b7280", border: "#e5e7eb",
+      borderWidth: 1, radius: 16, shadow: "0 4px 12px -2px rgba(16,24,40,0.08)",
+    },
+    dark: {
+      bg: "#0a0a0c", card: "#131316", fg: "#ffffff", muted: "#9ca3af", border: "#232328",
+      borderWidth: 1, radius: 16, shadow: "0 4px 12px -2px rgba(0,0,0,0.5)",
+    },
+  },
+};
+
+/**
+ * Every heading role in context — a miniature page, so the admin sees how the
+ * roles sit against each other rather than one at a time. The role whose
+ * editor is open gets an outline, tying the preview to the field being typed
+ * in.
+ */
+function PagePreview({
+  theme,
+  value,
+  activeRole,
+  onPick,
+  onPatch,
+}: {
+  theme: UiTheme;
+  value: HeadingType;
+  activeRole: HeadingRole | null;
+  /** A heading was clicked — the list expands the same role. */
+  onPick: (role: HeadingRole) => void;
+  onPatch: (role: HeadingRole, patch: Partial<HeadingStyle>) => void;
+}) {
+  const [scheme, setScheme] = useState<Scheme>("light");
+  const f = FRAME[theme][scheme];
+  const { containerRef, editing, close, target } = usePreviewEditor<HeadingRole>(onPick);
+
+  // A render helper rather than a nested component, so React doesn't see a
+  // new component type (and remount) on every keystroke. The role expanded in
+  // the list stays outlined even with no popover open.
+  const heading = (role: HeadingRole, text: string, as?: "h1" | "h2" | "h3") => (
+    <PreviewHeading
+      as={as}
+      style={value[role]}
+      targetProps={target(role, HEADING_ROLE_LABELS[role], role === activeRole)}
+    >
+      {text}
+    </PreviewHeading>
+  );
+
+  const card = {
+    backgroundColor: f.card,
+    border: `${f.borderWidth}px solid ${f.border}`,
+    borderRadius: f.radius,
+    boxShadow: f.shadow,
+  };
+
+  return (
+    // Unclipped wrapper so the popover can hang past the preview's edge.
+    <div ref={containerRef} className="relative">
+      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+        <div className="flex items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50 px-3 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Page preview · click a heading
+          </span>
+          <div className="inline-flex rounded-md border border-zinc-200 p-0.5 dark:border-zinc-700">
+            {(["light", "dark"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                setScheme(s);
+                close();
+              }}
+                aria-pressed={scheme === s}
+                aria-label={`${s} preview`}
+                className={`rounded px-1.5 py-1 transition ${
+                  scheme === s
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }`}
+              >
+                {s === "light" ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-5 p-5" style={{ backgroundColor: f.bg, color: f.fg }}>
+          <div>
+            {heading("eyebrow", SAMPLE.eyebrow)}
+            <div className="mt-2">{heading("display", SAMPLE.display, "h1")}</div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${f.border}` }} className="pt-4">
+            {heading("pageTitle", SAMPLE.pageTitle, "h2")}
+            <p className="mt-1.5 text-xs" style={{ color: f.muted }}>
+              Reviews, news and comparisons from the team.
+            </p>
+          </div>
+
+          <div>
+            {heading("section", SAMPLE.section, "h2")}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {["Xiaomi 17T Review", "Galaxy S26 vs Pixel 10"].map((t) => (
+                <div key={t} className="min-w-0 p-3" style={card}>
+                  {heading("card", t, "h3")}
+                  <p className="mt-1.5 text-[11px] leading-snug" style={{ color: f.muted }}>
+                    A short excerpt sits under the card title.
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {editing && (
+        <PreviewEditPopover
+          anchor={editing.anchor}
+          title={HEADING_ROLE_LABELS[editing.key]}
+          hint={`${HEADING_ROLE_HINTS[editing.key]} Applies to every one on the site.`}
+          width={340}
+          onClose={close}
+        >
+          <RoleFields
+            compact
+            style={value[editing.key]}
+            onPatch={(patch) => onPatch(editing!.key, patch)}
+          />
+        </PreviewEditPopover>
+      )}
     </div>
   );
 }

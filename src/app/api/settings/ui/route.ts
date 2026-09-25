@@ -13,6 +13,8 @@ import {
   setBrutalistAccents,
   setDarkSurfaces,
   setHeadingType,
+  setBrutalistBorder,
+  setAccentText,
   getThemeSettings,
   type UiTheme,
 } from "@/lib/settings";
@@ -35,6 +37,8 @@ async function readAll() {
     darkSurfaces: theme.darkSurfaces,
     brutalistAccents: theme.brutalistAccents,
     headingType: theme.headingType,
+    brutalistBorder: theme.brutalistBorder,
+    accentText: theme.accentText,
   };
 }
 
@@ -156,6 +160,19 @@ export async function PUT(request: Request) {
         touched = true;
       }
     }
+  }
+
+  // Brutalist outline/shadow — whole-blob like the headings: coerced on write,
+  // so an invalid colour becomes "theme default" and the blur is clamped.
+  if (body.brutalistBorder && typeof body.brutalistBorder === "object") {
+    await setBrutalistBorder(body.brutalistBorder);
+    touched = true;
+  }
+
+  // Accent text overrides — whole-blob, coerced on write (invalid → auto).
+  if (body.accentText && typeof body.accentText === "object") {
+    await setAccentText(body.accentText);
+    touched = true;
   }
 
   if (!touched) {

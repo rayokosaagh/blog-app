@@ -43,10 +43,13 @@
   --radius: 0px;
   --border-width: 3px;
   --shadow-color: var(--border-heavy);
-  --shadow-sm: 3px 3px 0 0 var(--shadow-color);
-  --shadow-md: 4px 4px 0 0 var(--shadow-color);
-  --shadow-lg: 6px 6px 0 0 var(--shadow-color);
-  --shadow-xl: 8px 8px 0 0 var(--shadow-color);
+  /* 0 = the classic hard block. Admin-tunable (Dashboard → UI → Borders &
+     shadows); modern redefines --shadow-* outright, so it never sees this. */
+  --shadow-blur: 0px;
+  --shadow-sm: 3px 3px var(--shadow-blur) 0 var(--shadow-color);
+  --shadow-md: 4px 4px var(--shadow-blur) 0 var(--shadow-color);
+  --shadow-lg: 6px 6px var(--shadow-blur) 0 var(--shadow-color);
+  --shadow-xl: 8px 8px var(--shadow-blur) 0 var(--shadow-color);
   --press-hover: translate(2px, 2px);
   --press-active: translate(4px, 4px);
   --press-hover-lg: translate(3px, 3px);
