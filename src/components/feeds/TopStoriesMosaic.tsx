@@ -64,24 +64,30 @@ function Meta({ story }: { story: MosaicStory }) {
 /** Photo pinned to the card's right edge, fading into the card surface on the left. */
 function SidePhoto({ story, width, sizes, priority = false }: { story: MosaicStory; width: string; sizes: string; priority?: boolean }) {
   return (
-    // overflow-hidden matters: the photo zooms 3% on hover, and without the
-    // clip its left edge slid out from under the fade gradient — a hairline of
-    // raw photo appeared beside the headline on every hover.
+    // The hover zoom scales the photo AND its fade together, as one layer.
+    // Zooming only the photo made Chrome split the (static) fade into a
+    // separate compositor layer for the length of the transition; the two
+    // layers pixel-snapped the fractional left edge differently, and a 1px
+    // line of raw photo flashed beside the headline on every hover. Scaled
+    // together they rasterise as one; overflow-hidden clips the grown edge
+    // against the card background, which is the fade's own starting colour.
     <div aria-hidden className={`pointer-events-none absolute inset-y-0 right-0 overflow-hidden ${width}`}>
-      {story.featuredImage ? (
-        <OptimizedImage
-          src={story.featuredImage}
-          alt=""
-          fill
-          sizes={sizes}
-          priority={priority}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-accent-tint" />
-      )}
-      {/* Fade into the card so the headline never sits on raw photo. */}
-      <div className="absolute inset-y-0 left-0 w-[38%] bg-gradient-to-r from-card via-card/60 to-transparent" />
+      <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.03]">
+        {story.featuredImage ? (
+          <OptimizedImage
+            src={story.featuredImage}
+            alt=""
+            fill
+            sizes={sizes}
+            priority={priority}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-accent-tint" />
+        )}
+        {/* Fade into the card so the headline never sits on raw photo. */}
+        <div className="absolute inset-y-0 left-0 w-[38%] bg-gradient-to-r from-card via-card/60 to-transparent" />
+      </div>
     </div>
   );
 }
