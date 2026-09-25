@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { verdictFieldsFromBody } from "@/lib/verdict";
 import { DEFAULT_POST_CATEGORY, isPostCategory } from "@/lib/blog/categories";
+import { productLinkFromBody } from "@/lib/blog/productLink";
 
 // Used by the dashboard: admins see every post, everyone else sees only their own.
 export async function GET(req: Request) {
@@ -73,6 +74,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const productLink = await productLinkFromBody(body);
+    if ("error" in productLink) {
+      return NextResponse.json({ error: productLink.error }, { status: 400 });
+    }
+
     const post = await prisma.post.create({
       data: {
         title,
@@ -87,6 +93,7 @@ export async function POST(req: Request) {
         // Preserve the exact order tags were selected in the picker.
         tagOrder: tagIds ?? [],
         ...verdictFieldsFromBody(body),
+        ...productLink.data,
         ...(tagIds && tagIds.length > 0
           ? { tags: { connect: tagIds.map((id: string) => ({ id })) } }
           : {}),

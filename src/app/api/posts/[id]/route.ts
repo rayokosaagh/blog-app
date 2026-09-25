@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { verdictFieldsFromBody } from "@/lib/verdict";
 import { isPostCategory } from "@/lib/blog/categories";
+import { productLinkFromBody } from "@/lib/blog/productLink";
 
 export async function GET(
   _: Request,
@@ -43,6 +44,11 @@ export async function PATCH(
     const body = await req.json();
     const { title, slug, content, published, featuredImage, tagIds, category } = body;
 
+    const productLink = await productLinkFromBody(body);
+    if ("error" in productLink) {
+      return NextResponse.json({ error: productLink.error }, { status: 400 });
+    }
+
     const updated = await prisma.post.update({
       where: { id },
       data: {
@@ -56,6 +62,8 @@ export async function PATCH(
         // Omitted entirely when the request carries no verdict keys, so a
         // partial update can't silently drop an existing score.
         ...verdictFieldsFromBody(body),
+        // Omitted when the request carries no productId, like the verdict.
+        ...productLink.data,
         // Preserve the exact order tags were selected in the picker.
         ...(tagIds !== undefined ? { tagOrder: tagIds } : {}),
         ...(tagIds !== undefined

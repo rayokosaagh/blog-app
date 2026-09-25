@@ -57,6 +57,13 @@ model Post {
   verdictSummary   String?  // the bottom line, 1–2 sentences
   verdictSubScores Json     @default("[]") // [{ label: "Camera", score: 8.5 }]
 
+  // ── Linked product ─────────────────────────────────────────────
+  // The catalogue entry this article is about, picked by the editor. Drives
+  // the "full detailed spec" card at the end of the post. Optional: news and
+  // guides usually have none, and deleting the product just unlinks it.
+  productId     String?
+  product       Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
   author        User      @relation(fields: [authorId], references: [id])
   comments      Comment[]
   ratings       Rating[]
@@ -67,6 +74,7 @@ model Post {
   @@index([createdAt])
   @@index([verdictScore])
   @@index([category, createdAt])
+  @@index([productId])
 }
 
 model Bookmark {
@@ -331,6 +339,7 @@ model Product {
   comparisonsAsA Comparison[] @relation("ComparisonProductA")
   comparisonsAsB Comparison[] @relation("ComparisonProductB")
   productOwnerships ProductOwnership[]
+  posts          Post[]
 
   @@index([categoryId])
   @@index([slug])

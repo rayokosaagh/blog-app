@@ -14,6 +14,7 @@ import VerdictEditor, {
   type VerdictDraft,
 } from "@/components/dashboard/VerdictEditor";
 import CategorySelect from "@/components/dashboard/CategorySelect";
+import ProductSelect from "@/components/dashboard/ProductSelect";
 import { DEFAULT_POST_CATEGORY } from "@/lib/blog/categories";
 import type { PostCategory } from "@/generated/prisma";
 
@@ -26,6 +27,7 @@ export default function NewPostPage() {
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
   const [category, setCategory] = useState<PostCategory>(DEFAULT_POST_CATEGORY);
+  const [productId, setProductId] = useState("");
   const [featuredImage, setFeaturedImage] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [verdict, setVerdict] = useState<VerdictDraft>(EMPTY_VERDICT);
@@ -99,6 +101,7 @@ export default function NewPostPage() {
           featuredImage,
           tagIds,
           category,
+          productId,
           ...verdictPayload(verdict),
         }),
       });
@@ -212,6 +215,8 @@ export default function NewPostPage() {
               it is about. Drives the /news, /reviews… pages and the badge on
               every card. */}
           <CategorySelect value={category} onChange={setCategory} />
+
+          <ProductSelect value={productId} onChange={setProductId} />
 
           <div>
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">
