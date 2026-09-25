@@ -1100,20 +1100,24 @@ html body .rich-text-render h3::before { font-family: var(--font-sans) !importan
         </FadeIn>
       )}
 
+      {/* Poll, rating and comments: max-w-[59rem] = the article's 56rem column
+          plus this wrapper's own 2 x 1.5rem padding, so each card is exactly
+          as wide as the article above it. At max-w-4xl the padding came out
+          of the 56rem and they were 48px narrower than the article. */}
       <FadeIn>
-        <div className="max-w-4xl mx-auto px-6 mt-6 mb-6 md:mt-8 md:mb-8">
+        <div className="max-w-[59rem] mx-auto px-6 mt-6 mb-6 md:mt-8 md:mb-8">
           <Poll />
         </div>
       </FadeIn>
 
       <FadeIn>
-        <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
+        <div className="max-w-[59rem] mx-auto px-6 mb-6 md:mb-8">
           <RatingMeter postId={post.id} />
         </div>
       </FadeIn>
 
       <FadeIn>
-        <div className="max-w-4xl mx-auto px-6 mb-6 md:mb-8">
+        <div className="max-w-[59rem] mx-auto px-6 mb-6 md:mb-8">
           <CommentSection postId={post.id} />
         </div>
       </FadeIn>
