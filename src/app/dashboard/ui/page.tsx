@@ -22,6 +22,7 @@ export default async function UiSettingsPage() {
       initialHeadingType={theme.headingType}
       initialBrutalistBorder={theme.brutalistBorder}
       initialAccentText={theme.accentText}
+      initialBranding={theme.branding}
     />
   );
 }

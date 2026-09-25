@@ -14,10 +14,12 @@ import {
   Square,
   Type,
   Bookmark,
+  BadgeCheck,
 } from "lucide-react";
 import { Toggle, SuccessToast } from "@/components/dashboard/DashboardUI";
 import HeadingTypeSettings from "@/components/dashboard/HeadingTypeSettings";
 import BrutalistBorderSettings from "@/components/dashboard/BrutalistBorderSettings";
+import BrandingSettings from "@/components/dashboard/BrandingSettings";
 import {
   usePreviewEditor,
   PreviewEditPopover,
@@ -38,6 +40,7 @@ import type {
   ModernAccents,
   DarkSurfacesByTheme,
   HeadingTypeByTheme,
+  Branding,
 } from "@/lib/settings";
 import { BRUTALIST_HEADING_DEFAULT, MODERN_HEADING_DEFAULT } from "@/lib/typography";
 import {
@@ -60,7 +63,7 @@ import {
 
 type Scheme = "light" | "dark";
 
-type SettingsTab = "theme" | "colors" | "borders" | "typography" | "effects";
+type SettingsTab = "theme" | "branding" | "colors" | "borders" | "typography" | "effects";
 
 // What a click in the accent preview can edit. Each preview element maps to
 // the accent it's coloured with on the real site (checked against the actual
@@ -111,6 +114,7 @@ const ACCENT_NAMES: Record<AccentKey, string> = {
 
 const SETTINGS_TABS: { value: SettingsTab; label: string; Icon: typeof Sun }[] = [
   { value: "theme", label: "Theme", Icon: Palette },
+  { value: "branding", label: "Branding", Icon: BadgeCheck },
   { value: "colors", label: "Colors", Icon: Droplet },
   { value: "borders", label: "Borders", Icon: Square },
   { value: "typography", label: "Typography", Icon: Type },
@@ -460,6 +464,7 @@ export default function UiSettingsForm({
   },
   initialBrutalistBorder = BRUTALIST_BORDER_DEFAULT,
   initialAccentText = ACCENT_TEXT_DEFAULT,
+  initialBranding = { logo: null, logoDark: null, siteIcon: null },
 }: {
   initialEnabled: boolean;
   initialTheme: UiTheme;
@@ -469,6 +474,7 @@ export default function UiSettingsForm({
   initialHeadingType?: HeadingTypeByTheme;
   initialBrutalistBorder?: BrutalistBorder;
   initialAccentText?: AccentText;
+  initialBranding?: Branding;
 }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -495,6 +501,15 @@ export default function UiSettingsForm({
   // Brutalist outline/shadow. Same saved/editing split for the dirty state.
   const [border, setBorder] = useState<BrutalistBorder>(initialBrutalistBorder);
   const [savedBorder, setSavedBorder] = useState<BrutalistBorder>(initialBrutalistBorder);
+
+  // Logo / dark logo / site icon. Same saved/editing split, so an upload
+  // survives switching tabs until it's saved or discarded.
+  const [branding, setBranding] = useState<Branding>(initialBranding);
+  const [savedBranding, setSavedBranding] = useState<Branding>(initialBranding);
+  const brandingDirty =
+    branding.logo !== savedBranding.logo ||
+    branding.logoDark !== savedBranding.logoDark ||
+    branding.siteIcon !== savedBranding.siteIcon;
 
   // Text colours on accent fills (null = auto contrast). Saved with the
   // accents, so they share the Colors panel's dirty state and Save button.
@@ -875,7 +890,12 @@ export default function UiSettingsForm({
           setTab(next);
           closeAccentEditor();
         }}
-        dirty={{ colors: colorsDirty, borders: bordersDirty, typography: headingsDirty }}
+        dirty={{
+          branding: brandingDirty,
+          colors: colorsDirty,
+          borders: bordersDirty,
+          typography: headingsDirty,
+        }}
       />
 
       <div
@@ -939,6 +959,19 @@ export default function UiSettingsForm({
               </div>
             </div>
           </div>
+        )}
+
+        {tab === "branding" && (
+          <BrandingSettings
+            value={branding}
+            saved={savedBranding}
+            onChange={setBranding}
+            onSaved={(next) => {
+              setSavedBranding(next);
+              setToast("Branding updated");
+            }}
+            onError={setError}
+          />
         )}
 
         {tab === "colors" && (
