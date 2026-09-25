@@ -17,10 +17,15 @@ interface TocSidebarProps {
   title: string;
 }
 
-// Distance from the viewport top that counts as "you are here". The spy and
-// the click-to-scroll use the SAME value so they always agree, and it keeps
-// the target heading clear of the sticky masthead.
+// Where click-to-scroll lands a heading: clear of the sticky masthead.
 const SCROLL_OFFSET = 100;
+
+// The "you are here" line, as a share of the viewport height. A heading
+// becomes active once it rises above this line — i.e. once it is in the
+// middle of the screen, where you are actually reading. At the old 100px
+// line a heading sitting mid-screen didn't count yet, so the entry above it
+// stayed lit while you read the new section.
+const READING_LINE = 0.55;
 
 // Past this many entries the list gets its own filter box. Below it the extra
 // control is just noise on a list you can already take in at a glance.
@@ -72,6 +77,11 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
 
   const listRef = useRef<HTMLUListElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Set by a ToC click; holds that entry active until the reader scrolls on
+  // their own. Click-to-scroll parks the heading near the top, and with the
+  // reading line mid-screen a short section's NEXT heading can already be
+  // above the line — the spy would light that one instead of the one clicked.
+  const clickedIdRef = useRef<string | null>(null);
   const reduced = useReducedMotion();
 
   const showFilter = toc.length > FILTER_THRESHOLD;
@@ -104,6 +114,11 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
 
       if (toc.length === 0) return;
 
+      if (clickedIdRef.current) {
+        setActiveId(clickedIdRef.current);
+        return;
+      }
+
       const atBottom =
         window.innerHeight + Math.round(window.scrollY) >=
         document.documentElement.scrollHeight - 50;
@@ -112,12 +127,13 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
         return;
       }
 
-      // Active = the last heading whose top has scrolled above the trigger line.
+      // Active = the last heading whose top has risen above the reading line.
+      const line = Math.max(SCROLL_OFFSET, window.innerHeight * READING_LINE);
       let current = toc[0].id;
       for (const { id } of toc) {
         const el = document.getElementById(id);
         if (!el) continue;
-        if (el.getBoundingClientRect().top - SCROLL_OFFSET <= 0) current = id;
+        if (el.getBoundingClientRect().top <= line) current = id;
         else break;
       }
       setActiveId(current);
@@ -132,12 +148,26 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
       });
     };
 
+    // Any scroll the reader starts themselves ends a click's hold. Scroll
+    // events can't tell the two apart, so listen for the inputs instead.
+    const releaseClick = () => {
+      if (!clickedIdRef.current) return;
+      clickedIdRef.current = null;
+      onScroll();
+    };
+
     compute();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
+    window.addEventListener("wheel", releaseClick, { passive: true });
+    window.addEventListener("touchstart", releaseClick, { passive: true });
+    window.addEventListener("keydown", releaseClick);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      window.removeEventListener("wheel", releaseClick);
+      window.removeEventListener("touchstart", releaseClick);
+      window.removeEventListener("keydown", releaseClick);
     };
   }, [toc]);
 
@@ -208,6 +238,7 @@ export default function TocSidebar({ toc, title }: TocSidebarProps) {
       if (!el) return; // let the browser handle it
       e.preventDefault();
       const top = el.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
+      clickedIdRef.current = id;
       window.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
       setActiveId(id);
       window.history.replaceState(null, "", `#${id}`);

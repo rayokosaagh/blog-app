@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 interface TocItem {
@@ -17,6 +17,9 @@ export default function MobileNav({ toc }: MobileNavProps) {
   const [progress, setProgress] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>("");
+  // Same hold as TocSidebar: a tapped entry stays active until the reader
+  // scrolls on their own, even if the next heading is also above the line.
+  const tappedIdRef = useRef<string | null>(null);
 
   // Portals must only run client-side, after mount, since document.body
   // isn't available during SSR.
@@ -49,6 +52,10 @@ export default function MobileNav({ toc }: MobileNavProps) {
 
     let ticking = false;
     const compute = () => {
+      if (tappedIdRef.current) {
+        setActiveId(tappedIdRef.current);
+        return;
+      }
       const atBottom =
         window.innerHeight + Math.round(window.scrollY) >=
         document.documentElement.scrollHeight - 50;
@@ -56,12 +63,14 @@ export default function MobileNav({ toc }: MobileNavProps) {
         setActiveId(toc[toc.length - 1].id);
         return;
       }
-      const TRIGGER = 90;
+      // The reading line sits mid-screen, as in TocSidebar: a heading counts
+      // once it is where you are reading, not only once it nears the top.
+      const line = Math.max(90, window.innerHeight * 0.55);
       let current = toc[0].id;
       for (const { id } of toc) {
         const el = document.getElementById(id);
         if (!el) continue;
-        if (el.getBoundingClientRect().top - TRIGGER <= 0) current = id;
+        if (el.getBoundingClientRect().top <= line) current = id;
         else break;
       }
       setActiveId(current);
@@ -76,12 +85,24 @@ export default function MobileNav({ toc }: MobileNavProps) {
       });
     };
 
+    const releaseTap = () => {
+      if (!tappedIdRef.current) return;
+      tappedIdRef.current = null;
+      onScroll();
+    };
+
     compute();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
+    window.addEventListener("wheel", releaseTap, { passive: true });
+    window.addEventListener("touchstart", releaseTap, { passive: true });
+    window.addEventListener("keydown", releaseTap);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      window.removeEventListener("wheel", releaseTap);
+      window.removeEventListener("touchstart", releaseTap);
+      window.removeEventListener("keydown", releaseTap);
     };
   }, [toc]);
 
@@ -134,7 +155,7 @@ export default function MobileNav({ toc }: MobileNavProps) {
                   <li key={item.id}>
                     <a
                       href={`#${item.id}`}
-                      onClick={() => { setActiveId(item.id); setIsOpen(false); }}
+                      onClick={() => { tappedIdRef.current = item.id; setActiveId(item.id); setIsOpen(false); }}
                       className={`block rounded-lg px-3 py-2.5 text-sm transition-colors ${
                         isActive
                           ? "bg-blue-50/80 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold"
