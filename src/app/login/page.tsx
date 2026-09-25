@@ -5,6 +5,15 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import { safeCallbackUrl } from "@/lib/loginRedirect";
+
+// Where to go after signing in: ?callbackUrl= when it's a same-site path (set
+// by the sign-in notices so the reader lands back where they were), else "/".
+// Read at click time rather than via useSearchParams, which would need this
+// page wrapped in a Suspense boundary.
+function returnTo(): string {
+  return safeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl"));
+}
 
 function GoogleIcon() {
   return (
@@ -85,14 +94,14 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    router.push(returnTo());
     router.refresh();
   }
 
   async function handleOAuth(provider: "google" | "github") {
     setError("");
     setLoading(provider);
-    await signIn(provider, { callbackUrl: "/" });
+    await signIn(provider, { callbackUrl: returnTo() });
   }
 
   const fieldTransition = { duration: prefersReducedMotion ? 0 : 0.22, ease: "easeOut" as const };

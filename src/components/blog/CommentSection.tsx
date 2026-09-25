@@ -5,7 +5,9 @@ import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useSession, signIn } from "next-auth/react";
 import type { Session } from "next-auth";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Smile, Loader2, MessageCircle, Reply as ReplyIcon, Trash2, Flag } from "lucide-react";
+import { loginHref } from "@/lib/loginRedirect";
 
 interface CommentAuthor {
   id: string;
@@ -561,6 +563,7 @@ function CommentItem({
 
 export default function CommentSection({ postId }: { postId: string }) {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -665,7 +668,18 @@ export default function CommentSection({ postId }: { postId: string }) {
           animate={{ opacity: 1, y: 0 }}
           className="bg-muted rounded-none border-2 border-border-heavy shadow-brutal-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
         >
-          <p className="text-sm text-muted-foreground">Sign in to join the conversation.</p>
+          {/* Same wording as AuthRequiredNotice. The one-click provider
+              buttons stay: signIn() returns to this page on its own. */}
+          <div className="text-sm">
+            <p className="font-bold text-foreground">You need to be signed in to comment.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Not registered?{" "}
+              <Link href={loginHref(pathname)} className="font-bold text-accent underline underline-offset-2">
+                Continue with Google or GitHub
+              </Link>{" "}
+              to create a free account.
+            </p>
+          </div>
           <div className="flex gap-2 shrink-0">
             <button
               type="button"

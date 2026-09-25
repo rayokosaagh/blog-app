@@ -2,9 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import AuthRequiredNotice from "@/components/auth/AuthRequiredNotice";
 
 interface BookmarkButtonProps {
   postId: string;
@@ -20,13 +19,15 @@ export default function BookmarkButton({
   showLabel = false,
 }: BookmarkButtonProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleClick = async () => {
+    // Explain instead of bouncing straight to /login, which lost the reader's
+    // place without saying why.
     if (!session) {
-      router.push("/login");
+      setNeedsAuth(true);
       return;
     }
 
@@ -55,23 +56,32 @@ export default function BookmarkButton({
   };
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={isPending}
-      aria-pressed={bookmarked}
-      aria-label={bookmarked ? "Remove bookmark" : "Bookmark this post"}
-      className={`inline-flex items-center gap-1.5 rounded-none border-2 px-2 py-1 transition-colors duration-100 disabled:opacity-60 ${
-  bookmarked
-    ? "border-accent-bookmark text-accent-bookmark"
-    : "border-transparent text-muted-foreground hover:border-accent-bookmark hover:text-accent-bookmark"
-} ${className}`}
-    >
-      <Bookmark
-        className="h-5 w-5"
-        strokeWidth={2}
-        fill={bookmarked ? "currentColor" : "none"}
+    // Positioned wrapper so the sign-in notice can open beneath the button.
+    <span className="relative inline-flex shrink-0">
+      <button
+        onClick={handleClick}
+        disabled={isPending}
+        aria-pressed={bookmarked}
+        aria-label={bookmarked ? "Remove bookmark" : "Bookmark this post"}
+        className={`inline-flex items-center gap-1.5 rounded-none border-2 px-2 py-1 transition-colors duration-100 disabled:opacity-60 ${
+          bookmarked
+            ? "border-accent-bookmark text-accent-bookmark"
+            : "border-transparent text-muted-foreground hover:border-accent-bookmark hover:text-accent-bookmark"
+        } ${className}`}
+      >
+        <Bookmark
+          className="h-5 w-5"
+          strokeWidth={2}
+          fill={bookmarked ? "currentColor" : "none"}
+        />
+        {showLabel && <span className="text-sm font-bold">{bookmarked ? "Bookmarked" : "Bookmark"}</span>}
+      </button>
+      <AuthRequiredNotice
+        open={needsAuth}
+        onClose={() => setNeedsAuth(false)}
+        action="bookmark posts"
+        align="right"
       />
-      {showLabel && <span className="text-sm font-bold">{bookmarked ? "Bookmarked" : "Bookmark"}</span>}
-    </button>
+    </span>
   );
 }
