@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
-  Search,
-  ChevronDown,
   Plus,
   Layers,
   Trash2,
@@ -14,6 +12,10 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+import FilterSelect from "@/components/dashboard/FilterSelect";
+import FilterSearch from "@/components/dashboard/FilterSearch";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
+import { usePagination } from "@/components/dashboard/usePagination";
 
 interface Product {
   id: string;
@@ -39,21 +41,9 @@ export default function GadgetsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTag, setSelectedTag] = useState("all");
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadProducts();
-  }, []);
-
-  useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowCategoryDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
   async function loadProducts() {
@@ -74,11 +64,6 @@ export default function GadgetsPage() {
     return Array.from(map.entries());
   }, [products]);
 
-  const selectedCategoryLabel = useMemo(() => {
-    if (selectedCategory === "all") return "All categories";
-    return categories.find(([slug]) => slug === selectedCategory)?.[1] ?? "All categories";
-  }, [selectedCategory, categories]);
-
   // Unique tags across all products, for the tag filter dropdown.
   const availableTags = useMemo(() => {
     const map = new Map<string, { name: string; slug: string }>();
@@ -98,6 +83,8 @@ export default function GadgetsPage() {
       return matchesSearch && matchesCategory && matchesTag;
     });
   }, [products, searchTerm, selectedCategory, selectedTag]);
+
+  const { pageItems: pagedProducts, topRef, resetPage, pagerProps } = usePagination(filteredProducts);
 
   async function confirmDelete() {
     if (!productToDelete) return;
@@ -173,87 +160,45 @@ export default function GadgetsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by name or brand..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="relative sm:w-52" ref={dropdownRef}>
-          <button
-            onClick={() => setShowCategoryDropdown((s) => !s)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span className="truncate">{selectedCategoryLabel}</span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 ml-2 transition-transform ${
-                showCategoryDropdown ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          <AnimatePresence>
-            {showCategoryDropdown && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-full max-h-72 overflow-y-auto bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50"
-              >
-                <div
-                  onClick={() => {
-                    setSelectedCategory("all");
-                    setShowCategoryDropdown(false);
-                  }}
-                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                    selectedCategory === "all"
-                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                  }`}
-                >
-                  All categories
-                </div>
-                {categories.map(([slug, name]) => (
-                  <div
-                    key={slug}
-                    onClick={() => {
-                      setSelectedCategory(slug);
-                      setShowCategoryDropdown(false);
-                    }}
-                    className={`px-4 py-2 text-sm cursor-pointer transition-colors truncate ${
-                      selectedCategory === slug
-                        ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                        : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                    }`}
-                  >
-                    {name}
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by name or brand..."
+          ariaLabel="Search gadgets"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by category"
+          value={selectedCategory}
+          onChange={(v) => {
+            setSelectedCategory(v);
+            resetPage();
+          }}
+          options={[
+            { value: "all", label: "All categories" },
+            ...categories.map(([slug, name]) => ({ value: slug, label: name })),
+          ]}
+          className="sm:w-52"
+        />
         {availableTags.length > 0 && (
-          <select
+          <FilterSelect
+            ariaLabel="Filter by tag"
             value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
-            className="border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all sm:w-52"
-          >
-            <option value="all">All tags</option>
-            {availableTags.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => {
+              setSelectedTag(v);
+              resetPage();
+            }}
+            options={[
+              { value: "all", label: "All tags" },
+              ...availableTags.map((t) => ({ value: t.slug, label: t.name })),
+            ]}
+            className="sm:w-52"
+            align="right"
+          />
         )}
       </div>
 
@@ -282,7 +227,7 @@ export default function GadgetsPage() {
                 </p>
               </motion.div>
             ) : (
-              filteredProducts.map((p, i) => (
+              pagedProducts.map((p, i) => (
                 <motion.div
                   key={p.id}
                   layout
@@ -347,6 +292,8 @@ export default function GadgetsPage() {
           </AnimatePresence>
         )}
       </div>
+
+      <DashboardPagination {...pagerProps} itemLabel="products" />
 
       <AnimatePresence>
         {productToDelete && (

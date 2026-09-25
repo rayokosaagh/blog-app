@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { Users as UsersIcon, Search, ChevronDown, CheckCircle2, Plus } from "lucide-react";
+import { Users as UsersIcon, CheckCircle2, Plus } from "lucide-react";
+import FilterSelect from "@/components/dashboard/FilterSelect";
+import FilterSearch from "@/components/dashboard/FilterSearch";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
+import { usePagination } from "@/components/dashboard/usePagination";
 import { EmptyStateRow } from "@/components/ui/EmptyState";
 import Modal from "@/components/dashboard/Modal";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
@@ -21,6 +25,12 @@ interface User {
   _count: { posts: number };
 }
 
+const ROLE_FILTERS = [
+  { value: "ALL", label: "All roles" },
+  { value: "ADMIN", label: "Admin only" },
+  { value: "EDITOR", label: "Editor only" },
+];
+
 export default function UsersPage() {
   const { data: session, update: updateSession } = useSession();
   const [users, setUsers] = useState<User[]>([]);
@@ -29,8 +39,6 @@ export default function UsersPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -72,16 +80,6 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowRoleDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
@@ -91,6 +89,8 @@ export default function UsersPage() {
       return matchesSearch && matchesRole;
     });
   }, [users, searchTerm, roleFilter]);
+
+  const { pageItems: pagedUsers, topRef, resetPage, pagerProps } = usePagination(filteredUsers);
 
   function openAddModal() {
     setEditingUser(null);
@@ -274,58 +274,28 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="relative sm:w-52" ref={dropdownRef}>
-          <button
-            onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span>
-              {roleFilter === "ALL" && "All roles"}
-              {roleFilter === "ADMIN" && "Admin only"}
-              {roleFilter === "EDITOR" && "Editor only"}
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${showRoleDropdown ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {showRoleDropdown && (
-            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
-              {[
-                { value: "ALL", label: "All roles" },
-                { value: "ADMIN", label: "Admin only" },
-                { value: "EDITOR", label: "Editor only" },
-              ].map((option) => (
-                <div
-                  key={option.value}
-                  onClick={() => {
-                    setRoleFilter(option.value as "ALL" | Role);
-                    setShowRoleDropdown(false);
-                  }}
-                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                    roleFilter === option.value
-                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                  }`}
-                >
-                  {option.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by name or email..."
+          ariaLabel="Search users"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by role"
+          value={roleFilter}
+          onChange={(v) => {
+            setRoleFilter(v as "ALL" | Role);
+            resetPage();
+          }}
+          options={ROLE_FILTERS}
+          className="sm:w-52"
+          align="right"
+        />
       </div>
 
       {fetchError && (
@@ -372,7 +342,7 @@ export default function UsersPage() {
                   }
                 />
               ) : (
-                filteredUsers.map((user) => (
+                pagedUsers.map((user) => (
                   <tr key={user.id} className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -419,6 +389,8 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+
+      <DashboardPagination {...pagerProps} itemLabel="users" />
 
       <ConfirmDialog
         open={showDeleteModal && !!userToDelete}

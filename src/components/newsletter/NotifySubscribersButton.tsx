@@ -6,11 +6,14 @@ import { createPortal } from "react-dom";
 interface NotifySubscribersButtonProps {
   postId: string;
   postTitle?: string;
+  /** Replaces the trigger's default blue link styling. */
+  className?: string;
 }
 
 export default function NotifySubscribersButton({
   postId,
   postTitle,
+  className = "text-sm text-blue-600 hover:underline font-medium",
 }: NotifySubscribersButtonProps) {
   const [showModal, setShowModal] = useState(false);
   const [sending, setSending] = useState(false);
@@ -57,7 +60,7 @@ export default function NotifySubscribersButton({
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="text-sm text-blue-600 hover:underline font-medium"
+        className={className}
       >
         Notify
       </button>

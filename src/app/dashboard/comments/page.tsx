@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   MessageCircle,
-  Search,
-  ChevronDown,
   CheckCircle2,
   Flag,
   ExternalLink,
 } from "lucide-react";
+import FilterSelect from "@/components/dashboard/FilterSelect";
+import FilterSearch from "@/components/dashboard/FilterSearch";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
+import { usePagination } from "@/components/dashboard/usePagination";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 import { EmptyStateRow } from "@/components/ui/EmptyState";
 
@@ -53,8 +55,6 @@ export default function CommentsModerationPage() {
   const [fetchError, setFetchError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | Status>("PENDING");
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [commentToDelete, setCommentToDelete] = useState<CommentRow | null>(null);
@@ -83,16 +83,6 @@ export default function CommentsModerationPage() {
     fetchComments();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowStatusDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const filteredComments = useMemo(() => {
     return comments.filter((c) => {
       const term = searchTerm.toLowerCase();
@@ -105,6 +95,8 @@ export default function CommentsModerationPage() {
       return matchesSearch && matchesStatus;
     });
   }, [comments, searchTerm, statusFilter]);
+
+  const { pageItems: pagedComments, topRef, resetPage, pagerProps } = usePagination(filteredComments);
 
   const pendingCount = comments.filter((c) => c.status === "PENDING").length;
 
@@ -195,50 +187,28 @@ export default function CommentsModerationPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by content, author, or post..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="relative sm:w-56" ref={dropdownRef}>
-          <button
-            onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span>{STATUS_FILTERS.find((f) => f.value === statusFilter)?.label}</span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {showStatusDropdown && (
-            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
-              {STATUS_FILTERS.map((option) => (
-                <div
-                  key={option.value}
-                  onClick={() => {
-                    setStatusFilter(option.value);
-                    setShowStatusDropdown(false);
-                  }}
-                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                    statusFilter === option.value
-                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                  }`}
-                >
-                  {option.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by content, author, or post..."
+          ariaLabel="Search comments"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by status"
+          value={statusFilter}
+          onChange={(v) => {
+            setStatusFilter(v as "ALL" | Status);
+            resetPage();
+          }}
+          options={STATUS_FILTERS}
+          className="sm:w-56"
+          align="right"
+        />
       </div>
 
       {fetchError && (
@@ -279,7 +249,7 @@ export default function CommentsModerationPage() {
                   }
                 />
               ) : (
-                filteredComments.map((comment) => {
+                pagedComments.map((comment) => {
                   const busy = pendingActionId === comment.id;
                   return (
                     <tr key={comment.id} className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors align-top">
@@ -352,6 +322,8 @@ export default function CommentsModerationPage() {
           </table>
         </div>
       </div>
+
+      <DashboardPagination {...pagerProps} itemLabel="comments" />
 
       <ConfirmDialog
         open={!!commentToDelete}

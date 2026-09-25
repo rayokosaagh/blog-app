@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Megaphone,
   FileText,
   AppWindow,
-  Search,
-  ChevronDown,
   Plus,
   ImagePlus,
   X,
@@ -20,6 +18,10 @@ import {
   MonitorPlay,
   PanelRight,
 } from "lucide-react";
+import FilterSelect from "@/components/dashboard/FilterSelect";
+import FilterSearch from "@/components/dashboard/FilterSearch";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
+import { usePagination } from "@/components/dashboard/usePagination";
 import { mediaTypeFromUrl } from "@/lib/mediaType";
 import { useFileDrop, DROP_ACTIVE_CLASS, MEDIA_TYPES } from "@/components/dashboard/useFileDrop";
 import {
@@ -61,6 +63,12 @@ type ActionType = "added" | "updated" | "deleted" | null;
 // inputClass, labelClass) now come from @/components/dashboard/DashboardUI.
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+
+const AD_STATUS_FILTERS = (all: string) => [
+  { value: "ALL", label: all },
+  { value: "ACTIVE", label: "Active only" },
+  { value: "INACTIVE", label: "Inactive only" },
+];
 
 export default function AdsPage() {
   const [activeTab, setActiveTab] = useState<"inline" | "hero" | "popup" | "spotlight">("inline");
@@ -191,8 +199,6 @@ function AdsCrudTab({
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({ title: "", image: "", link: "", active: true, position: 0 });
 
@@ -212,16 +218,6 @@ function AdsCrudTab({
     }
   }
 
-  useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowFilterDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
   const filteredAds = useMemo(() => {
     return ads.filter((ad) => {
       const matchesSearch =
@@ -234,6 +230,8 @@ function AdsCrudTab({
       return matchesSearch && matchesFilter;
     });
   }, [ads, searchTerm, activeFilter]);
+
+  const { pageItems: pagedAds, topRef, resetPage, pagerProps } = usePagination(filteredAds, [6, 12, 24]);
 
   function openAdd() {
     setEditingAd(null);
@@ -529,68 +527,28 @@ function AdsCrudTab({
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by title or link..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="relative sm:w-52" ref={dropdownRef}>
-          <button
-            onClick={() => setShowFilterDropdown((s) => !s)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span>
-              {activeFilter === "ALL" && "All ads"}
-              {activeFilter === "ACTIVE" && "Active only"}
-              {activeFilter === "INACTIVE" && "Inactive only"}
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 ml-2 transition-transform ${
-                showFilterDropdown ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          <AnimatePresence>
-            {showFilterDropdown && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50"
-              >
-                {[
-                  { value: "ALL", label: "All ads" },
-                  { value: "ACTIVE", label: "Active only" },
-                  { value: "INACTIVE", label: "Inactive only" },
-                ].map((option) => (
-                  <div
-                    key={option.value}
-                    onClick={() => {
-                      setActiveFilter(option.value as "ALL" | "ACTIVE" | "INACTIVE");
-                      setShowFilterDropdown(false);
-                    }}
-                    className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                      activeFilter === option.value
-                        ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                        : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                    }`}
-                  >
-                    {option.label}
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by title or link..."
+          ariaLabel="Search ads"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by status"
+          value={activeFilter}
+          onChange={(v) => {
+            setActiveFilter(v as "ALL" | "ACTIVE" | "INACTIVE");
+            resetPage();
+          }}
+          options={AD_STATUS_FILTERS("All ads")}
+          className="sm:w-52"
+          align="right"
+        />
       </div>
 
       {loading ? (
@@ -617,7 +575,7 @@ function AdsCrudTab({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {filteredAds.map((ad, i) => (
+            {pagedAds.map((ad, i) => (
               <motion.div
                 key={ad.id}
                 layout
@@ -678,6 +636,8 @@ function AdsCrudTab({
         </div>
       )}
 
+      <DashboardPagination {...pagerProps} itemLabel="ads" />
+
       <AnimatePresence>
         {adToDelete && (
           <DeleteModal
@@ -713,8 +673,6 @@ function PopupAdsTab() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -743,16 +701,6 @@ function PopupAdsTab() {
     }
   }
 
-  useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowFilterDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
   const filteredAds = useMemo(() => {
     return ads.filter((ad) => {
       const matchesSearch =
@@ -765,6 +713,8 @@ function PopupAdsTab() {
       return matchesSearch && matchesFilter;
     });
   }, [ads, searchTerm, activeFilter]);
+
+  const { pageItems: pagedAds, topRef, resetPage, pagerProps } = usePagination(filteredAds, [6, 12, 24]);
 
   function openAdd() {
     setEditingAd(null);
@@ -1116,68 +1066,28 @@ function PopupAdsTab() {
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by title or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="relative sm:w-52" ref={dropdownRef}>
-          <button
-            onClick={() => setShowFilterDropdown((s) => !s)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span>
-              {activeFilter === "ALL" && "All popup ads"}
-              {activeFilter === "ACTIVE" && "Active only"}
-              {activeFilter === "INACTIVE" && "Inactive only"}
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 ml-2 transition-transform ${
-                showFilterDropdown ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          <AnimatePresence>
-            {showFilterDropdown && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50"
-              >
-                {[
-                  { value: "ALL", label: "All popup ads" },
-                  { value: "ACTIVE", label: "Active only" },
-                  { value: "INACTIVE", label: "Inactive only" },
-                ].map((option) => (
-                  <div
-                    key={option.value}
-                    onClick={() => {
-                      setActiveFilter(option.value as "ALL" | "ACTIVE" | "INACTIVE");
-                      setShowFilterDropdown(false);
-                    }}
-                    className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                      activeFilter === option.value
-                        ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                        : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                    }`}
-                  >
-                    {option.label}
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by title or description..."
+          ariaLabel="Search ads"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by status"
+          value={activeFilter}
+          onChange={(v) => {
+            setActiveFilter(v as "ALL" | "ACTIVE" | "INACTIVE");
+            resetPage();
+          }}
+          options={AD_STATUS_FILTERS("All popup ads")}
+          className="sm:w-52"
+          align="right"
+        />
       </div>
 
       {loading ? (
@@ -1202,7 +1112,7 @@ function PopupAdsTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {filteredAds.map((ad, i) => (
+            {pagedAds.map((ad, i) => (
               <motion.div
                 key={ad.id}
                 layout
@@ -1272,6 +1182,8 @@ function PopupAdsTab() {
           </AnimatePresence>
         </div>
       )}
+
+      <DashboardPagination {...pagerProps} itemLabel="popup ads" />
 
       <AnimatePresence>
         {adToDelete && (
@@ -1377,6 +1289,8 @@ function SpotlightAdsTab() {
       ),
     [ads, searchTerm]
   );
+
+  const { pageItems: pagedAds, topRef, resetPage, pagerProps } = usePagination(filteredAds, [6, 12, 24]);
 
   function openAdd() {
     setEditingAd(null);
@@ -1727,14 +1641,15 @@ function SpotlightAdsTab() {
         </button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-        <input
-          type="text"
-          placeholder="Search by title or link..."
+      <div ref={topRef} className="scroll-mt-4">
+        <FilterSearch
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by title or link..."
+          ariaLabel="Search ads"
         />
       </div>
 
@@ -1760,7 +1675,7 @@ function SpotlightAdsTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {filteredAds.map((ad, i) => (
+            {pagedAds.map((ad, i) => (
               <motion.div
                 key={ad.id}
                 layout
@@ -1824,6 +1739,8 @@ function SpotlightAdsTab() {
           </AnimatePresence>
         </div>
       )}
+
+      <DashboardPagination {...pagerProps} itemLabel="spotlight ads" />
 
       <AnimatePresence>
         {adToDelete && (

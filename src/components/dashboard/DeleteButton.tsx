@@ -12,6 +12,8 @@ interface DeleteButtonProps {
   /** Noun used in the title, e.g. "Post". */
   itemType?: string;
   onDeleted?: () => void;
+  /** Replaces the trigger's default red styling, e.g. for dense tables. */
+  className?: string;
 }
 
 export default function DeleteButton({
@@ -19,6 +21,7 @@ export default function DeleteButton({
   itemLabel,
   itemType = "item",
   onDeleted,
+  className = "text-sm font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors",
 }: DeleteButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -56,7 +59,7 @@ export default function DeleteButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors"
+        className={className}
       >
         Delete
       </button>

@@ -1,20 +1,35 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { FileText, Search, ChevronDown, Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import DeleteButton from "@/components/dashboard/DeleteButton";
-import AnimatedPostCard from "@/components/blog/AnimatedPostCard";
 import NotifySubscribersButton from "@/components/newsletter/NotifySubscribersButton";
 import { SuccessToast } from "@/components/dashboard/DashboardUI";
+import FilterSelect from "@/components/dashboard/FilterSelect";
+import FilterSearch from "@/components/dashboard/FilterSearch";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
+import { usePagination } from "@/components/dashboard/usePagination";
 import { POST_CATEGORIES, getPostCategory } from "@/lib/blog/categories";
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "All posts" },
+  { value: "PUBLISHED", label: "Published only" },
+  { value: "DRAFT", label: "Drafts only" },
+];
+
+// One grid for the heading row and every post row, so columns line up. Below
+// xl: thumbnail | title | status, with the actions wrapping onto a second line.
+const ROW =
+  "grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 sm:px-5 xl:grid-cols-[64px_minmax(0,1fr)_96px_104px_56px_96px_220px] xl:gap-x-4";
 
 interface Post {
   id: string;
   title: string;
   slug: string;
   published: boolean;
+  views: number;
   featuredImage: string | null;
   createdAt: string;
   author: {
@@ -33,8 +48,6 @@ export default function PostsPage() {
   const [tagFilter, setTagFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [deletedTitle, setDeletedTitle] = useState<string | null>(null);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Unique tags across all posts, for the tag filter dropdown.
   const availableTags = useMemo(() => {
@@ -60,16 +73,6 @@ export default function PostsPage() {
     fetchPosts();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowStatusDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
       const matchesSearch =
@@ -90,6 +93,16 @@ export default function PostsPage() {
       return matchesSearch && matchesStatus && matchesTag && matchesCategory;
     });
   }, [posts, searchTerm, statusFilter, tagFilter, categoryFilter]);
+
+  const { pageItems: pagedPosts, topRef, resetPage, pagerProps } = usePagination(filteredPosts);
+
+  // Any filter change starts over at page 1.
+  function updateFilter<T>(setter: (value: T) => void) {
+    return (value: T) => {
+      setter(value);
+      resetPage();
+    };
+  }
 
   if (loading) {
     return (
@@ -130,138 +143,136 @@ export default function PostsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by title or slug..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <select
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={updateFilter(setSearchTerm)}
+          placeholder="Search by title or slug..."
+          ariaLabel="Search posts"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by category"
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          aria-label="Filter by category"
-          className="border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all sm:w-44"
-        >
-          <option value="ALL">All categories</option>
-          {POST_CATEGORIES.map((c) => (
-            <option key={c.key} value={c.key}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-
+          onChange={updateFilter(setCategoryFilter)}
+          options={[
+            { value: "ALL", label: "All categories" },
+            ...POST_CATEGORIES.map((c) => ({ value: c.key, label: c.label })),
+          ]}
+          className="sm:w-44"
+        />
         {availableTags.length > 0 && (
-          <select
+          <FilterSelect
+            ariaLabel="Filter by tag"
             value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-            className="border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all sm:w-52"
-          >
-            <option value="ALL">All tags</option>
-            {availableTags.map((t) => (
-              <option key={t.slug} value={t.slug}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            onChange={updateFilter(setTagFilter)}
+            options={[
+              { value: "ALL", label: "All tags" },
+              ...availableTags.map((t) => ({ value: t.slug, label: t.name })),
+            ]}
+            className="sm:w-44"
+          />
         )}
-
-        <div className="relative sm:w-52" ref={dropdownRef}>
-          <button
-            onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span>
-              {statusFilter === "ALL" && "All posts"}
-              {statusFilter === "PUBLISHED" && "Published only"}
-              {statusFilter === "DRAFT" && "Drafts only"}
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {showStatusDropdown && (
-            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
-              {[
-                { value: "ALL", label: "All posts" },
-                { value: "PUBLISHED", label: "Published only" },
-                { value: "DRAFT", label: "Drafts only" },
-              ].map((option) => (
-                <div
-                  key={option.value}
-                  onClick={() => {
-                    setStatusFilter(option.value as "ALL" | "PUBLISHED" | "DRAFT");
-                    setShowStatusDropdown(false);
-                  }}
-                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                    statusFilter === option.value
-                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                  }`}
-                >
-                  {option.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <FilterSelect
+          ariaLabel="Filter by status"
+          value={statusFilter}
+          onChange={updateFilter((v: string) => setStatusFilter(v as "ALL" | "PUBLISHED" | "DRAFT"))}
+          options={STATUS_OPTIONS}
+          className="sm:w-44"
+          align="right"
+        />
       </div>
 
-      <div className="space-y-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden">
         {filteredPosts.length === 0 ? (
-          <AnimatedPostCard index={0}>
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 p-12 text-center">
-              <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
-                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">No posts found</p>
+          <div className="p-12 text-center">
+            <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+              <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              {posts.length === 0 ? "No posts yet" : "No posts match your filters"}
+            </p>
+            {posts.length === 0 && (
               <Link
                 href="/dashboard/posts/new"
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium mt-2 inline-block"
               >
                 Create your first post
               </Link>
-            </div>
-          </AnimatedPostCard>
+            )}
+          </div>
         ) : (
-          filteredPosts.map((post, index) => (
-            <AnimatedPostCard key={post.id} index={index}>
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/70 dark:ring-zinc-800 overflow-hidden flex flex-col sm:flex-row">
-                {post.featuredImage ? (
-                  <img
-                    src={post.featuredImage}
-                    alt={post.title}
-                    className="w-full h-40 sm:w-48 sm:h-36 object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-full h-40 sm:w-48 sm:h-36 bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                    <FileText className="h-8 w-8 text-blue-300 dark:text-blue-400/40" />
-                  </div>
-                )}
-
-                <div className="flex-1 p-5 sm:p-6 flex flex-col justify-between min-w-0">
-                  <div>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">
-                          {post.title}
-                        </h2>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                          <span className="font-semibold text-zinc-600 dark:text-zinc-300">
-                            {getPostCategory(post.category).label}
-                          </span>
-                          <span className="mx-1.5 text-zinc-300 dark:text-zinc-600">·</span>
-                          /{post.slug}
-                        </p>
+          <>
+            {/* Column headings, desktop only; below xl each row stacks. */}
+            <div
+              aria-hidden
+              className={`${ROW} hidden py-3 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 xl:grid`}
+            >
+              <span className="col-span-2">Post</span>
+              <span>Category</span>
+              <span>Date</span>
+              <span className="text-right">Views</span>
+              <span>Status</span>
+              <span className="text-right">Actions</span>
+            </div>
+            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {pagedPosts.map((post) => {
+                const category = getPostCategory(post.category).label;
+                const date = new Date(post.createdAt).toLocaleDateString("en", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                });
+                return (
+                  <li
+                    key={post.id}
+                    className={`${ROW} py-3.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/40`}
+                  >
+                    {post.featuredImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.featuredImage}
+                        alt=""
+                        loading="lazy"
+                        className="h-11 w-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-11 w-16 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
+                        <FileText className="h-4 w-4 text-blue-300 dark:text-blue-400/40" />
                       </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <Link
+                        href={`/dashboard/posts/${post.id}/edit`}
+                        className="block truncate text-sm font-semibold text-zinc-900 hover:text-blue-600 dark:text-zinc-50 dark:hover:text-blue-400"
+                      >
+                        {post.title}
+                      </Link>
+                      <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+                        {/* Below xl the category/date/views columns are hidden,
+                            so they ride along on this line instead. */}
+                        <span className="xl:hidden">
+                          <span className="font-semibold text-zinc-600 dark:text-zinc-300">{category}</span>
+                          {" · "}
+                          {date} · {post.views.toLocaleString()} views ·{" "}
+                        </span>
+                        By {post.author.name}
+                        <span className="hidden xl:inline"> · /{post.slug}</span>
+                      </p>
+                    </div>
+
+                    <span className="hidden truncate text-sm font-semibold text-zinc-600 xl:block dark:text-zinc-300">
+                      {category}
+                    </span>
+                    <span className="hidden text-sm text-zinc-500 xl:block dark:text-zinc-400">{date}</span>
+                    <span className="hidden text-right text-sm tabular-nums text-zinc-500 xl:block dark:text-zinc-400">
+                      {post.views.toLocaleString()}
+                    </span>
+
+                    <span>
                       <span
-                        className={`text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide flex-shrink-0 ${
+                        className={`text-[10px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide ${
                           post.published
                             ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -269,15 +280,9 @@ export default function PostsPage() {
                       >
                         {post.published ? "Published" : "Draft"}
                       </span>
-                    </div>
-                  </div>
+                    </span>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      By {post.author.name} · {new Date(post.createdAt).toDateString()}
-                    </p>
-
-                    <div className="flex items-center gap-4">
+                    <div className="col-span-3 flex flex-wrap items-center gap-x-4 gap-y-1 pl-[76px] xl:col-span-1 xl:justify-end xl:pl-0">
                       {post.published && (
                         <>
                           <Link
@@ -287,7 +292,11 @@ export default function PostsPage() {
                           >
                             View →
                           </Link>
-                          <NotifySubscribersButton postId={post.id} postTitle={post.title} />
+                          <NotifySubscribersButton
+                            postId={post.id}
+                            postTitle={post.title}
+                            className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                          />
                         </>
                       )}
                       <Link
@@ -309,13 +318,15 @@ export default function PostsPage() {
                         }}
                       />
                     </div>
-                  </div>
-                </div>
-              </div>
-            </AnimatedPostCard>
-          ))
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
+
+      <DashboardPagination {...pagerProps} itemLabel="posts" />
 
       <AnimatePresence>
         {deletedTitle && (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { pageWindow } from "@/lib/pagination";
 
 function hrefForPage(searchParams: URLSearchParams, basePath: string, page: number) {
   const params = new URLSearchParams(searchParams);
@@ -13,16 +14,6 @@ function hrefForPage(searchParams: URLSearchParams, basePath: string, page: numb
   }
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
-}
-
-// Collapses a long run of pages into first/last + a window around the
-// current page, e.g. 1 … 4 5 [6] 7 8 … 42, so the control stays scannable
-// no matter how many pages of content exist.
-function pageWindow(current: number, total: number) {
-  const pages = new Set<number>([1, total, current, current - 1, current + 1]);
-  return [...pages]
-    .filter((p) => p >= 1 && p <= total)
-    .sort((a, b) => a - b);
 }
 
 export default function Pagination({

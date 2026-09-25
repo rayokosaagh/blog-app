@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Mail, Search, ChevronDown, CheckCircle2, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Mail, CheckCircle2 } from "lucide-react";
+import FilterSelect from "@/components/dashboard/FilterSelect";
+import FilterSearch from "@/components/dashboard/FilterSearch";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
+import { usePagination } from "@/components/dashboard/usePagination";
 import { EmptyStateRow } from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/dashboard/ConfirmDialog";
 
@@ -14,6 +18,12 @@ interface Subscriber {
   createdAt: string;
 }
 
+const STATUS_FILTERS = [
+  { value: "ALL", label: "All statuses" },
+  { value: "CONFIRMED", label: "Confirmed only" },
+  { value: "PENDING", label: "Pending only" },
+];
+
 export default function NewsletterPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +31,6 @@ export default function NewsletterPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | Status>("ALL");
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [subscriberToDelete, setSubscriberToDelete] = useState<{ id: string; email: string } | null>(null);
@@ -52,16 +60,6 @@ export default function NewsletterPage() {
     fetchSubscribers();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowStatusDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const filteredSubscribers = useMemo(() => {
     return subscribers.filter((s) => {
       const matchesSearch = s.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -72,6 +70,8 @@ export default function NewsletterPage() {
       return matchesSearch && matchesStatus;
     });
   }, [subscribers, searchTerm, statusFilter]);
+
+  const { pageItems: pagedSubscribers, topRef, resetPage, pagerProps } = usePagination(filteredSubscribers);
 
   const confirmedCount = subscribers.filter((s) => s.confirmed).length;
   const pendingCount = subscribers.length - confirmedCount;
@@ -148,58 +148,28 @@ export default function NewsletterPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
-          />
-        </div>
-
-        <div className="relative sm:w-52" ref={dropdownRef}>
-          <button
-            onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-            className="w-full border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-700 dark:text-zinc-200 flex justify-between items-center hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-          >
-            <span>
-              {statusFilter === "ALL" && "All statuses"}
-              {statusFilter === "CONFIRMED" && "Confirmed only"}
-              {statusFilter === "PENDING" && "Pending only"}
-            </span>
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {showStatusDropdown && (
-            <div className="absolute right-0 mt-2 w-full bg-white dark:bg-zinc-800 rounded-xl shadow-xl ring-1 ring-zinc-200 dark:ring-zinc-700 py-1.5 z-50">
-              {[
-                { value: "ALL", label: "All statuses" },
-                { value: "CONFIRMED", label: "Confirmed only" },
-                { value: "PENDING", label: "Pending only" },
-              ].map((option) => (
-                <div
-                  key={option.value}
-                  onClick={() => {
-                    setStatusFilter(option.value as "ALL" | Status);
-                    setShowStatusDropdown(false);
-                  }}
-                  className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                    statusFilter === option.value
-                      ? "text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-500/10"
-                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                  }`}
-                >
-                  {option.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      <div ref={topRef} className="flex scroll-mt-4 flex-col gap-3 sm:flex-row">
+        <FilterSearch
+          value={searchTerm}
+          onChange={(v) => {
+            setSearchTerm(v);
+            resetPage();
+          }}
+          placeholder="Search by email..."
+          ariaLabel="Search subscribers"
+          className="flex-1"
+        />
+        <FilterSelect
+          ariaLabel="Filter by status"
+          value={statusFilter}
+          onChange={(v) => {
+            setStatusFilter(v as "ALL" | Status);
+            resetPage();
+          }}
+          options={STATUS_FILTERS}
+          className="sm:w-52"
+          align="right"
+        />
       </div>
 
       {fetchError && (
@@ -241,7 +211,7 @@ export default function NewsletterPage() {
                   }
                 />
               ) : (
-                filteredSubscribers.map((subscriber) => (
+                pagedSubscribers.map((subscriber) => (
                   <tr
                     key={subscriber.id}
                     className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
@@ -285,6 +255,8 @@ export default function NewsletterPage() {
           </table>
         </div>
       </div>
+
+      <DashboardPagination {...pagerProps} itemLabel="subscribers" />
 
       <ConfirmDialog
         open={showDeleteModal && !!subscriberToDelete}
