@@ -6,7 +6,11 @@ pipeline, SEO, PWA behavior, and operational requirements. It is written for
 developers and administrators who need to understand, run, maintain, or extend
 the application.
 
-Implementation snapshot: **24 September 2026**.
+Implementation snapshot: **26 September 2026**.
+
+Screenshots live in `docs/images/`. They were taken on the Modern theme in
+light mode at 1440px wide, from the local development database, so the
+content shown is sample content.
 
 ## Contents
 
@@ -75,6 +79,7 @@ browser.
 | Animation | Framer Motion / Motion |
 | Email | Nodemailer through Gmail SMTP |
 | Charts | Chart.js and `react-chartjs-2` |
+| Fonts | `next/font` built-ins, plus admin-added Google Fonts or uploaded font files |
 | Icons | Lucide React and Bootstrap Icons |
 | PWA | Web manifest plus a custom service worker |
 
@@ -264,30 +269,56 @@ large enough.
 
 ### 6.2 Homepage section order
 
-1. **Hero Banner** — active `Banner` rows displayed as an auto-playing carousel.
-2. **Hero Ad Rail** — active `HeroAd` rows beside the banner on large screens.
+![Homepage above the fold: hero banner, hero ad rail and the quick navigation](docs/images/home-above-fold.jpg)
+
+1. **Hero row** — the hero banner and the hero ad rail side by side.
+   - **Hero Banner** (`HeroBanner`): active `Banner` rows as an auto-playing
+     carousel, with the title, description and button over the artwork.
+   - **Hero Ad Rail** (`AdCarousel`): active `HeroAd` rows beside the banner on
+     large screens. When no hero ad is active, the banner takes the full width.
+   - On desktop the row height is `--hero-h`, which is
+     `clamp(28rem, 100svh − 20rem, 38rem)`. That leaves room for the navbar
+     and the quick navigation on the first screen. The ad column is
+     `--hero-h × 1070/1470` wide, which matches the hero ads' artwork ratio, so
+     the ads show uncropped.
+2. **Quick navigation** (`HomeStart`) — the page's only `<h1>`, "Find your
+   next gadget", plus three links: Read reviews (`/reviews`), Explore gadgets
+   (`/products`) and Compare (`/compare`). The title uses the page-title
+   heading style (`.h-page-title`).
 3. **Top Stories** — four posts ranked by `Post.views`.
-4. **Value Props** — static explanation of the site's value.
-5. **Latest Posts** — newest non-duplicated articles.
-6. **Social Links** — active `SocialLink` rows.
-7. **Poll** — displayed only when an active, unexpired poll exists.
-8. **Newsroom** — latest news river and scored review rail.
-9. **Continue Reading** — private browser reading history; hidden for new users.
-10. **Explore Gadgets** — category tabs and recent products.
-11. **Spotlight Ad Rail** — media promotion beside gadget discovery.
-12. **Editor's Verdicts** — products with both a score and written verdict.
-13. **Latest Comparisons** — curated active comparison pairs.
-14. **Footer Newsletter** — subscription form.
+4. **Latest Posts row** — one grid whose columns depend on whether a poll is
+   active:
+   - **With an active poll:** Social Links | Latest Posts | Poll.
+   - **Without one:** Latest Posts | Social Links, so the articles lead.
+   - **On phones:** Latest Posts, then the poll (if any), then Social Links.
+5. **Newsroom** — latest news river and scored review rail.
+6. **Continue Reading** — private browser reading history; hidden for new users.
+7. **Explore Gadgets** — category tabs and recent products, with the
+   **Spotlight Ad Rail** beside them.
+8. **Editor's Verdicts** — products with both a score and written verdict.
+9. **Latest Comparisons** — curated active comparison pairs.
+10. **Footer** — including the newsletter subscription form.
+
+The popup ad (§14) is mounted on the homepage as well, but it only opens after
+its timer.
 
 Sections that have no valid data return nothing rather than rendering empty
 containers. The poll's presence also changes the responsive grid so an empty
 sidebar track is not left behind.
+
+![Top Stories mosaic: rank numbers, category, date and review score](docs/images/home-top-stories.jpg)
 
 ### 6.3 Carousel behavior
 
 Hero banners rotate every six seconds. Hero advertisements rotate every five
 seconds. Both support manual navigation, pause on interaction, and avoid autoplay
 when the browser requests reduced motion.
+
+The hero banner darkens its artwork so white text stays readable on bright
+images. On phones it uses an even tint, because the text covers almost the
+whole width. From the `sm` breakpoint up it uses a radial shade from the
+bottom-left corner, where the text sits, and fades out toward the top right.
+The title and description also have a soft text shadow.
 
 ## 7. Articles, categories, filtering, and search
 
@@ -347,8 +378,10 @@ marked `noindex,follow` and excluded from the sitemap.
 posts with `notFound()`, loads the current bookmark state, resolves the
 editorial category, and reads the optional editorial verdict.
 
-It also loads active inline ads, banners, spotlight ads, and related articles
-that share tags.
+It also loads active inline ads, banners, spotlight ads, related articles that
+share tags, the five most-viewed other posts (for the Trending card), the
+linked product when it is published, and the author's bio, social links and
+article count.
 
 ### 8.2 Content transformation order
 
@@ -389,29 +422,167 @@ The dashboard editor supports:
 - Undo and redo.
 - Structured content-block insertion.
 
+The editor's heading buttons map to the article's heading levels:
+
+| Editor button | Article level | Numbered in the table of contents |
+| --- | --- | --- |
+| H1 | Section label (stored as `<h2 data-was-h1>`) | Yes: `01`, `02`, … |
+| H2 | Heading | No |
+| H3 | Subheading | Yes: `1.1`, `1.2`, … within its section |
+| H4 | Minor heading | No |
+
+Their look is set per theme in Appearance → Typography → Article typography
+(§15.4).
+
 Structured content blocks are deliberately plain headings plus lists rather
 than custom TipTap nodes. Their heading text and adjacency are parser contracts.
 Changing `Key Highlights`, `Specifications`, `Pros`, `Cons`, or `Also Read`, or
 inserting another node between the heading and list, prevents the published
 article parser from recognizing the block.
 
-### 8.4 Article presentation
+### 8.4 Content blocks and shortcodes
+
+The **Insert content block** button in the editor toolbar adds a block's
+heading and a starter list in the right shape. Edit the list items; leave the
+heading text as it is.
+
+![The Insert content block menu in the post editor](docs/images/dash-insert-block.jpg)
+
+| Block | How to write it | What readers see |
+| --- | --- | --- |
+| Key Highlights | Heading `Key Highlights`, then a bulleted list | A bulleted summary card |
+| Specifications | Heading `Specifications`, then a list where every item is `Label: value` | A spec table with an icon per known label |
+| Pros / Cons | Heading `Pros` + list, then straight after it heading `Cons` + list | One card with a green Pros panel and a red Cons panel |
+| Also Read | Heading `Also Read`, then a list where every item is a link | A numbered related-links card |
+| Gallery | Toolbar button **Insert image gallery**, then pick several images | A swipeable image carousel |
+
+**Key Highlights** — as written in the editor, and as published:
+
+![Key Highlights block in the editor](docs/images/dash-editor-key-highlights.jpg)
+
+![Key Highlights card on a published article](docs/images/article-key-highlights.jpg)
+
+**Specifications:**
+
+![Specifications block rendered as a spec table](docs/images/article-specifications.jpg)
+
+**Pros and Cons** (the left rail also shows the numbered table of contents and,
+below, the author card):
+
+![Pros and Cons card](docs/images/article-pros-cons.jpg)
+
+**Also Read:**
+
+![Also Read related-links card](docs/images/article-also-read.jpg)
+
+**Gallery:**
+
+![Image gallery carousel inside an article](docs/images/article-gallery.jpg)
+
+#### Ad and banner shortcodes
+
+Type a shortcode on its own line in the post body:
+
+- `[Ads N]` — replaced by the active inline ad whose position is `N`
+  (Dashboard → Ads → Inline ads).
+- `[Banner N]` or `[Banners N]` — replaced by the active banner whose order is
+  `N` (Dashboard → Banners).
+
+A shortcode is only replaced when a matching ad or banner is active. If none
+matches, for example because the ad was switched off, readers see the raw
+`[Ads N]` text, so remove the shortcode from the post when you retire the ad.
+
+![An [Ads N] shortcode rendered as an inline sponsored ad](docs/images/article-inline-ad.jpg)
+
+### 8.5 Article presentation
 
 The page renders:
 
 - Category, tags, title, publication/update dates, author, and reading time.
 - Responsive featured image and article image lightbox.
 - Share controls and bookmark controls.
-- Desktop table of contents generated from headings.
+- Desktop table of contents generated from headings (§8.6).
 - Reading progress bar.
 - Rich article HTML and enhanced tables.
 - Spotlight advertising and social links in the side rail.
-- Editorial verdict when valid.
-- Reader rating widget.
+- End-of-article cards: editorial verdict, Trending, and Full specs (§8.7).
+- Poll and reader rating widget.
+- About the author card (§8.8).
 - Threaded comments.
 - Continue-reading and related-article sections.
 
-### 8.5 Editorial verdicts versus reader ratings
+### 8.6 Table of contents
+
+![Article page with the numbered table of contents in the left rail](docs/images/article-toc.jpg)
+
+The server builds the table of contents from the body's h1–h4 headings
+(`parseContentAndGenerateToc` in `src/app/blog/[slug]/page.tsx`). Each heading
+gets a unique ID; duplicate text gets `-2`, `-3`, and so on.
+
+Numbering follows the editor's heading levels (§8.3):
+
+- Each Section label (editor H1) starts a new section: `01`, `02`, …
+- Each Subheading (editor H3) is numbered within its section: `1.1`, `1.2`, …
+- Headings (H2) and minor headings (H4) are listed without a number.
+
+The same numbers appear next to the headings in the article body.
+
+`TocSidebar` shows the list in the left rail from 1440px wide:
+
+- Section numbers are filled chips; subsection numbers are outlined chips.
+- The entry for the section being read is highlighted. It switches when a
+  heading passes 55% of the way down the screen, and the last entry is
+  highlighted near the bottom of the page.
+- Clicking an entry scrolls to it and keeps it highlighted until the reader
+  scrolls or types again.
+- A filter box appears when there are more than ten entries.
+- The panel can be collapsed.
+
+Below 1440px, `MobileNav` shows a bottom bar with a reading-progress line and
+a **Contents** button that opens an "In this article" panel. That panel lists
+the headings without numbers.
+
+### 8.7 End-of-article cards
+
+![End-of-article cards: Trending in the right gutter](docs/images/article-end-cards.jpg)
+
+After the article body, `ArticleEndCarousel` shows up to three cards. Each one
+appears only when it has something to show:
+
+| Card | Shown when | Content |
+| --- | --- | --- |
+| Editorial verdict | `readVerdict()` passes (§8.9) | Score, summary and sub-scores |
+| Trending now | At least one other published post exists | The five most-viewed other posts, with view counts |
+| Full specs | The post has a linked product and that product is published | Product image, name, brand · category, and a "Check the full detailed spec" button linking to `/product/[slug]` |
+
+Link a product with the **Linked product** field on the post form (§16.3).
+
+Layout:
+
+- **1440px and wider:** the verdict sits under the article; Full specs sits
+  in the left gutter and Trending in the right gutter. Without a verdict, the
+  side cards hang beside the poll and rating.
+- **Narrower screens:** with two or more cards, they become a swipeable
+  carousel with tabs above it. A single card just sits under the article.
+
+### 8.8 About the author
+
+![About the author card](docs/images/article-author-card.jpg)
+
+`AuthorCard` closes every article. It shows:
+
+- The author's photo, or their initial when there is no photo.
+- Name, the author's number of published articles, and the update date when
+  the post was edited after publishing.
+- The author's bio, when set.
+- An icon for each social link the author has added. Platforms without a link
+  are not shown.
+- A "More from {name}" link to `/blog?author={id}`.
+
+Staff edit their own bio and links on `/account` (§9.7). Admins can edit
+anyone's in Dashboard → Users (§16.7).
+
+### 8.9 Editorial verdicts versus reader ratings
 
 These are separate systems:
 
@@ -498,6 +669,19 @@ future. A visitor can vote once per poll:
 comment count and update their name and image. The endpoint never accepts a user
 ID; it always scopes reads and writes to the session user.
 
+Staff (`ADMIN` and `EDITOR`) also get an **Author profile** on this page: a
+bio of up to 280 characters and links for Website, X, Instagram, Facebook,
+LinkedIn, YouTube, GitHub and TikTok. These feed the About the author card
+(§8.8). Validation lives in `src/lib/authorProfile.ts`:
+
+- A link without `https://` gets it added; anything that isn't `http(s)` is
+  refused.
+- Each platform's link must point at that platform's own site (a LinkedIn
+  link must be on `linkedin.com`, for example). Website accepts any site.
+- An empty field clears that link.
+
+The API ignores bio and socials sent by `READER` accounts.
+
 ## 10. Gadget catalogue
 
 ### 10.1 Categories and spec schemas
@@ -570,6 +754,11 @@ renders:
 The quick-spec fields vary by category. The full table is driven entirely by
 the ordered groups in the code registry and hides empty values.
 
+![Product detail page](docs/images/product-page.jpg)
+
+A post linked to a published product (§16.3) shows a Full specs card that
+links here (§8.7).
+
 ### 11.2 Color variants and galleries
 
 `Product.images` stores additional gallery URLs. `Product.colors` stores JSON
@@ -637,6 +826,8 @@ The comparison UI provides:
 
 At least two products are required before the table is shown.
 
+![Comparison page with two phones](docs/images/compare-page.jpg)
+
 ### 12.3 Curated comparisons
 
 Staff can create a `Comparison` between two products in the same category,
@@ -701,7 +892,31 @@ data contract.
 | `SpotlightAd` | Homepage gadget rail and article side rail | Image, GIF, or video with adaptive rotation |
 | `SocialLink` | Social sidebars | Platform, SVG icon, action text, color, order, and active state |
 
-### 14.1 Popup frequency controls
+### 14.1 Where each type appears
+
+**Banner and hero ad rail.** The banner carousel fills the left of the hero
+row, and hero ads rotate in the portrait column on the right (see the first
+screenshot in §6.2). Banners can also be placed inside articles with
+`[Banner N]`.
+
+**Inline ad.** An `[Ads N]` shortcode in a post body becomes a full-width,
+sponsored image link with an "Advertisement" label:
+
+![Inline ad inside an article](docs/images/article-inline-ad.jpg)
+
+**Spotlight ad.** Images, GIFs or videos that rotate in a card beside Explore
+Gadgets on the homepage, and in the right-hand rail of articles. The card's
+eyebrow label and title ("Checkout" / "Featured Products" here) are set in the
+Spotlight ads tab.
+
+![Spotlight ad card beside Explore Gadgets](docs/images/home-spotlight-rail.jpg)
+
+**Popup ad.** A modal over the homepage that opens after a delay, at most once
+per browser session (§14.2):
+
+![Popup ad over the homepage](docs/images/popup-ad.jpg)
+
+### 14.2 Popup frequency controls
 
 Popup campaigns use browser storage to avoid repeatedly interrupting a visitor:
 
@@ -710,10 +925,42 @@ Popup campaigns use browser storage to avoid repeatedly interrupting a visitor:
 - Only currently active and scheduled campaigns are eligible.
 - The popup waits for its dwell/scroll trigger before opening.
 
-### 14.2 Sponsored-link behavior
+### 14.3 Sponsored-link behavior
 
 Injected article ads and spotlight ads open external destinations with
 appropriate sponsored/no-opener relationship attributes.
+
+### 14.4 Managing ads in the dashboard
+
+Dashboard → **Ads** has one tab per ad type; Dashboard → **Banners** manages
+banners. Every tab works the same way:
+
+1. Click **Add inline ad**, **Add hero rail ad**, **Add popup ad**,
+   **Add spotlight ad** or **Add banner**. Fill in the title and link, then
+   drag the image into the drop zone or click it to browse. Spotlight ads also
+   accept a video.
+2. Set the number that places it:
+   - **Inline ads:** the position `N` used by `[Ads N]` in posts.
+   - **Hero rail and spotlight ads:** the position in the rotation.
+   - **Banners:** the order in the hero carousel, also used by `[Banner N]`.
+3. Use the **Active** switch on a card to show or hide it without deleting it.
+4. Use the pencil to edit and the bin to delete.
+
+Each tab has a search box and, except Spotlight ads, an active/inactive
+filter. Cards are paged 12 at a time (6, 12 or 24 per page).
+
+![Ads → Inline ads](docs/images/dash-ads-inline.jpg)
+
+![Ads → Hero rail ads](docs/images/dash-ads-hero-rail.jpg)
+
+![Ads → Popup ads](docs/images/dash-ads-popup.jpg)
+
+The Spotlight ads tab also holds the card's **Eyebrow label** and **Title**.
+Leave a field empty to hide it.
+
+![Ads → Spotlight ads, with the card's eyebrow and title](docs/images/dash-ads-spotlight.jpg)
+
+![Banners](docs/images/dash-banners.jpg)
 
 ## 15. Themes and shared UI
 
@@ -731,12 +978,16 @@ The selected site theme is stored in `SiteSetting` and rendered on
 Administrators can configure:
 
 - Active site theme.
+- Logo, dark-mode logo, and site icon (§15.5).
 - Three accent colors for each theme.
 - Custom or automatically derived modern dark accents.
 - Dark background, card, border, and text surfaces per theme.
+- The site font per theme (§15.4).
 - Heading typography by semantic role.
+- Article typography: body text and the four article heading levels.
+- A library of custom fonts (§15.4).
 - Homepage animated background.
-- Spotlight-ad heading and title.
+- Spotlight-ad eyebrow and title (edited in Dashboard → Ads → Spotlight ads).
 
 `getThemeSettings()` reads all required keys in one query. The root layout
 generates scoped CSS variables for both site themes and injects them into the
@@ -744,14 +995,26 @@ initial HTML, preventing a flash of default colors.
 
 ### 15.2 Semantic typography
 
-Shared heading roles such as `.h-display`, `.h-section`, `.h-eyebrow`, and
-`.h-card` allow the dashboard typography settings to affect the entire site.
-`SectionHeader` is the standard homepage section-heading component.
+Shared heading roles let the dashboard typography settings restyle the whole
+site:
+
+| Class | Role in Appearance → Typography | Used for |
+| --- | --- | --- |
+| `.h-display` | Display | Page heroes and listing mastheads |
+| `.h-page-title` | Page title | Page titles and major blocks, such as "Find your next gadget" |
+| `.h-section` | Section heading | Section headings inside a page |
+| `.h-card` | Card title | Cards, feed rows and list items |
+| `.h-eyebrow` | Eyebrow / label | Small uppercase labels above a heading |
+
+`SectionHeader` is the standard homepage section-heading component. A Tailwind
+size class on one of these headings would opt it out of the settings, so don't
+add one.
 
 ### 15.3 Navigation
 
 The desktop and mobile navigation provide:
 
+- The site logo (or the "Blog" wordmark when no logo is set), linking home.
 - News, Reviews, Blog, Gadgets, and Compare routes.
 - Dashboard only for staff sessions.
 - Global live search.
@@ -759,6 +1022,83 @@ The desktop and mobile navigation provide:
 - Light/dark toggle.
 - Login for guests.
 - Profile, bookmarks, and sign-out for signed-in users.
+
+### 15.4 Fonts and typography
+
+All font settings are in Dashboard → Appearance, and each one is set
+separately for the Brutalist and Modern themes.
+
+![Appearance → Typography: the Site font and heading styles](docs/images/dash-appearance-typography.jpg)
+
+**Typography tab**, from top to bottom:
+
+1. **Site font** — the main font for the whole site: paragraphs, buttons and
+   menus. It replaces the theme's base font (`--font-sans`). Articles use it
+   too unless Article typography sets its own font, and heading styles left on
+   "Theme default" follow it as well. Bebas Neue is not offered here, because
+   it's a display face.
+2. **Heading styles** — size range, weight, letter spacing, uppercase and font
+   for each role in §15.2.
+3. **Article typography** — the article's body font, size and line height,
+   and the four heading levels from §8.3. Each heading level either follows a
+   site role ("Match the site's … style") or gets its own custom style. Leave
+   the article font on "Theme default" to use the site font.
+
+The built-in fonts are Plus Jakarta Sans, Space Grotesk, Bebas Neue, Geist and
+Source Serif 4, all self-hosted through `next/font`.
+
+**Fonts tab** — a library of extra fonts. Every font added here appears in all
+the font pickers above.
+
+![Appearance → Fonts: the custom font library](docs/images/dash-appearance-fonts.jpg)
+
+Click **Add font** and choose a source:
+
+- **Upload files:** give the font a name, then choose `.woff2`, `.woff`,
+  `.ttf` or `.otf` files (5 MB each, up to 12 per font). Set each file's weight
+  (or "Variable 100–900") and style. The server checks each file's bytes to
+  make sure it really is a font and stores it under `public/uploads/fonts/`.
+- **Google Fonts:** give it a name, type the Google family (for example
+  `Poppins`), tick the weights and optionally **Include italics**, then click
+  **Check & preview**. The font can be added once it shows "Found on Google
+  Fonts".
+
+Choose a fallback (sans-serif, serif or monospace) for either source, then
+click **Add to library**. The library holds up to 20 fonts.
+
+Each font card shows a preview, its weights and where it is used. Deleting a
+font lists those places first. Settings that used it fall back to Theme
+default, and its uploaded files are deleted from the server. Upload only
+fonts you're licensed to use on the web.
+
+How fonts reach the page:
+
+- Uploaded fonts get an `@font-face` rule with `font-display: swap` in the
+  root layout's injected CSS.
+- Google fonts are requested in one Google Fonts stylesheet link, and only
+  for fonts that are actually used.
+- A setting stores a font as `custom:<id>`. A reference to a font that no
+  longer exists is treated as Theme default.
+
+### 15.5 Branding
+
+![Appearance → Branding: logo, dark-mode logo and site icon](docs/images/dash-appearance-branding.jpg)
+
+Appearance → **Branding** has three image slots:
+
+| Slot | Used for | Advice |
+| --- | --- | --- |
+| Logo | Replaces the "Blog" wordmark in the header, mobile menu and footer | A wide PNG or WebP with a transparent background, at least 80px tall |
+| Dark-mode logo | Shown instead of the logo in dark mode | Optional; a light-coloured version. Empty means the main logo is used in both modes |
+| Site icon | Browser-tab favicon, Apple touch icon, and the installed-app icon in the manifest | A square PNG, 512×512 or larger |
+
+Images upload through `/api/upload` (PNG, JPEG, GIF or WebP, up to 5 MB; SVG is
+not accepted) and are saved as the `brandLogo`, `brandLogoDark` and `siteIcon`
+settings. Removing an image restores the default: the wordmark, or the
+bundled icons in `public/icons` and `public/favicon.ico`.
+
+`SiteLogo` renders both logos when a dark logo exists and lets CSS pick one, so
+the right logo is in the first paint with no swap after loading.
 
 ## 16. Dashboard
 
@@ -787,29 +1127,77 @@ The user and appearance sections have additional server-side `ADMIN` guards.
 | `/dashboard/users` | User accounts and roles | Admin only |
 | `/dashboard/ui` | Theme and appearance settings | Admin only |
 
-### 16.2 Analytics overview
+The sidebar groups the pages into Content (Posts, Comments, Gadgets,
+Comparisons), Audience (Newsletter, Polls), Promotions (Ads, Banners) and
+Settings (Socials, Appearance, Users).
 
-The dashboard aggregates total/published posts, users, views, comments,
-subscribers, products, comparisons, polls, ratings, and advertisement counts.
-It also loads recent post data and renders charts/stat cards.
+### 16.2 Overview
 
-### 16.3 Post workflow
+![Dashboard overview](docs/images/dash-overview.jpg)
 
-Admins see all posts; editors see only posts they authored. Staff can search and
-filter the dashboard list.
+`/dashboard` shows, from top to bottom:
 
-A create/edit payload contains:
+- A greeting and a **New post** button.
+- Four headline numbers: published posts, total views, subscribers, and total
+  users.
+- **Needs attention:** comments awaiting approval and unpublished drafts,
+  each linking to its page. It reads "All clear" when there is nothing.
+- **Top posts by views:** the five most-viewed posts, with bars scaled to the
+  top one.
+- **Posts per month:** a bar chart of the last six months.
+- **Recent posts:** the six newest posts with thumbnail, category, author,
+  date and status.
+- **Site at a glance:** counts grouped into Catalog, Promotions (active items
+  only), Engagement and Site. Rows with a dashboard page link to it.
+
+### 16.3 Adding a post
+
+Admins see all posts; editors see only posts they authored.
+
+![Dashboard → Posts](docs/images/dash-posts.jpg)
+
+The Posts page lists every post with its category, date, views and status.
+Search by title or slug, and filter by category, tag and status (§16.10). Each
+row has **View**, **Notify** (email confirmed subscribers about the post),
+**Edit** and **Delete**.
+
+To add a post:
+
+1. Click **New post**.
+2. Type the **Title**. The **Slug** fills in from it; edit it if needed. The
+   post's address will be `/blog/{slug}`.
+3. Choose the **Category** (News, Reviews, Versus, Deals or Guides). The hint
+   under it says where the post will be listed.
+4. Optionally choose a **Linked product**: the gadget the article is about.
+   Once that product is published, a Full specs card appears at the end of
+   the post (§8.7). Draft products are marked "(draft)".
+5. Add the **Featured image**: drag it in or click to browse (PNG, JPG, GIF or
+   WebP, up to 5 MB).
+6. Pick the **Tags**.
+7. Tick **Publish immediately**, or leave it unticked to save a draft.
+8. Write the **Content** in the editor. Use **Insert content block** for Key
+   Highlights, Specifications, Pros/Cons and Also Read, the gallery button
+   for image galleries, and `[Ads N]` / `[Banner N]` for ads (§8.4).
+9. For a review, fill in the **editorial verdict**: a written summary plus a
+   score or sub-scores (§27.7).
+10. Click **Publish post** (or **Save draft**).
+
+![New post form, with Category and Linked product](docs/images/dash-post-new.jpg)
+
+The saved payload contains:
 
 - Title and unique slug.
 - HTML content.
 - Featured image.
 - Structural article category.
 - Ordered tag IDs.
+- Linked product ID (`productId`), or none.
 - Draft/published state.
 - Editorial score, summary, and sub-scores.
 
 Editors may update or delete only their own posts. Admins can update or delete
-any post. The edit page also exposes the subscriber-notification action.
+any post. The edit page has the same form, plus the subscriber-notification
+action.
 
 ### 16.4 Product workflow
 
@@ -822,6 +1210,8 @@ The product form supports:
 - Tags.
 - Category-specific specification fields.
 - Editorial verdict and sub-scores.
+
+![Add gadget form](docs/images/dash-gadget-form.jpg)
 
 When a product is created, the category database row is upserted from the code
 registry. Duplicate slugs return a conflict. Deleting a product referenced by a
@@ -845,6 +1235,9 @@ Admins can list, create, edit, and delete users, set roles, update avatars,
 change credentials, and hash new passwords with bcrypt. Passwords are never
 returned by the list endpoint. An admin cannot delete their own current account.
 
+The user edit form also has the Author profile fields (bio and social links,
+§9.7), so an admin can fill them in for any writer.
+
 ### 16.8 Poll management
 
 Admins can create questions and ordered options, set end dates, toggle active
@@ -854,9 +1247,40 @@ active toggle sends only `{ isActive }` to preserve votes.
 
 ### 16.9 Appearance management
 
-The UI settings form fetches the current database settings, previews changes,
-and saves partial updates. Theme/background toggles are optimistic; palette,
-surface, and typography changes are validated by the server before persistence.
+Dashboard → **Appearance** (`/dashboard/ui`) has seven tabs:
+
+| Tab | What it controls |
+| --- | --- |
+| Theme | Brutalist or Modern site theme |
+| Branding | Logo, dark-mode logo and site icon (§15.5) |
+| Colors | Accent colors and dark-mode surfaces per theme |
+| Borders | Border and shadow settings for the Brutalist theme |
+| Typography | Site font, heading styles and article typography (§15.4) |
+| Fonts | The custom font library (§15.4) |
+| Effects | Homepage animated background |
+
+The form fetches the current database settings, previews changes, and saves
+partial updates. Theme/background toggles are optimistic; palette, surface,
+typography, branding and font changes are validated by the server before
+they are stored. Saving refreshes every page, because the settings are applied
+in the root layout.
+
+### 16.10 List filters and pagination
+
+The Posts, Gadgets, Comments, Users, Newsletter, Banners and Ads pages share
+the same controls:
+
+- **Search box** (`FilterSearch`) — filters as you type.
+- **Dropdown filters** (`FilterSelect`) — category, tag, status or role,
+  depending on the page. They work with the keyboard: arrow keys, Home/End,
+  Enter or Space to choose, Escape to close.
+- **Pagination** (`DashboardPagination` with `usePagination`) — "1–20 of 57
+  posts", a **Per page** choice, Prev/Next and page numbers. Lists show 20 rows
+  per page (10, 20 or 50); card grids such as Banners and Ads show 12 (6, 12
+  or 24). The pager hides itself when everything fits on one page.
+
+Changing a filter goes back to page 1. Paging happens in the browser on the
+full list the page loaded.
 
 ## 17. API reference
 
@@ -873,17 +1297,21 @@ Authentication labels below mean:
 | Method | Endpoint | Access | Behavior |
 | --- | --- | --- | --- |
 | GET/POST | `/api/auth/[...nextauth]` | Public | Auth.js provider, callback, session, CSRF, and sign-out handlers |
-| GET | `/api/account` | Signed in | Current profile and bookmark/comment counts |
-| PATCH | `/api/account` | Signed in | Update current user's name and image |
+| GET | `/api/account` | Signed in | Current profile, bio, social links, and bookmark/comment counts |
+| PATCH | `/api/account` | Signed in | Update current user's name and image; staff can also send `bio` and `socials` |
 
 ### 17.2 Posts and engagement
 
 | Method | Endpoint | Access | Behavior |
 | --- | --- | --- | --- |
 | GET | `/api/posts` | Signed in | Admin sees all; every other role is scoped to its own authored posts; supports filters |
-| POST | `/api/posts` | Staff | Create draft/published post, tags, category, verdict |
+| POST | `/api/posts` | Staff | Create draft/published post, tags, category, linked product, verdict |
 | GET | `/api/posts/[id]` | Public | Retrieve one post for editing/view integrations |
 | PATCH | `/api/posts/[id]` | Owner/Admin | Update post and relationships |
+
+`productId` on POST and PATCH: leave it out to keep the current link, send
+`null` or `""` to unlink, or send a product ID to link it. An ID that doesn't
+exist returns 400 "The linked product no longer exists".
 | DELETE | `/api/posts/[id]` | Owner/Admin | Delete post |
 | POST | `/api/posts/[id]/view` | Public | Count one view per 12-hour post cookie |
 | GET | `/api/posts/[id]/rating` | Public | Aggregate and current visitor rating |
@@ -953,11 +1381,29 @@ tightened if direct endpoint access is part of the threat model.
 | DELETE | `/api/tags/[id]` | Staff | Delete tag |
 | GET | `/api/users` | Admin | List users without passwords |
 | POST | `/api/users` | Admin | Create user and hash password |
-| PATCH | `/api/users/[id]` | Admin | Update profile, role, or password |
+| PATCH | `/api/users/[id]` | Admin | Update profile, role, password, bio, or social links |
 | DELETE | `/api/users/[id]` | Admin | Delete user, except current self |
 | POST | `/api/upload` | Signed in | Store validated image/video in `public/uploads` |
 | GET | `/api/settings/ui` | Public | Read public appearance settings |
 | PUT | `/api/settings/ui` | Admin | Validate and partially update settings |
+| POST | `/api/fonts` | Admin | Upload one font file (multipart field `file`); returns its URL, format, and a guessed weight and style |
+| DELETE | `/api/fonts?url=...` | Admin | Delete an uploaded font file that isn't in the saved library; 409 if it is |
+| GET | `/api/fonts/google-check?family=...&weights=...&italic=1` | Admin | Check that a Google Fonts family serves the requested weights |
+
+`PUT /api/settings/ui` accepts any subset of these fields: `uiTheme`,
+`modernAccents`, `brutalistAccents`, `darkSurfaces`, `accentText`,
+`brutalistBorder`, `headingType`, `articleType`, `bodyFont`, `branding`,
+`customFonts`, `homepageAnimatedBackground`, `spotlightAdsHeader`, and
+`spotlightAdsTitle`. Notes on the newer ones:
+
+- `branding`: `{ logo?, logoDark?, siteIcon? }`. Each value is a
+  `/uploads/...` path, or `null`/`""` to clear it.
+- `bodyFont` and `articleType`: `{ brutalist?, modern? }`, one value per theme.
+- `customFonts`: the whole library. New or changed Google families are checked
+  with Google first. Uploaded files that are no longer in the library are
+  deleted from disk.
+
+The response is the full, updated settings object.
 
 `/api/upload` currently permits any authenticated role, including `READER`.
 Files are restricted by MIME type and size, but production deployments should
@@ -980,16 +1426,17 @@ consider whether upload should be staff-only.
 
 | Model | Purpose and important rules |
 | --- | --- |
-| `User` | Identity, optional password, role, avatar, and relations to authored/reader activity |
-| `Post` | Article HTML, slug, category, draft state, views, ordered tags, editorial verdict |
+| `User` | Identity, optional password, role, avatar, author `bio`, `socials` JSON (`{ platform: url }`), and relations to authored/reader activity |
+| `Post` | Article HTML, slug, category, draft state, views, ordered tags, editorial verdict, optional linked `productId` |
 | `Tag` | Shared post/product topic with icon and color policy |
 | `Bookmark` | Unique saved post per user |
 | `Session` | Legacy/database-session-compatible table; active Auth.js strategy is JWT |
 | `Comment` | Threaded comment with moderation status and cascade-deleting replies |
 | `Rating` | Reader score unique by signed-in user or anonymous token |
 
-Important post indexes cover views, dates, verdict scores, and
-`(category, createdAt)`.
+Important post indexes cover views, dates, verdict scores, `productId`, and
+`(category, createdAt)`. Deleting a product unlinks it from its posts
+(`onDelete: SetNull`); the posts stay.
 
 ### 18.2 Engagement
 
@@ -1025,6 +1472,15 @@ them.
 | `SocialLink` | Configurable social/action links |
 | `SiteSetting` | String key/value store for visual and homepage settings |
 
+Newer `SiteSetting` keys:
+
+| Key | Holds |
+| --- | --- |
+| `brandLogo`, `brandLogoDark`, `siteIcon` | Branding image paths |
+| `customFonts` | The custom font library, as JSON |
+| `bodyFontBrutalist`, `bodyFontModern` | The site font per theme |
+| `articleTypeBrutalist`, `articleTypeModern` | Article typography per theme, as JSON |
+
 ## 19. Key implementation modules and functions
 
 | Module/function | Responsibility |
@@ -1043,6 +1499,18 @@ them.
 | `src/lib/verdict.ts` / `verdictFieldsFromBody()` | Safely convert dashboard payloads to Prisma fields |
 | `src/lib/settings.ts` / `getThemeSettings()` | Load the root layout's appearance settings in one query |
 | `src/lib/settings.ts` / `setSetting()` | Upsert one key/value setting |
+| `src/lib/settings.ts` / `getBranding()` | Read the logo, dark logo and site icon paths |
+| `src/lib/authorProfile.ts` / `validateAuthorProfile()` | Validate a bio and social links before saving |
+| `src/lib/authorProfile.ts` / `readSocials()` | Turn stored links into the ordered icons the author card shows |
+| `src/lib/blog/productLink.ts` / `productLinkFromBody()` | Read `productId` from a post payload: keep, unlink, or link a product that exists |
+| `src/lib/typography.ts` / `fontStack()`, `resolveFont()` | Turn a built-in or `custom:<id>` font into a CSS font stack; treat missing fonts as Theme default |
+| `src/lib/typography.ts` / `bodyFontCss()` | CSS for the site font per theme |
+| `src/lib/articleType.ts` / `articleTypeCss()` | CSS variables for article typography per theme |
+| `src/lib/fontLibrary.ts` / `customFontsFrom()` | Strictly validate the custom font library |
+| `src/lib/fontLibrary.ts` / `fontFaceCss()`, `googleHref()` | `@font-face` rules for uploaded fonts; the Google Fonts stylesheet URL for the ones in use |
+| `src/lib/fontFiles.ts` | Save and delete font files under `public/uploads/fonts` (server only) |
+| `src/lib/googleFonts.ts` / `checkGoogleFont()` | Ask Google Fonts whether a family serves the requested weights |
+| `src/lib/pagination.ts` / `pageWindow()` | Page numbers to show: first, last, and one either side of the current page |
 | `src/lib/localStore.ts` / `createLocalStore()` | Hydration-safe, reference-cached, cross-tab browser store |
 | `src/lib/readingHistory.ts` / `recordVisit()` | Add/update a local reading-history entry |
 | `src/lib/readingHistory.ts` / `updateProgress()` | Persist forward-only reading progress |
@@ -1056,7 +1524,7 @@ them.
 | `lookupEditorVerdicts()` | Match an exact two-product pair in either order |
 | `src/lib/rss.ts` / `fetchFeedPosts()` | Load the latest 30 feed posts |
 | `src/lib/rss.ts` / `buildRss()` | Escape and generate RSS 2.0 XML |
-| `src/lib/email/send.ts` / `sendEmail()` | Pooled SMTP delivery with safe failure handling |
+| `src/lib/email/send.ts` / `sendEmail()` | SMTP delivery through one reused transport, with safe failure handling |
 | `notifySubscribersOfNewPost()` | Batched confirmed-subscriber delivery |
 | `src/lib/appUrl.ts` / `APP_URL` | Base URL for SEO, emails, and absolute media URLs |
 
@@ -1067,6 +1535,12 @@ them.
 The root layout defines the title template, description, Open Graph site data,
 Twitter card defaults, robots defaults, manifest, viewport colors, and
 `metadataBase` using `NEXT_PUBLIC_APP_URL`.
+
+It uses `generateMetadata()` so the icons follow Branding (§15.5): the site
+icon, when set, is the favicon and the Apple touch icon. Otherwise
+`/favicon.ico` and `/icons/apple-touch-icon.png` are used. The default favicon
+lives in `public/` rather than `src/app/`, because a file-based `app/favicon.ico`
+would override the admin's choice.
 
 Pages define their own canonical URLs. A root canonical is deliberately avoided
 because it would make child pages inherit `/`.
@@ -1116,8 +1590,13 @@ shared-cache revalidation and stale-while-revalidate headers.
 
 ## 21. PWA and offline behavior
 
-The web manifest defines standalone display, portrait orientation, install
-icons, a maskable icon, and shortcuts for articles, compare, and bookmarks.
+The web manifest (`src/app/manifest.ts`) defines standalone display, portrait
+orientation, install icons, and shortcuts for articles, compare, and
+bookmarks. It is generated on every request so it can use the Branding site
+icon. With no site icon it lists the bundled 192px, 512px and maskable 512px
+icons. With one, it lists only the uploaded icon, as `purpose: "any"`: an
+arbitrary upload has no safe-zone padding, so marking it maskable would let
+Android crop it.
 
 The service worker registers only in production. During development, the
 registrar removes old workers so cached assets do not interfere with Turbopack
@@ -1143,15 +1622,26 @@ runtime caches.
 - MP4, WebM, Ogg video up to 20 MB.
 
 Files are stored under `public/uploads` with a timestamp-prefixed name and
-returned as `/uploads/...` URLs. This is local filesystem storage, so a
-multi-instance or ephemeral hosting platform requires replacement with shared
-object storage.
+returned as `/uploads/...` URLs. Branding images use this endpoint too.
+
+Font files have their own endpoint, `POST /api/fonts` (admin only). It accepts
+`.woff2`, `.woff`, `.ttf` and `.otf` up to 5 MB, identifies the format from
+the file's bytes rather than its name, and saves it under a random name in
+`public/uploads/fonts/`.
+
+This is local filesystem storage, so a multi-instance or ephemeral hosting
+platform requires replacement with shared object storage.
 
 ### 22.2 Email
 
-Email uses a pooled Nodemailer transport configured by `GMAIL_USER`,
-`GMAIL_PASSWORD`, and `EMAIL_FROM`. Gmail requires an app password, not the
-normal account password.
+Email uses one Nodemailer Gmail transport, created on first use and then
+reused. It is configured by `GMAIL_USER`, `GMAIL_PASSWORD`, and `EMAIL_FROM`.
+Gmail requires an app password, not the normal account password.
+
+The transport is not pooled (`pool: true` is not set), so each message opens
+its own SMTP connection. The comment in `send.ts` saying it "pools
+connections internally" is wrong. For large subscriber lists, turning pooling
+on would cut the connection overhead.
 
 In development, missing SMTP configuration produces a logged preview instead of
 attempting delivery. In production, missing configuration is treated as a real
@@ -1202,10 +1692,19 @@ use port 3001.
 
 ```powershell
 npm.cmd install
+npx.cmd prisma db push
 npx.cmd prisma generate
-npx.cmd prisma migrate dev
 npm.cmd run dev
 ```
+
+The project has no `prisma/migrations` folder: the schema is applied with
+`prisma db push`, which updates the database to match `schema.prisma`. Don't run
+`prisma migrate dev` against an existing database. With no migration history,
+Prisma reports drift and offers to reset the database, which deletes all data.
+The shadow database is only used by `migrate` commands.
+
+After changing `schema.prisma`, run `prisma db push` and `prisma generate`,
+then restart `npm run dev` so the server loads the new client.
 
 The optional database helper is:
 
@@ -1233,9 +1732,11 @@ Before deployment:
 1. Set `NEXT_PUBLIC_APP_URL` and `NEXTAUTH_URL` to the real HTTPS origin.
 2. Register the production Google and GitHub callback URLs.
 3. Use a strong `AUTH_SECRET`.
-4. Configure PostgreSQL and run migrations.
+4. Configure PostgreSQL and apply the schema with `prisma db push`.
 5. Configure SMTP or intentionally accept disabled newsletter delivery.
 6. Ensure uploaded files persist or replace local storage with object storage.
+   This includes branding images and custom font files under
+   `public/uploads/fonts/`.
 7. Run TypeScript, Prisma validation, ESLint, and the production build.
 8. Run the rendered-site audits against the production-mode server.
 9. Confirm sitemap, robots, RSS, Open Graph, and JSON-LD use the real domain.
@@ -1294,6 +1795,17 @@ Recommended future automated coverage:
 - A category-specific products query and comparison lookup should be reviewed if
   unpublished product slugs must never be observable outside staff tools.
 - The schema contains a `Session` model although active Auth.js sessions use JWTs.
+- An `[Ads N]` or `[Banner N]` shortcode with no matching active item shows as
+  raw text in the article.
+- The mobile Contents panel lists headings without the section numbers the
+  desktop table of contents shows. Its bottom bar hides at 1440px, but the
+  panel itself only hides at 1536px.
+- The verdict label and Review JSON-LD take the reviewed item's name from the
+  post title, even when the post has a linked product.
+- The Hero rail ads tab says its ads "appear inside blog post content"; they
+  appear beside the homepage hero.
+- Email is sent without connection pooling (§22.2).
+- The schema is applied with `prisma db push`; there is no migration history.
 
 ## 27. Common extension workflows
 
@@ -1301,7 +1813,7 @@ Recommended future automated coverage:
 
 1. Add the enum value to `PostCategory` in `prisma/schema.prisma`.
 2. Add the display entry to `src/lib/blog/categories.ts`.
-3. Generate and migrate Prisma.
+3. Run `prisma db push` and `prisma generate` (§23.3).
 4. Confirm the slug does not collide with another root route.
 5. Verify navbar/category tabs, dashboard select, sitemap, and RSS route.
 
@@ -1342,7 +1854,9 @@ category row.
 3. Scope writes to the current user or role.
 4. Return specific 400/401/403/404/409 responses.
 5. Update or revalidate affected cached pages.
-6. Add automated coverage for the permission boundary and destructive cases.
+6. Check the permission boundary and destructive cases by hand, or with a
+   throwaway script against the dev server. There is no automated test suite
+   to add them to yet (§25).
 
 ### 27.6 Change a poll without losing votes
 
@@ -1364,3 +1878,32 @@ Provide a written `verdictSummary` and either:
 
 A bare score is intentionally not displayed and does not produce Review
 structured data.
+
+### 27.8 Add a custom font and use it
+
+1. Dashboard → Appearance → **Fonts** → **Add font**.
+2. Either upload the font files and set each file's weight and style, or
+   choose **Google Fonts**, type the family, tick the weights, and click
+   **Check & preview**.
+3. Click **Add to library**.
+4. Open the **Typography** tab and pick the font as the **Site font**, a
+   heading style's font, or an Article typography font. Custom fonts are listed
+   after the built-in ones.
+5. Click that section's save button (**Save site font**, **Save heading
+   styles** or **Save article typography**). Every page picks it up on its
+   next load.
+
+To remove a font, delete it on the Fonts tab. Check its "Used by" list first:
+those settings go back to Theme default.
+
+### 27.9 Change the logo or site icon
+
+1. Dashboard → Appearance → **Branding**.
+2. Click **Upload** (or **Replace**) on the Logo, Dark-mode logo or Site icon
+   slot and choose a PNG, JPEG, GIF or WebP image up to 5 MB.
+3. Click **Remove** on a slot to go back to the default wordmark or icon.
+4. Click **Save branding**. Nothing changes on the site until you save.
+
+Browsers cache favicons aggressively, so a new site icon can take a hard
+refresh to appear in the tab. An installed app picks up the new icon from the
+manifest the next time the browser updates it.
